@@ -1,0 +1,213 @@
+{
+  "description": "Test vectors for TaskRedirectBody (body.type = task.redirect) and X-Load-Level header usage (AMP v0.1.4). Covers simple redirects, redirects with alternatives, high-load with retry_after, and maintenance redirects.",
+  "vectors": [
+    {
+      "description": "Simple redirect — overloaded agent points to a single alternative",
+      "body_type": "task.redirect",
+      "valid": true,
+      "body": {
+        "task_id": "task-001",
+        "redirect_to": "agent://processor-c.example.com",
+        "reason": "overloaded",
+        "original_description": "Analyze server access logs for anomaly detection",
+        "load_level": 85
+      },
+      "headers": {
+        "X-Load-Level": "85",
+        "Protocol-Version": "0.1.4"
+      }
+    },
+    {
+      "description": "Redirect with alternatives — primary target plus fallback agents",
+      "body_type": "task.redirect",
+      "valid": true,
+      "body": {
+        "task_id": "task-002",
+        "redirect_to": "agent://primary-alt.example.com",
+        "reason": "overloaded",
+        "original_description": "Run batch aggregation on Q4 metrics",
+        "load_level": 92,
+        "alternative_agents": [
+          "agent://fallback-a.example.com",
+          "agent://fallback-b.example.com",
+          "agent://fallback-c.example.com"
+        ]
+      },
+      "headers": {
+        "X-Load-Level": "92",
+        "Protocol-Version": "0.1.4"
+      },
+      "note": "Caller should try redirect_to first, then alternative_agents in order."
+    },
+    {
+      "description": "Redirect with high load and retry_after — agent is saturated",
+      "body_type": "task.redirect",
+      "valid": true,
+      "body": {
+        "task_id": "task-003",
+        "redirect_to": "agent://overflow-handler.example.com",
+        "reason": "overloaded",
+        "original_description": "Index new document corpus",
+        "load_level": 99,
+        "alternative_agents": null,
+        "retry_after_seconds": 600
+      },
+      "headers": {
+        "X-Load-Level": "99",
+        "Retry-After": "600",
+        "Protocol-Version": "0.1.4"
+      },
+      "note": "retry_after_seconds tells the caller when the redirecting agent expects to be available again. The Retry-After header mirrors this value."
+    },
+    {
+      "description": "Redirect for maintenance — agent is draining, not overloaded",
+      "body_type": "task.redirect",
+      "valid": true,
+      "body": {
+        "task_id": "task-004",
+        "redirect_to": "agent://replacement-v2.example.com",
+        "reason": "maintenance",
+        "original_description": "Process payment reconciliation batch",
+        "load_level": 40,
+        "alternative_agents": [
+          "agent://backup-processor.example.com"
+        ],
+        "retry_after_seconds": 3600
+      },
+      "headers": {
+        "X-Load-Level": "40",
+        "Retry-After": "3600",
+        "Protocol-Version": "0.1.4"
+      },
+      "note": "Load is low but the agent is shutting down for maintenance. reason=maintenance distinguishes this from overload."
+    },
+    {
+      "description": "Redirect with capability mismatch — agent cannot handle the task",
+      "body_type": "task.redirect",
+      "valid": true,
+      "body": {
+        "task_id": "task-005",
+        "redirect_to": "agent://specialist-ml.example.com",
+        "reason": "capability_mismatch",
+        "original_description": "Train a classification model on labeled dataset",
+        "load_level": 20,
+        "alternative_agents": [
+          "agent://ml-worker-a.example.com",
+          "agent://ml-worker-b.example.com"
+        ]
+      },
+      "headers": {
+        "X-Load-Level": "20",
+        "Protocol-Version": "0.1.4"
+      },
+      "note": "Low load but the agent lacks required capabilities. redirect_to points to an agent that has them."
+    },
+    {
+      "description": "Redirect with minimal fields — required only",
+      "body_type": "task.redirect",
+      "valid": true,
+      "body": {
+        "task_id": "task-006",
+        "redirect_to": "agent://other-agent.example.com",
+        "reason": "overloaded"
+      },
+      "headers": {
+        "Protocol-Version": "0.1.4"
+      },
+      "note": "Optional fields (original_description, load_level, alternative_agents, retry_after_seconds) are all absent."
+    },
+    {
+      "description": "Redirect with all optional fields explicitly null",
+      "body_type": "task.redirect",
+      "valid": true,
+      "body": {
+        "task_id": "task-007",
+        "redirect_to": "agent://target.example.com",
+        "reason": "overloaded",
+        "original_description": null,
+        "load_level": null,
+        "alternative_agents": null,
+        "retry_after_seconds": null
+      }
+    },
+    {
+      "description": "Invalid redirect — missing task_id (required)",
+      "body_type": "task.redirect",
+      "valid": false,
+      "expected_error": "task_id",
+      "body": {
+        "redirect_to": "agent://target.example.com",
+        "reason": "overloaded"
+      }
+    },
+    {
+      "description": "Invalid redirect — missing redirect_to (required)",
+      "body_type": "task.redirect",
+      "valid": false,
+      "expected_error": "redirect_to",
+      "body": {
+        "task_id": "task-bad-001",
+        "reason": "overloaded"
+      }
+    },
+    {
+      "description": "Invalid redirect — missing reason (required)",
+      "body_type": "task.redirect",
+      "valid": false,
+      "expected_error": "reason",
+      "body": {
+        "task_id": "task-bad-002",
+        "redirect_to": "agent://target.example.com"
+      }
+    },
+    {
+      "description": "Full redirect flow — envelope with X-Load-Level headers at each hop",
+      "schema": "redirect_flow",
+      "valid": true,
+      "steps": [
+        {
+          "step": 1,
+          "direction": "A -> B",
+          "body_type": "task.create",
+          "headers": {
+            "X-Load-Level": "20",
+            "Protocol-Version": "0.1.4"
+          },
+          "note": "Agent A sends task.create to B, reporting its own 20% load."
+        },
+        {
+          "step": 2,
+          "direction": "B -> A",
+          "body_type": "task.redirect",
+          "headers": {
+            "X-Load-Level": "85",
+            "Retry-After": "300",
+            "Protocol-Version": "0.1.4"
+          },
+          "note": "Agent B is at 85% load, redirects to Agent C."
+        },
+        {
+          "step": 3,
+          "direction": "A -> C",
+          "body_type": "task.create",
+          "headers": {
+            "X-Load-Level": "20",
+            "Via": "agent://processor-b.example.com (redirect: overloaded)",
+            "Protocol-Version": "0.1.4"
+          },
+          "note": "Agent A follows redirect, adds Via header to trace the redirect path."
+        },
+        {
+          "step": 4,
+          "direction": "C -> A",
+          "body_type": "task.complete",
+          "headers": {
+            "X-Load-Level": "30",
+            "Protocol-Version": "0.1.4"
+          },
+          "note": "Agent C completes the task at 30% load."
+        }
+      ]
+    }
+  ]
+}

@@ -64,6 +64,8 @@ STANDARD_HEADERS = frozenset({
     "Anonymous-Sender-Hint",
     # v0.1.3 — Resilience
     "Hop-Timeout",
+    # v0.1.4 — Routing
+    "X-Load-Level",
 })
 
 

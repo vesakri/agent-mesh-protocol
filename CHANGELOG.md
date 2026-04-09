@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.1.4] - 2026-04-09
+
+### Added
+- `RegistrySearchRequest` / `RegistrySearchMatch` / `RegistrySearchResult` — structured service discovery
+- `task.redirect` body type (`TaskRedirectBody`) — load-aware task redirection
+- `X-Load-Level` header — agent load percentage (0-100)
+
+### Changed
+- Standard headers grew from 44 to 45
+- Body type registry grew from 39 to 40
+- Exports grew from 152 to 156
+
 ## [0.1.3] - 2026-04-09
 
 ### Added

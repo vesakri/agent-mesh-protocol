@@ -1,0 +1,215 @@
+{
+  "description": "Test vectors for RegistrySearchRequest, RegistrySearchMatch, and RegistrySearchResult (AMP v0.1.4). Covers search by capability, search with filters, populated results, empty results, and match metadata.",
+  "vectors": [
+    {
+      "description": "Search by capability — minimal required fields",
+      "schema": "registry_search_request",
+      "valid": true,
+      "body": {
+        "capability": "data-processing"
+      },
+      "note": "min_trust_score defaults to null, max_results defaults to 10, include_load_level defaults to true."
+    },
+    {
+      "description": "Search with filters — all fields populated",
+      "schema": "registry_search_request",
+      "valid": true,
+      "body": {
+        "capability": "analytics",
+        "min_trust_score": 400,
+        "max_results": 5,
+        "filters": {
+          "region": "us-east",
+          "version_gte": "2.0.0"
+        },
+        "include_load_level": true
+      }
+    },
+    {
+      "description": "Search with high trust threshold and load excluded",
+      "schema": "registry_search_request",
+      "valid": true,
+      "body": {
+        "capability": "code-execution",
+        "min_trust_score": 800,
+        "max_results": 3,
+        "filters": null,
+        "include_load_level": false
+      }
+    },
+    {
+      "description": "Populated result — 3 matches ranked by trust score",
+      "schema": "registry_search_result",
+      "valid": true,
+      "body": {
+        "matches": [
+          {
+            "agent_id": "agent://alpha-processor.example.com",
+            "endpoint": "https://alpha-processor.example.com/agent/message",
+            "capabilities": [
+              "data-processing",
+              "analytics",
+              "batch-jobs"
+            ],
+            "trust_score": 820,
+            "trust_tier": "verified",
+            "load_level": 45,
+            "status": "active",
+            "metadata": {
+              "version": "3.1.0",
+              "region": "us-east-1"
+            }
+          },
+          {
+            "agent_id": "agent://beta-analytics.example.com",
+            "endpoint": "https://beta-analytics.example.com/agent/message",
+            "capabilities": [
+              "data-processing",
+              "analytics"
+            ],
+            "trust_score": 650,
+            "trust_tier": "verified",
+            "load_level": 30,
+            "status": "active",
+            "metadata": {
+              "version": "2.4.1",
+              "region": "us-east-2"
+            }
+          },
+          {
+            "agent_id": "agent://gamma-worker.example.com",
+            "endpoint": "https://gamma-worker.example.com/agent/message",
+            "capabilities": [
+              "data-processing"
+            ],
+            "trust_score": 480,
+            "trust_tier": "external",
+            "load_level": 72,
+            "status": "active",
+            "metadata": {
+              "version": "1.0.5",
+              "region": "us-east-1"
+            }
+          }
+        ],
+        "total_available": 3,
+        "search_time_ms": 12.4
+      },
+      "note": "Matches are sorted descending by trust_score. load_level is included because include_load_level was true."
+    },
+    {
+      "description": "Empty result — no agents match the query",
+      "schema": "registry_search_result",
+      "valid": true,
+      "body": {
+        "matches": [],
+        "total_available": 0,
+        "search_time_ms": 3.1
+      }
+    },
+    {
+      "description": "Single match — full metadata with load_level null (load reporting disabled)",
+      "schema": "registry_search_match",
+      "valid": true,
+      "body": {
+        "agent_id": "agent://specialist.example.com",
+        "endpoint": "https://specialist.example.com/agent/message",
+        "capabilities": [
+          "data-processing",
+          "ml-inference"
+        ],
+        "trust_score": 910,
+        "trust_tier": "owner",
+        "load_level": null,
+        "status": "active",
+        "metadata": {
+          "version": "4.0.0",
+          "gpu_available": true,
+          "max_batch_size": 10000
+        }
+      },
+      "note": "load_level is null when the search request had include_load_level=false or the agent does not report load."
+    },
+    {
+      "description": "Match with deactivating status — still returned but marked",
+      "schema": "registry_search_match",
+      "valid": true,
+      "body": {
+        "agent_id": "agent://draining-worker.example.com",
+        "endpoint": "https://draining-worker.example.com/agent/message",
+        "capabilities": [
+          "data-processing"
+        ],
+        "trust_score": 550,
+        "trust_tier": "verified",
+        "load_level": 95,
+        "status": "deactivating",
+        "metadata": null
+      },
+      "note": "Clients should prefer active agents over deactivating ones."
+    },
+    {
+      "description": "Match with minimal optional fields — no load_level, no metadata",
+      "schema": "registry_search_match",
+      "valid": true,
+      "body": {
+        "agent_id": "agent://bare-agent.example.com",
+        "endpoint": "https://bare-agent.example.com/agent/message",
+        "capabilities": [
+          "data-processing"
+        ],
+        "trust_score": 400,
+        "trust_tier": "external"
+      },
+      "note": "load_level and metadata are optional. status defaults to active."
+    },
+    {
+      "description": "Invalid search request — missing capability (required)",
+      "schema": "registry_search_request",
+      "valid": false,
+      "expected_error": "capability",
+      "body": {
+        "min_trust_score": 400,
+        "max_results": 10
+      }
+    },
+    {
+      "description": "Invalid search request — max_results exceeds limit",
+      "schema": "registry_search_request",
+      "valid": false,
+      "expected_error": "max_results",
+      "body": {
+        "capability": "analytics",
+        "max_results": 200
+      }
+    },
+    {
+      "description": "Invalid match — missing agent_id (required)",
+      "schema": "registry_search_match",
+      "valid": false,
+      "expected_error": "agent_id",
+      "body": {
+        "endpoint": "https://broken.example.com/agent/message",
+        "capabilities": [
+          "data-processing"
+        ],
+        "trust_score": 500,
+        "trust_tier": "external"
+      }
+    },
+    {
+      "description": "Invalid match — missing trust_score (required)",
+      "schema": "registry_search_match",
+      "valid": false,
+      "expected_error": "trust_score",
+      "body": {
+        "agent_id": "agent://broken.example.com",
+        "endpoint": "https://broken.example.com/agent/message",
+        "capabilities": [
+          "data-processing"
+        ],
+        "trust_tier": "external"
+      }
+    }
+  ]
+}

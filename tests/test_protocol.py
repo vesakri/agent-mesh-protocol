@@ -7,7 +7,7 @@ from pydantic import ValidationError
 class TestImports:
     def test_version(self):
         import ampro
-        assert ampro.__version__ == "0.1.3"
+        assert ampro.__version__ == "0.1.4"
 
     def test_all_exports(self):
         import ampro
@@ -56,7 +56,7 @@ class TestEnvelope:
 
     def test_headers_count(self):
         from ampro import STANDARD_HEADERS
-        assert len(STANDARD_HEADERS) == 44
+        assert len(STANDARD_HEADERS) == 45
 
 
 class TestBodySchemas:
@@ -266,7 +266,7 @@ class TestV011Imports:
 
     def test_version_bumped(self):
         import ampro
-        assert ampro.__version__ == "0.1.3"
+        assert ampro.__version__ == "0.1.4"
 
     def test_handshake_imports(self):
         from ampro import (
@@ -326,9 +326,9 @@ class TestV011Imports:
 class TestV012Imports:
     """Verify all v0.1.2 types are importable from ampro."""
 
-    def test_version_is_013(self):
+    def test_version_is_014(self):
         import ampro
-        assert ampro.__version__ == "0.1.3"
+        assert ampro.__version__ == "0.1.4"
 
     def test_key_revocation_imports(self):
         from ampro import RevocationReason, KeyRevocationBody
@@ -453,3 +453,47 @@ class TestV013Imports:
     def test_all_exports_count(self):
         import ampro
         assert len(ampro.__all__) >= 152
+
+
+class TestV014Imports:
+    """Verify all v0.1.4 types are importable from ampro."""
+
+    def test_registry_search_request_import(self):
+        from ampro import RegistrySearchRequest
+        req = RegistrySearchRequest(capability="messaging")
+        assert req.max_results == 10
+
+    def test_registry_search_match_import(self):
+        from ampro import RegistrySearchMatch
+        match = RegistrySearchMatch(
+            agent_id="agent://test.com",
+            endpoint="https://test.com/agent/message",
+            capabilities=["messaging"],
+            trust_score=700,
+            trust_tier="verified",
+        )
+        assert match.agent_id == "agent://test.com"
+
+    def test_registry_search_result_import(self):
+        from ampro import RegistrySearchResult
+        result = RegistrySearchResult()
+        assert result.matches == []
+        assert result.total_available == 0
+
+    def test_task_redirect_body_import(self):
+        from ampro import TaskRedirectBody
+        body = TaskRedirectBody(
+            task_id="t-1",
+            redirect_to="agent://alt.com",
+            reason="overloaded",
+        )
+        assert body.task_id == "t-1"
+        assert body.reason == "overloaded"
+
+    def test_x_load_level_header(self):
+        from ampro import STANDARD_HEADERS
+        assert "X-Load-Level" in STANDARD_HEADERS
+
+    def test_all_exports_v014_count(self):
+        import ampro
+        assert len(ampro.__all__) >= 156

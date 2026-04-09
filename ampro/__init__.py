@@ -84,6 +84,7 @@ from ampro.message_middleware import (
 
 # --- Registry & discovery ---
 from ampro.registry_types import RegistryResolution, RegistryRegistration
+from ampro.registry_search import RegistrySearchRequest, RegistrySearchMatch, RegistrySearchResult
 from ampro.agent_json_schema import AgentJson
 
 # --- Cross-verification ---
@@ -145,11 +146,14 @@ from ampro.agent_lifecycle import AgentLifecycleStatus, AgentDeactivationNoticeB
 # --- Cost receipts ---
 from ampro.cost_receipt import CostReceipt, CostReceiptChain
 
+# --- Task redirect ---
+from ampro.task_redirect import TaskRedirectBody
+
 # --- Negotiation & versioning ---
 from ampro.negotiation import NegotiationResult, CapabilityNegotiator
 from ampro.versioning import SUPPORTED_VERSIONS, CURRENT_VERSION, check_version, negotiate_version
 
-__version__ = "0.1.3"
+__version__ = "0.1.4"
 
 __all__ = [
     # Core
@@ -197,7 +201,9 @@ __all__ = [
     "validate_message_body", "build_negotiation_headers",
     "check_message_size", "MessageSizeError",
     # Registry & discovery
-    "RegistryResolution", "RegistryRegistration", "AgentJson",
+    "RegistryResolution", "RegistryRegistration",
+    "RegistrySearchRequest", "RegistrySearchMatch", "RegistrySearchResult",
+    "AgentJson",
     # Cross-verification
     "cross_verify_identifiers", "check_all_verified",
     "get_failed_identifiers", "VerificationResult",
@@ -233,6 +239,8 @@ __all__ = [
     "AgentLifecycleStatus", "AgentDeactivationNoticeBody",
     # Cost receipts
     "CostReceipt", "CostReceiptChain",
+    # Task redirect
+    "TaskRedirectBody",
     # Negotiation & versioning
     "NegotiationResult", "CapabilityNegotiator",
     "SUPPORTED_VERSIONS", "CURRENT_VERSION", "check_version", "negotiate_version",

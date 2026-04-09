@@ -568,6 +568,17 @@ def _register_v013_body_types() -> None:
 _register_v013_body_types()
 
 
+def _register_v014_body_types() -> None:
+    """Register v0.1.4 body types: task redirect."""
+    try:
+        from ampro.task_redirect import TaskRedirectBody
+        _BODY_TYPE_REGISTRY["task.redirect"] = TaskRedirectBody
+    except ImportError:
+        pass
+
+_register_v014_body_types()
+
+
 def validate_body(body_type: str, body: dict[str, Any]) -> BaseModel | dict[str, Any]:
     """Validate a body dict against its body_type schema.
 
