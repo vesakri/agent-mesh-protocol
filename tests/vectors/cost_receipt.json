@@ -1,0 +1,248 @@
+{
+  "description": "Test vectors for CostReceipt, CostReceiptChain, and task.complete with cost_receipt field (AMP v0.1.3). Covers single-hop, multi-hop, full breakdown, and round-trip through task.complete.",
+  "vectors": [
+    {
+      "description": "Single-hop receipt — minimal fields",
+      "schema": "cost_receipt",
+      "valid": true,
+      "body": {
+        "agent_id": "agent://simple-agent.example.com",
+        "task_id": "task-001",
+        "cost_usd": 0.005,
+        "currency": "USD",
+        "issued_at": "2026-04-09T14:00:00Z"
+      }
+    },
+    {
+      "description": "Single-hop receipt — full breakdown and token_usage",
+      "schema": "cost_receipt",
+      "valid": true,
+      "body": {
+        "agent_id": "agent://analytics-agent.example.com",
+        "task_id": "task-002",
+        "cost_usd": 0.042,
+        "currency": "USD",
+        "breakdown": {
+          "llm_inference": 0.035,
+          "tool_execution": 0.005,
+          "embedding_lookup": 0.002
+        },
+        "token_usage": {
+          "input": 3200,
+          "output": 1450
+        },
+        "duration_seconds": 4.7,
+        "signature": "base64url-ed25519-sig-cost-receipt-aabbccdd",
+        "issued_at": "2026-04-09T14:01:00Z"
+      }
+    },
+    {
+      "description": "Multi-hop chain — 3 receipts with running total",
+      "schema": "cost_receipt_chain",
+      "valid": true,
+      "body": {
+        "receipts": [
+          {
+            "agent_id": "agent://tool-runner.example.com",
+            "task_id": "task-003",
+            "cost_usd": 0.003,
+            "currency": "USD",
+            "breakdown": {
+              "llm_inference": 0.001,
+              "tool_execution": 0.002
+            },
+            "token_usage": {
+              "input": 450,
+              "output": 120
+            },
+            "duration_seconds": 1.2,
+            "issued_at": "2026-04-09T14:00:01Z"
+          },
+          {
+            "agent_id": "agent://specialist.example.com",
+            "task_id": "task-003",
+            "cost_usd": 0.012,
+            "currency": "USD",
+            "breakdown": {
+              "llm_inference": 0.010,
+              "tool_execution": 0.002
+            },
+            "token_usage": {
+              "input": 2100,
+              "output": 850
+            },
+            "duration_seconds": 3.8,
+            "issued_at": "2026-04-09T14:00:03Z"
+          },
+          {
+            "agent_id": "agent://gateway.example.com",
+            "task_id": "task-003",
+            "cost_usd": 0.005,
+            "currency": "USD",
+            "breakdown": {
+              "llm_inference": 0.004,
+              "routing_overhead": 0.001
+            },
+            "token_usage": {
+              "input": 800,
+              "output": 200
+            },
+            "duration_seconds": 0.5,
+            "issued_at": "2026-04-09T14:00:05Z"
+          }
+        ],
+        "total_cost_usd": 0.020
+      },
+      "note": "Total is sum of all 3 hop costs: 0.003 + 0.012 + 0.005 = 0.020 USD."
+    },
+    {
+      "description": "task.complete with embedded cost_receipt chain",
+      "body_type": "task.complete",
+      "valid": true,
+      "body": {
+        "task_id": "task-004",
+        "result": {
+          "summary": "Analysis complete",
+          "findings": 3
+        },
+        "cost_usd": 0.020,
+        "duration_seconds": 5.5,
+        "cost_receipt": {
+          "receipts": [
+            {
+              "agent_id": "agent://tool-runner.example.com",
+              "task_id": "task-004",
+              "cost_usd": 0.003,
+              "currency": "USD",
+              "breakdown": {
+                "llm_inference": 0.001,
+                "tool_execution": 0.002
+              },
+              "token_usage": {
+                "input": 450,
+                "output": 120
+              },
+              "duration_seconds": 1.2,
+              "issued_at": "2026-04-09T14:00:01Z"
+            },
+            {
+              "agent_id": "agent://specialist.example.com",
+              "task_id": "task-004",
+              "cost_usd": 0.012,
+              "currency": "USD",
+              "breakdown": {
+                "llm_inference": 0.010,
+                "tool_execution": 0.002
+              },
+              "token_usage": {
+                "input": 2100,
+                "output": 850
+              },
+              "duration_seconds": 3.8,
+              "issued_at": "2026-04-09T14:00:03Z"
+            },
+            {
+              "agent_id": "agent://gateway.example.com",
+              "task_id": "task-004",
+              "cost_usd": 0.005,
+              "currency": "USD",
+              "breakdown": {
+                "llm_inference": 0.004,
+                "routing_overhead": 0.001
+              },
+              "token_usage": {
+                "input": 800,
+                "output": 200
+              },
+              "duration_seconds": 0.5,
+              "issued_at": "2026-04-09T14:00:05Z"
+            }
+          ],
+          "total_cost_usd": 0.020
+        },
+        "metadata": {
+          "hops": 3
+        }
+      },
+      "note": "The cost_receipt field carries the full CostReceiptChain inside task.complete for end-to-end cost attribution."
+    },
+    {
+      "description": "Single-hop receipt — optional fields explicitly null",
+      "schema": "cost_receipt",
+      "valid": true,
+      "body": {
+        "agent_id": "agent://minimal-agent.example.com",
+        "task_id": "task-005",
+        "cost_usd": 0.001,
+        "currency": "USD",
+        "breakdown": null,
+        "token_usage": null,
+        "duration_seconds": null,
+        "signature": null,
+        "issued_at": "2026-04-09T15:00:00Z"
+      }
+    },
+    {
+      "description": "Empty chain — no receipts yet",
+      "schema": "cost_receipt_chain",
+      "valid": true,
+      "body": {
+        "receipts": [],
+        "total_cost_usd": 0.0
+      }
+    },
+    {
+      "description": "Receipt with non-USD currency",
+      "schema": "cost_receipt",
+      "valid": true,
+      "body": {
+        "agent_id": "agent://eu-processor.example.com",
+        "task_id": "task-006",
+        "cost_usd": 0.018,
+        "currency": "EUR",
+        "breakdown": {
+          "llm_inference": 0.015,
+          "tool_execution": 0.003
+        },
+        "issued_at": "2026-04-09T16:00:00Z"
+      },
+      "note": "cost_usd still reports the USD-equivalent amount even when currency is non-USD."
+    },
+    {
+      "description": "Invalid receipt — missing agent_id (required)",
+      "schema": "cost_receipt",
+      "valid": false,
+      "expected_error": "agent_id",
+      "body": {
+        "task_id": "task-bad-001",
+        "cost_usd": 0.005,
+        "currency": "USD",
+        "issued_at": "2026-04-09T14:00:00Z"
+      }
+    },
+    {
+      "description": "Invalid receipt — missing issued_at (required)",
+      "schema": "cost_receipt",
+      "valid": false,
+      "expected_error": "issued_at",
+      "body": {
+        "agent_id": "agent://broken.example.com",
+        "task_id": "task-bad-002",
+        "cost_usd": 0.005,
+        "currency": "USD"
+      }
+    },
+    {
+      "description": "Invalid receipt — missing task_id (required)",
+      "schema": "cost_receipt",
+      "valid": false,
+      "expected_error": "task_id",
+      "body": {
+        "agent_id": "agent://broken.example.com",
+        "cost_usd": 0.005,
+        "currency": "USD",
+        "issued_at": "2026-04-09T14:00:00Z"
+      }
+    }
+  ]
+}

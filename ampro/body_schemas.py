@@ -357,6 +357,10 @@ class TaskCompleteBody(BaseModel):
         default=None,
         description="Actual wall-clock duration in seconds",
     )
+    cost_receipt: dict[str, Any] | None = Field(
+        default=None,
+        description="Per-hop cost receipt for delegation chain cost attribution",
+    )
 
     model_config = {"extra": "ignore"}
 
@@ -551,6 +555,17 @@ def _register_v012_body_types() -> None:
         pass
 
 _register_v012_body_types()
+
+
+def _register_v013_body_types() -> None:
+    """Register v0.1.3 body types: agent lifecycle."""
+    try:
+        from ampro.agent_lifecycle import AgentDeactivationNoticeBody
+        _BODY_TYPE_REGISTRY["agent.deactivation_notice"] = AgentDeactivationNoticeBody
+    except ImportError:
+        pass
+
+_register_v013_body_types()
 
 
 def validate_body(body_type: str, body: dict[str, Any]) -> BaseModel | dict[str, Any]:

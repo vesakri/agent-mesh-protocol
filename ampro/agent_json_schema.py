@@ -41,4 +41,10 @@ class AgentJson(BaseModel):
         description="Context schema URNs this agent understands (e.g. urn:schema:purchase-order:v1)",
     )
 
+    # v0.1.3 — Agent lifecycle
+    status: str = Field(
+        default="active",
+        description="Agent lifecycle status: active, deactivating, or decommissioned",
+    )
+
     model_config = {"extra": "allow"}

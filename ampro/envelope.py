@@ -62,6 +62,8 @@ STANDARD_HEADERS = frozenset({
     # v0.1.2 — Defense
     "Key-Revoked-At",
     "Anonymous-Sender-Hint",
+    # v0.1.3 — Resilience
+    "Hop-Timeout",
 })
 
 

@@ -1,0 +1,154 @@
+{
+  "description": "Test vectors for agent lifecycle status and agent.deactivation_notice body type (AMP v0.1.3). Covers deactivation notices, agent.json status field, and registry gone responses.",
+  "vectors": [
+    {
+      "description": "Deactivation notice — all fields populated, with migration endpoint",
+      "body_type": "agent.deactivation_notice",
+      "valid": true,
+      "body": {
+        "agent_id": "agent://data-processor.example.com",
+        "reason": "Scheduled maintenance — migrating to v2 infrastructure",
+        "deactivation_time": "2026-04-09T14:00:00Z",
+        "active_sessions": 7,
+        "migration_endpoint": "https://data-processor-v2.example.com/agent/message",
+        "final_at": "2026-04-09T14:10:00Z",
+        "metadata": {
+          "version": "1.4.2",
+          "replacement_version": "2.0.0"
+        }
+      }
+    },
+    {
+      "description": "Deactivation notice — required fields only (minimal)",
+      "body_type": "agent.deactivation_notice",
+      "valid": true,
+      "body": {
+        "agent_id": "agent://temp-worker.example.com",
+        "reason": "Task pool exhausted, no further work available",
+        "deactivation_time": "2026-04-09T18:30:00Z",
+        "active_sessions": 0
+      }
+    },
+    {
+      "description": "Deactivation notice — no migration endpoint, with final_at",
+      "body_type": "agent.deactivation_notice",
+      "valid": true,
+      "body": {
+        "agent_id": "agent://legacy-indexer.example.com",
+        "reason": "Service permanently retired — no replacement",
+        "deactivation_time": "2026-04-09T08:00:00Z",
+        "active_sessions": 3,
+        "migration_endpoint": null,
+        "final_at": "2026-04-09T09:00:00Z"
+      }
+    },
+    {
+      "description": "Deactivation notice — optional fields explicitly null",
+      "body_type": "agent.deactivation_notice",
+      "valid": true,
+      "body": {
+        "agent_id": "agent://batch-runner.example.com",
+        "reason": "Scaling down — peak hours ended",
+        "deactivation_time": "2026-04-09T22:00:00Z",
+        "active_sessions": 12,
+        "migration_endpoint": null,
+        "final_at": null,
+        "metadata": null
+      }
+    },
+    {
+      "description": "Invalid deactivation notice — missing agent_id (required)",
+      "body_type": "agent.deactivation_notice",
+      "valid": false,
+      "expected_error": "agent_id",
+      "body": {
+        "reason": "Shutting down",
+        "deactivation_time": "2026-04-09T12:00:00Z",
+        "active_sessions": 0
+      }
+    },
+    {
+      "description": "Invalid deactivation notice — missing reason (required)",
+      "body_type": "agent.deactivation_notice",
+      "valid": false,
+      "expected_error": "reason",
+      "body": {
+        "agent_id": "agent://broken.example.com",
+        "deactivation_time": "2026-04-09T12:00:00Z",
+        "active_sessions": 0
+      }
+    },
+    {
+      "description": "Invalid deactivation notice — missing active_sessions (required)",
+      "body_type": "agent.deactivation_notice",
+      "valid": false,
+      "expected_error": "active_sessions",
+      "body": {
+        "agent_id": "agent://broken.example.com",
+        "reason": "Shutting down",
+        "deactivation_time": "2026-04-09T12:00:00Z"
+      }
+    },
+    {
+      "description": "agent.json with status decommissioned",
+      "schema": "agent.json",
+      "valid": true,
+      "body": {
+        "protocol_version": "0.1.3",
+        "identifiers": ["agent://retired-agent.example.com"],
+        "endpoint": "https://retired-agent.example.com/agent/message",
+        "capabilities": {
+          "groups": [],
+          "level": 0
+        },
+        "status": "decommissioned",
+        "ttl_seconds": 86400
+      },
+      "note": "A decommissioned agent keeps its agent.json accessible so clients can read the status and discover migration info."
+    },
+    {
+      "description": "agent.json with status deactivating",
+      "schema": "agent.json",
+      "valid": true,
+      "body": {
+        "protocol_version": "0.1.3",
+        "identifiers": ["agent://draining-agent.example.com"],
+        "endpoint": "https://draining-agent.example.com/agent/message",
+        "capabilities": {
+          "groups": ["search"],
+          "level": 2
+        },
+        "status": "deactivating",
+        "ttl_seconds": 300
+      },
+      "note": "Short TTL so clients re-check status frequently during drain."
+    },
+    {
+      "description": "Registry resolution with gone=true for decommissioned agent",
+      "schema": "registry_resolution",
+      "valid": true,
+      "body": {
+        "agent_uri": "agent://retired-agent.example.com",
+        "endpoint": "https://retired-agent.example.com/agent/message",
+        "agent_json_url": "https://retired-agent.example.com/.well-known/agent.json",
+        "ttl_seconds": 86400,
+        "status": "decommissioned",
+        "gone": true
+      },
+      "note": "Registry returns HTTP 410 Gone. Clients MUST stop sending messages and check for migration_endpoint in the deactivation notice."
+    },
+    {
+      "description": "Registry resolution with gone=false for active agent",
+      "schema": "registry_resolution",
+      "valid": true,
+      "body": {
+        "agent_uri": "agent://healthy-agent.example.com",
+        "endpoint": "https://healthy-agent.example.com/agent/message",
+        "agent_json_url": "https://healthy-agent.example.com/.well-known/agent.json",
+        "ttl_seconds": 3600,
+        "status": "active",
+        "gone": false
+      }
+    }
+  ]
+}

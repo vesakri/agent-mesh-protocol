@@ -7,7 +7,7 @@ from pydantic import ValidationError
 class TestImports:
     def test_version(self):
         import ampro
-        assert ampro.__version__ == "0.1.2"
+        assert ampro.__version__ == "0.1.3"
 
     def test_all_exports(self):
         import ampro
@@ -56,7 +56,7 @@ class TestEnvelope:
 
     def test_headers_count(self):
         from ampro import STANDARD_HEADERS
-        assert len(STANDARD_HEADERS) == 43
+        assert len(STANDARD_HEADERS) == 44
 
 
 class TestBodySchemas:
@@ -266,7 +266,7 @@ class TestV011Imports:
 
     def test_version_bumped(self):
         import ampro
-        assert ampro.__version__ == "0.1.2"
+        assert ampro.__version__ == "0.1.3"
 
     def test_handshake_imports(self):
         from ampro import (
@@ -326,9 +326,9 @@ class TestV011Imports:
 class TestV012Imports:
     """Verify all v0.1.2 types are importable from ampro."""
 
-    def test_version_is_012(self):
+    def test_version_is_013(self):
         import ampro
-        assert ampro.__version__ == "0.1.2"
+        assert ampro.__version__ == "0.1.3"
 
     def test_key_revocation_imports(self):
         from ampro import RevocationReason, KeyRevocationBody
@@ -416,3 +416,40 @@ class TestSessionResumption:
             binding_token="bt",
         )
         assert body.resumed is False
+
+
+class TestV013Imports:
+    """Verify all v0.1.3 types are importable from ampro."""
+
+    def test_agent_lifecycle_status_import(self):
+        from ampro import AgentLifecycleStatus
+        assert AgentLifecycleStatus.ACTIVE == "active"
+
+    def test_agent_deactivation_notice_body_import(self):
+        from ampro import AgentDeactivationNoticeBody
+        body = AgentDeactivationNoticeBody(
+            agent_id="agent://test.com",
+            reason="Shutdown",
+            deactivation_time="2026-04-09T00:00:00Z",
+            active_sessions=0,
+        )
+        assert body.agent_id == "agent://test.com"
+
+    def test_cost_receipt_import(self):
+        from ampro import CostReceipt
+        receipt = CostReceipt(
+            agent_id="agent://a.com",
+            task_id="t-1",
+            cost_usd=0.01,
+            issued_at="2026-04-09T00:00:00Z",
+        )
+        assert receipt.cost_usd == 0.01
+
+    def test_cost_receipt_chain_import(self):
+        from ampro import CostReceiptChain
+        chain = CostReceiptChain()
+        assert chain.total_cost_usd == 0.0
+
+    def test_all_exports_count(self):
+        import ampro
+        assert len(ampro.__all__) >= 152

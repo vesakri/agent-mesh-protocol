@@ -139,11 +139,17 @@ from ampro.tool_consent import ToolConsentRequestBody, ToolConsentGrantBody, Too
 # --- Backpressure ---
 from ampro.backpressure import StreamAckEvent, StreamPauseEvent, StreamResumeEvent
 
+# --- Agent lifecycle ---
+from ampro.agent_lifecycle import AgentLifecycleStatus, AgentDeactivationNoticeBody
+
+# --- Cost receipts ---
+from ampro.cost_receipt import CostReceipt, CostReceiptChain
+
 # --- Negotiation & versioning ---
 from ampro.negotiation import NegotiationResult, CapabilityNegotiator
 from ampro.versioning import SUPPORTED_VERSIONS, CURRENT_VERSION, check_version, negotiate_version
 
-__version__ = "0.1.2"
+__version__ = "0.1.3"
 
 __all__ = [
     # Core
@@ -223,6 +229,10 @@ __all__ = [
     "ToolConsentRequestBody", "ToolConsentGrantBody", "ToolDefinition",
     # Backpressure
     "StreamAckEvent", "StreamPauseEvent", "StreamResumeEvent",
+    # Agent lifecycle
+    "AgentLifecycleStatus", "AgentDeactivationNoticeBody",
+    # Cost receipts
+    "CostReceipt", "CostReceiptChain",
     # Negotiation & versioning
     "NegotiationResult", "CapabilityNegotiator",
     "SUPPORTED_VERSIONS", "CURRENT_VERSION", "check_version", "negotiate_version",

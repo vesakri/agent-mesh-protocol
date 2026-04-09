@@ -18,6 +18,9 @@ class RegistryResolution(BaseModel):
     endpoint: str = Field(description="HTTPS endpoint for /agent/message")
     agent_json_url: str = Field(default="", description="URL to fetch agent.json")
     ttl_seconds: int = Field(default=3600, ge=1)
+    # v0.1.3 — Agent lifecycle
+    status: str = Field(default="active", description="Agent lifecycle status")
+    gone: bool = Field(default=False, description="True when registry returns 410 Gone for decommissioned agents")
 
     model_config = {"extra": "ignore"}
 

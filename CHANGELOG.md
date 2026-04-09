@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.1.3] - 2026-04-09
+
+### Added
+- `agent.deactivation_notice` body type — orderly shutdown notification
+- `AgentLifecycleStatus` enum (active, deactivating, decommissioned)
+- `CostReceipt` + `CostReceiptChain` models — per-hop cost attribution in delegation chains
+- `cost_receipt` field on `TaskCompleteBody`
+- `Hop-Timeout` header — per-hop timeout declaration
+- `status` field on `AgentJson` (active/deactivating/decommissioned)
+- `status` + `gone` fields on `RegistryResolution` — 410 Gone support
+
+### Changed
+- Standard headers grew from 43 to 44
+- Body type registry grew from 38 to 39
+- Exports grew from 148 to 152+
+
 ## [0.1.2] - 2026-04-09
 
 ### Added
