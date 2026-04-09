@@ -590,6 +590,22 @@ def _register_v015_body_types() -> None:
 _register_v015_body_types()
 
 
+def _register_v016_body_types() -> None:
+    """Register v0.1.6 body types: erasure propagation, consent revoke."""
+    try:
+        from ampro.erasure_propagation import ErasurePropagationStatusBody
+        _BODY_TYPE_REGISTRY["erasure.propagation_status"] = ErasurePropagationStatusBody
+    except ImportError:
+        pass
+    try:
+        from ampro.consent_revoke import DataConsentRevokeBody
+        _BODY_TYPE_REGISTRY["data.consent_revoke"] = DataConsentRevokeBody
+    except ImportError:
+        pass
+
+_register_v016_body_types()
+
+
 def validate_body(body_type: str, body: dict[str, Any]) -> BaseModel | dict[str, Any]:
     """Validate a body dict against its body_type schema.
 

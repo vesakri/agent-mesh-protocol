@@ -1,0 +1,206 @@
+{
+  "description": "Test vectors for JurisdictionInfo, validate_jurisdiction_code, and check_jurisdiction_conflict (AMP v0.1.6). Covers valid jurisdictions, invalid codes, and conflict detection.",
+  "vectors": [
+    {
+      "description": "Valid jurisdiction — DE with GDPR",
+      "valid": true,
+      "input": {
+        "primary": "DE",
+        "additional": [],
+        "frameworks": ["GDPR"]
+      }
+    },
+    {
+      "description": "Valid jurisdiction — US with CCPA",
+      "valid": true,
+      "input": {
+        "primary": "US",
+        "additional": [],
+        "frameworks": ["CCPA"]
+      }
+    },
+    {
+      "description": "Valid jurisdiction — IE with GDPR (compatible with DE/GDPR)",
+      "valid": true,
+      "input": {
+        "primary": "IE",
+        "additional": [],
+        "frameworks": ["GDPR"]
+      }
+    },
+    {
+      "description": "Valid jurisdiction — multiple frameworks",
+      "valid": true,
+      "input": {
+        "primary": "US",
+        "additional": ["CA"],
+        "frameworks": ["CCPA", "HIPAA"]
+      }
+    },
+    {
+      "description": "Valid jurisdiction — no frameworks declared",
+      "valid": true,
+      "input": {
+        "primary": "JP",
+        "additional": [],
+        "frameworks": []
+      },
+      "note": "Agents with no frameworks declared never trigger unmatched-framework conflicts."
+    },
+    {
+      "description": "Valid jurisdiction — multiple additional jurisdictions",
+      "valid": true,
+      "input": {
+        "primary": "GB",
+        "additional": ["IE", "FR"],
+        "frameworks": ["GDPR", "UK-DPA"]
+      }
+    },
+    {
+      "description": "validate_jurisdiction_code — valid two-letter uppercase codes",
+      "test_type": "validate_code",
+      "cases": [
+        {"code": "DE", "expected": true},
+        {"code": "US", "expected": true},
+        {"code": "IE", "expected": true},
+        {"code": "GB", "expected": true},
+        {"code": "JP", "expected": true},
+        {"code": "CN", "expected": true},
+        {"code": "BR", "expected": true},
+        {"code": "AU", "expected": true}
+      ]
+    },
+    {
+      "description": "validate_jurisdiction_code — invalid codes",
+      "test_type": "validate_code",
+      "cases": [
+        {"code": "de", "expected": false, "reason": "lowercase"},
+        {"code": "USA", "expected": false, "reason": "three characters"},
+        {"code": "D", "expected": false, "reason": "single character"},
+        {"code": "", "expected": false, "reason": "empty string"},
+        {"code": "1A", "expected": false, "reason": "starts with digit"},
+        {"code": "A1", "expected": false, "reason": "ends with digit"},
+        {"code": "D-", "expected": false, "reason": "contains hyphen"},
+        {"code": "DE ", "expected": false, "reason": "trailing space"}
+      ]
+    },
+    {
+      "description": "Conflict — DE/GDPR sender vs US/CCPA receiver (different primary, unmatched frameworks)",
+      "test_type": "conflict_check",
+      "sender": {
+        "primary": "DE",
+        "additional": [],
+        "frameworks": ["GDPR"]
+      },
+      "receiver": {
+        "primary": "US",
+        "additional": [],
+        "frameworks": ["CCPA"]
+      },
+      "expected_conflict": true,
+      "note": "Different primary jurisdictions and sender declares GDPR which receiver does not recognise."
+    },
+    {
+      "description": "No conflict — DE/GDPR sender vs IE/GDPR receiver (different primary, matching frameworks)",
+      "test_type": "conflict_check",
+      "sender": {
+        "primary": "DE",
+        "additional": [],
+        "frameworks": ["GDPR"]
+      },
+      "receiver": {
+        "primary": "IE",
+        "additional": [],
+        "frameworks": ["GDPR"]
+      },
+      "expected_conflict": false,
+      "note": "Different primary but all sender frameworks are recognised by receiver."
+    },
+    {
+      "description": "No conflict — same primary jurisdiction (US/CCPA+HIPAA vs US/CCPA)",
+      "test_type": "conflict_check",
+      "sender": {
+        "primary": "US",
+        "additional": [],
+        "frameworks": ["CCPA", "HIPAA"]
+      },
+      "receiver": {
+        "primary": "US",
+        "additional": [],
+        "frameworks": ["CCPA"]
+      },
+      "expected_conflict": false,
+      "note": "Same primary jurisdiction — no conflict regardless of framework differences."
+    },
+    {
+      "description": "Conflict — CN/PIPL sender vs US/CCPA receiver",
+      "test_type": "conflict_check",
+      "sender": {
+        "primary": "CN",
+        "additional": [],
+        "frameworks": ["PIPL"]
+      },
+      "receiver": {
+        "primary": "US",
+        "additional": [],
+        "frameworks": ["CCPA"]
+      },
+      "expected_conflict": true,
+      "note": "Different primary, sender declares PIPL which receiver does not recognise."
+    },
+    {
+      "description": "No conflict — sender has no frameworks",
+      "test_type": "conflict_check",
+      "sender": {
+        "primary": "JP",
+        "additional": [],
+        "frameworks": []
+      },
+      "receiver": {
+        "primary": "US",
+        "additional": [],
+        "frameworks": ["CCPA"]
+      },
+      "expected_conflict": false,
+      "note": "Sender declares no frameworks, so there are no unmatched frameworks."
+    },
+    {
+      "description": "Conflict — partial framework overlap (sender has extra)",
+      "test_type": "conflict_check",
+      "sender": {
+        "primary": "GB",
+        "additional": [],
+        "frameworks": ["GDPR", "UK-DPA"]
+      },
+      "receiver": {
+        "primary": "IE",
+        "additional": [],
+        "frameworks": ["GDPR"]
+      },
+      "expected_conflict": true,
+      "note": "Receiver recognises GDPR but not UK-DPA. The unmatched UK-DPA triggers a conflict."
+    },
+    {
+      "description": "Jurisdiction in AgentMessage envelope — Jurisdiction header",
+      "test_type": "envelope",
+      "valid": true,
+      "envelope": {
+        "sender": "agent://agent-a.example.de",
+        "recipient": "agent://agent-b.example.us",
+        "body_type": "task.create",
+        "headers": {
+          "Protocol-Version": "0.1.6",
+          "Session-Id": "sess-jurisdiction-001",
+          "Jurisdiction": "{\"primary\":\"DE\",\"additional\":[],\"frameworks\":[\"GDPR\"]}"
+        },
+        "body": {
+          "description": "Process data subject access request",
+          "task_id": "task-jurisdiction-envelope-001",
+          "priority": "normal",
+          "timeout_seconds": 120
+        }
+      },
+      "note": "Jurisdiction is carried as a JSON-encoded string in the Jurisdiction header."
+    }
+  ]
+}

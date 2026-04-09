@@ -7,7 +7,7 @@ from pydantic import ValidationError
 class TestImports:
     def test_version(self):
         import ampro
-        assert ampro.__version__ == "0.1.5"
+        assert ampro.__version__ == "0.1.6"
 
     def test_all_exports(self):
         import ampro
@@ -56,7 +56,7 @@ class TestEnvelope:
 
     def test_headers_count(self):
         from ampro import STANDARD_HEADERS
-        assert len(STANDARD_HEADERS) == 47
+        assert len(STANDARD_HEADERS) == 49
 
 
 class TestBodySchemas:
@@ -266,7 +266,7 @@ class TestV011Imports:
 
     def test_version_bumped(self):
         import ampro
-        assert ampro.__version__ == "0.1.5"
+        assert ampro.__version__ == "0.1.6"
 
     def test_handshake_imports(self):
         from ampro import (
@@ -326,9 +326,9 @@ class TestV011Imports:
 class TestV012Imports:
     """Verify all v0.1.2 types are importable from ampro."""
 
-    def test_version_is_015(self):
+    def test_version_is_016(self):
         import ampro
-        assert ampro.__version__ == "0.1.5"
+        assert ampro.__version__ == "0.1.6"
 
     def test_key_revocation_imports(self):
         from ampro import RevocationReason, KeyRevocationBody
@@ -545,3 +545,70 @@ class TestV015Imports:
     def test_all_exports_v015_count(self):
         import ampro
         assert len(ampro.__all__) >= 163
+
+
+class TestV016Imports:
+    """Verify all v0.1.6 types are importable from ampro."""
+
+    def test_jurisdiction_info_import(self):
+        from ampro import JurisdictionInfo
+        info = JurisdictionInfo(primary="US")
+        assert info.primary == "US"
+
+    def test_validate_jurisdiction_code_import(self):
+        from ampro import validate_jurisdiction_code
+        assert validate_jurisdiction_code("US") is True
+
+    def test_check_jurisdiction_conflict_import(self):
+        from ampro import check_jurisdiction_conflict
+        assert callable(check_jurisdiction_conflict)
+
+    def test_erasure_propagation_status_import(self):
+        from ampro import ErasurePropagationStatus
+        assert ErasurePropagationStatus.PENDING == "pending"
+
+    def test_erasure_propagation_status_body_import(self):
+        from ampro import ErasurePropagationStatusBody
+        body = ErasurePropagationStatusBody(
+            erasure_id="er-1",
+            agent_id="agent://test.com",
+            status="completed",
+            records_affected=5,
+            timestamp="2026-04-09T00:00:00Z",
+        )
+        assert body.records_affected == 5
+
+    def test_data_consent_revoke_body_import(self):
+        from ampro import DataConsentRevokeBody
+        body = DataConsentRevokeBody(
+            grant_id="g-1",
+            requester="agent://a.com",
+            target="agent://b.com",
+            reason="user request",
+        )
+        assert body.grant_id == "g-1"
+
+    def test_data_residency_import(self):
+        from ampro import DataResidency
+        dr = DataResidency(region="eu-west-1")
+        assert dr.region == "eu-west-1"
+
+    def test_validate_residency_region_import(self):
+        from ampro import validate_residency_region
+        assert validate_residency_region("us-east-1") is True
+
+    def test_check_residency_violation_import(self):
+        from ampro import check_residency_violation
+        assert callable(check_residency_violation)
+
+    def test_jurisdiction_header(self):
+        from ampro import STANDARD_HEADERS
+        assert "Jurisdiction" in STANDARD_HEADERS
+
+    def test_data_residency_header(self):
+        from ampro import STANDARD_HEADERS
+        assert "Data-Residency" in STANDARD_HEADERS
+
+    def test_all_exports_v016_count(self):
+        import ampro
+        assert len(ampro.__all__) >= 173

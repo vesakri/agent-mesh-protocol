@@ -69,6 +69,9 @@ STANDARD_HEADERS = frozenset({
     # v0.1.5 — Observability
     "Trace-Id",
     "Span-Id",
+    # v0.1.6 — Compliance at Scale
+    "Jurisdiction",
+    "Data-Residency",
 })
 
 

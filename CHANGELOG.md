@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.1.6] - 2026-04-09
+
+### Added
+- `JurisdictionInfo` model + `validate_jurisdiction_code` + `check_jurisdiction_conflict` — cross-border jurisdiction declaration
+- `Jurisdiction` + `Data-Residency` headers
+- `erasure.propagation_status` body type — track erasure across delegation chains
+- `data.consent_revoke` body type — revoke previously granted consent
+- `DataResidency` model + `validate_residency_region` + `check_residency_violation`
+- `ErasurePropagationStatus` enum (pending, completed, failed)
+- `DataConsentRequestBody` + `DataConsentResponseBody` now exported from top-level
+
+### Changed
+- Standard headers grew from 47 to 49
+- Body type registry grew from 41 to 43
+- Exports grew from 163 to 174
+
 ## [0.1.5] - 2026-04-09
 
 ### Added

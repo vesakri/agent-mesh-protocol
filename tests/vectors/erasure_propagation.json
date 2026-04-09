@@ -1,0 +1,186 @@
+{
+  "description": "Test vectors for ErasurePropagationStatusBody (body.type = erasure.propagation_status) (AMP v0.1.6). Covers status transitions, downstream tracking, and invalid payloads.",
+  "vectors": [
+    {
+      "description": "Pending — erasure acknowledged but not yet processed",
+      "body_type": "erasure.propagation_status",
+      "valid": true,
+      "body": {
+        "erasure_id": "erasure-req-001",
+        "agent_id": "agent://downstream-a.example.com",
+        "status": "pending",
+        "records_affected": 0,
+        "timestamp": "2026-04-09T10:00:00Z",
+        "detail": null,
+        "downstream_agents": []
+      },
+      "note": "Initial status report. records_affected is 0 because erasure has not started yet."
+    },
+    {
+      "description": "Completed — all records erased successfully",
+      "body_type": "erasure.propagation_status",
+      "valid": true,
+      "body": {
+        "erasure_id": "erasure-req-001",
+        "agent_id": "agent://downstream-a.example.com",
+        "status": "completed",
+        "records_affected": 42,
+        "timestamp": "2026-04-09T10:00:05Z",
+        "detail": null,
+        "downstream_agents": []
+      },
+      "note": "Erasure completed. 42 records were erased."
+    },
+    {
+      "description": "Failed — erasure could not be completed",
+      "body_type": "erasure.propagation_status",
+      "valid": true,
+      "body": {
+        "erasure_id": "erasure-req-001",
+        "agent_id": "agent://downstream-c.example.com",
+        "status": "failed",
+        "records_affected": 0,
+        "timestamp": "2026-04-09T10:00:12Z",
+        "detail": "Storage backend unreachable after 3 retries",
+        "downstream_agents": []
+      },
+      "note": "Erasure failed. detail explains why."
+    },
+    {
+      "description": "Completed with downstream propagation — agent reports its own sub-agents",
+      "body_type": "erasure.propagation_status",
+      "valid": true,
+      "body": {
+        "erasure_id": "erasure-req-002",
+        "agent_id": "agent://downstream-a.example.com",
+        "status": "completed",
+        "records_affected": 18,
+        "timestamp": "2026-04-09T10:01:00Z",
+        "detail": null,
+        "downstream_agents": [
+          "agent://sub-agent-x.example.com",
+          "agent://sub-agent-y.example.com"
+        ]
+      },
+      "note": "Agent A propagated the erasure to 2 sub-agents. The requester should expect status reports from them as well."
+    },
+    {
+      "description": "Pending with downstream agents already identified",
+      "body_type": "erasure.propagation_status",
+      "valid": true,
+      "body": {
+        "erasure_id": "erasure-req-003",
+        "agent_id": "agent://hub.example.com",
+        "status": "pending",
+        "records_affected": 0,
+        "timestamp": "2026-04-09T10:02:00Z",
+        "detail": "Erasure queued, identifying downstream data holders",
+        "downstream_agents": [
+          "agent://storage-a.example.com",
+          "agent://storage-b.example.com",
+          "agent://cache-layer.example.com"
+        ]
+      },
+      "note": "Hub acknowledges the request and pre-reports its downstream agents while still pending."
+    },
+    {
+      "description": "Completed with zero records — no data held by this agent",
+      "body_type": "erasure.propagation_status",
+      "valid": true,
+      "body": {
+        "erasure_id": "erasure-req-004",
+        "agent_id": "agent://relay.example.com",
+        "status": "completed",
+        "records_affected": 0,
+        "timestamp": "2026-04-09T10:03:00Z",
+        "detail": "No data held for this subject",
+        "downstream_agents": []
+      },
+      "note": "Agent held no data for the subject but confirms completion."
+    },
+    {
+      "description": "Wrapped in AgentMessage envelope",
+      "body_type": "erasure.propagation_status",
+      "valid": true,
+      "envelope": {
+        "sender": "agent://downstream-a.example.com",
+        "recipient": "agent://target.example.com",
+        "body_type": "erasure.propagation_status",
+        "headers": {
+          "Protocol-Version": "0.1.6",
+          "Session-Id": "sess-erasure-001"
+        },
+        "body": {
+          "erasure_id": "erasure-req-001",
+          "agent_id": "agent://downstream-a.example.com",
+          "status": "completed",
+          "records_affected": 42,
+          "timestamp": "2026-04-09T10:00:05Z",
+          "detail": null,
+          "downstream_agents": []
+        }
+      },
+      "note": "ErasurePropagationStatusBody inside a full AgentMessage envelope."
+    },
+    {
+      "description": "Invalid — missing erasure_id (required)",
+      "body_type": "erasure.propagation_status",
+      "valid": false,
+      "expected_error": "erasure_id",
+      "body": {
+        "agent_id": "agent://downstream-a.example.com",
+        "status": "completed",
+        "records_affected": 10,
+        "timestamp": "2026-04-09T10:00:00Z"
+      }
+    },
+    {
+      "description": "Invalid — missing agent_id (required)",
+      "body_type": "erasure.propagation_status",
+      "valid": false,
+      "expected_error": "agent_id",
+      "body": {
+        "erasure_id": "erasure-req-001",
+        "status": "completed",
+        "records_affected": 10,
+        "timestamp": "2026-04-09T10:00:00Z"
+      }
+    },
+    {
+      "description": "Invalid — missing status (required)",
+      "body_type": "erasure.propagation_status",
+      "valid": false,
+      "expected_error": "status",
+      "body": {
+        "erasure_id": "erasure-req-001",
+        "agent_id": "agent://downstream-a.example.com",
+        "records_affected": 10,
+        "timestamp": "2026-04-09T10:00:00Z"
+      }
+    },
+    {
+      "description": "Invalid — missing records_affected (required)",
+      "body_type": "erasure.propagation_status",
+      "valid": false,
+      "expected_error": "records_affected",
+      "body": {
+        "erasure_id": "erasure-req-001",
+        "agent_id": "agent://downstream-a.example.com",
+        "status": "completed",
+        "timestamp": "2026-04-09T10:00:00Z"
+      }
+    },
+    {
+      "description": "Invalid — missing timestamp (required)",
+      "body_type": "erasure.propagation_status",
+      "valid": false,
+      "expected_error": "timestamp",
+      "body": {
+        "erasure_id": "erasure-req-001",
+        "agent_id": "agent://downstream-a.example.com",
+        "status": "completed",
+        "records_affected": 10
+      }
+    }
+  ]
+}

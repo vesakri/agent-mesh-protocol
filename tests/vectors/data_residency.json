@@ -1,0 +1,190 @@
+{
+  "description": "Test vectors for DataResidency, validate_residency_region, and check_residency_violation (AMP v0.1.6). Covers valid regions, invalid regions, strict vs non-strict, and violation scenarios.",
+  "vectors": [
+    {
+      "description": "Valid residency — eu-west-1 with strict=true",
+      "valid": true,
+      "input": {
+        "region": "eu-west-1",
+        "strict": true,
+        "allowed_regions": []
+      }
+    },
+    {
+      "description": "Valid residency — us-east-1 with strict=true",
+      "valid": true,
+      "input": {
+        "region": "us-east-1",
+        "strict": true,
+        "allowed_regions": []
+      }
+    },
+    {
+      "description": "Valid residency — non-strict with allowed regions",
+      "valid": true,
+      "input": {
+        "region": "eu-west-1",
+        "strict": false,
+        "allowed_regions": ["eu-central-1", "eu-north-1"]
+      }
+    },
+    {
+      "description": "Valid residency — strict=false with empty allowed_regions",
+      "valid": true,
+      "input": {
+        "region": "ap-southeast-1",
+        "strict": false,
+        "allowed_regions": []
+      },
+      "note": "strict=false but no allowed_regions means only the primary region is valid — any other region is a violation."
+    },
+    {
+      "description": "validate_residency_region — valid region identifiers",
+      "test_type": "validate_region",
+      "cases": [
+        {"region": "eu-west-1", "expected": true},
+        {"region": "us-east-1", "expected": true},
+        {"region": "ap-southeast-1", "expected": true},
+        {"region": "eu-central-1", "expected": true},
+        {"region": "abc", "expected": true, "reason": "3 chars, lowercase alphanumeric"},
+        {"region": "a0b", "expected": true, "reason": "mixed alphanumeric, 3 chars"},
+        {"region": "region-with-many-hyphens-ok", "expected": true, "reason": "27 chars, hyphens allowed in middle"}
+      ]
+    },
+    {
+      "description": "validate_residency_region — invalid region identifiers",
+      "test_type": "validate_region",
+      "cases": [
+        {"region": "-invalid", "expected": false, "reason": "starts with hyphen"},
+        {"region": "invalid-", "expected": false, "reason": "ends with hyphen"},
+        {"region": "AB", "expected": false, "reason": "uppercase not allowed"},
+        {"region": "", "expected": false, "reason": "empty string"},
+        {"region": "a", "expected": false, "reason": "single character — too short"},
+        {"region": "ab", "expected": false, "reason": "two characters — too short"},
+        {"region": "EU-WEST-1", "expected": false, "reason": "uppercase not allowed"},
+        {"region": "eu west 1", "expected": false, "reason": "spaces not allowed"}
+      ]
+    },
+    {
+      "description": "No violation — same region (eu-west-1 = eu-west-1)",
+      "test_type": "violation_check",
+      "message_residency": {
+        "region": "eu-west-1",
+        "strict": true,
+        "allowed_regions": []
+      },
+      "agent_residency": {
+        "region": "eu-west-1",
+        "strict": true,
+        "allowed_regions": []
+      },
+      "expected_violation": false,
+      "note": "Agent is in the same region as the message. No violation regardless of strict flag."
+    },
+    {
+      "description": "Violation — strict residency, different regions",
+      "test_type": "violation_check",
+      "message_residency": {
+        "region": "eu-west-1",
+        "strict": true,
+        "allowed_regions": []
+      },
+      "agent_residency": {
+        "region": "us-east-1",
+        "strict": true,
+        "allowed_regions": []
+      },
+      "expected_violation": true,
+      "expected_detail_contains": "strict residency",
+      "note": "Message requires strict eu-west-1 but agent is in us-east-1."
+    },
+    {
+      "description": "No violation — non-strict, agent in allowed_regions",
+      "test_type": "violation_check",
+      "message_residency": {
+        "region": "eu-west-1",
+        "strict": false,
+        "allowed_regions": ["eu-central-1", "eu-north-1"]
+      },
+      "agent_residency": {
+        "region": "eu-central-1",
+        "strict": true,
+        "allowed_regions": []
+      },
+      "expected_violation": false,
+      "note": "Message is non-strict and eu-central-1 is in allowed_regions."
+    },
+    {
+      "description": "Violation — non-strict, agent NOT in allowed_regions",
+      "test_type": "violation_check",
+      "message_residency": {
+        "region": "eu-west-1",
+        "strict": false,
+        "allowed_regions": ["eu-central-1", "eu-north-1"]
+      },
+      "agent_residency": {
+        "region": "ap-southeast-1",
+        "strict": true,
+        "allowed_regions": []
+      },
+      "expected_violation": true,
+      "expected_detail_contains": "not in allowed_regions",
+      "note": "Message allows eu-central-1 and eu-north-1, but ap-southeast-1 is not in the list."
+    },
+    {
+      "description": "Violation — non-strict with empty allowed_regions, different region",
+      "test_type": "violation_check",
+      "message_residency": {
+        "region": "eu-west-1",
+        "strict": false,
+        "allowed_regions": []
+      },
+      "agent_residency": {
+        "region": "us-east-1",
+        "strict": true,
+        "allowed_regions": []
+      },
+      "expected_violation": true,
+      "expected_detail_contains": "not in allowed_regions",
+      "note": "Non-strict but allowed_regions is empty, so no other region is permitted."
+    },
+    {
+      "description": "No violation — same region regardless of strict flag",
+      "test_type": "violation_check",
+      "message_residency": {
+        "region": "us-east-1",
+        "strict": false,
+        "allowed_regions": ["eu-west-1"]
+      },
+      "agent_residency": {
+        "region": "us-east-1",
+        "strict": true,
+        "allowed_regions": []
+      },
+      "expected_violation": false,
+      "note": "Same region always passes — the strict flag and allowed_regions are only checked for cross-region cases."
+    },
+    {
+      "description": "Data-Residency header in AgentMessage envelope",
+      "test_type": "envelope",
+      "valid": true,
+      "envelope": {
+        "sender": "agent://processor.example.com",
+        "recipient": "agent://storage.example.com",
+        "body_type": "task.create",
+        "headers": {
+          "Protocol-Version": "0.1.6",
+          "Session-Id": "sess-residency-001",
+          "Data-Residency": "{\"region\":\"eu-west-1\",\"strict\":true,\"allowed_regions\":[]}"
+        },
+        "body": {
+          "description": "Store processed records in compliant region",
+          "task_id": "task-residency-envelope-001",
+          "priority": "normal",
+          "timeout_seconds": 60
+        }
+      },
+      "note": "Data-Residency is carried as a JSON-encoded string in the Data-Residency header."
+    }
+  ]
+}

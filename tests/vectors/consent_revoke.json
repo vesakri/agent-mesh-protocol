@@ -1,0 +1,159 @@
+{
+  "description": "Test vectors for DataConsentRevokeBody (body.type = data.consent_revoke) (AMP v0.1.6). Covers full revocation, partial scope revocation, immediate vs scheduled, and invalid payloads.",
+  "vectors": [
+    {
+      "description": "Full revocation — empty scopes revokes all granted permissions",
+      "body_type": "data.consent_revoke",
+      "valid": true,
+      "body": {
+        "grant_id": "grant-abc-001",
+        "requester": "agent://requester.example.com",
+        "target": "agent://target.example.com",
+        "scopes": [],
+        "reason": "Agent decommissioned, revoking all data access",
+        "effective_at": null
+      },
+      "note": "scopes=[] means revoke ALL scopes on this grant. effective_at=null means immediate."
+    },
+    {
+      "description": "Partial revocation — specific scopes only",
+      "body_type": "data.consent_revoke",
+      "valid": true,
+      "body": {
+        "grant_id": "grant-abc-002",
+        "requester": "agent://requester.example.com",
+        "target": "agent://target.example.com",
+        "scopes": ["read:analytics", "read:logs"],
+        "reason": "Analytics access no longer required after project completion",
+        "effective_at": null
+      },
+      "note": "Only read:analytics and read:logs are revoked. Other scopes on this grant remain active."
+    },
+    {
+      "description": "Immediate revocation — effective_at is null",
+      "body_type": "data.consent_revoke",
+      "valid": true,
+      "body": {
+        "grant_id": "grant-abc-003",
+        "requester": "agent://requester.example.com",
+        "target": "agent://target.example.com",
+        "scopes": ["write:config"],
+        "reason": "Unauthorized configuration change detected",
+        "effective_at": null
+      },
+      "note": "effective_at=null signals that revocation takes effect immediately upon receipt."
+    },
+    {
+      "description": "Scheduled revocation — future effective_at timestamp",
+      "body_type": "data.consent_revoke",
+      "valid": true,
+      "body": {
+        "grant_id": "grant-abc-004",
+        "requester": "agent://requester.example.com",
+        "target": "agent://target.example.com",
+        "scopes": ["write:config"],
+        "reason": "Contract ends on 2026-05-01, revoking write access",
+        "effective_at": "2026-05-01T00:00:00Z"
+      },
+      "note": "Revocation is scheduled. The target continues to hold the grant until the effective_at timestamp."
+    },
+    {
+      "description": "Full revocation with scheduled effective_at",
+      "body_type": "data.consent_revoke",
+      "valid": true,
+      "body": {
+        "grant_id": "grant-abc-005",
+        "requester": "agent://requester.example.com",
+        "target": "agent://target.example.com",
+        "scopes": [],
+        "reason": "Scheduled full access removal at end of evaluation period",
+        "effective_at": "2026-06-15T23:59:59Z"
+      },
+      "note": "Combines full revocation (scopes=[]) with a future timestamp."
+    },
+    {
+      "description": "Single scope revocation",
+      "body_type": "data.consent_revoke",
+      "valid": true,
+      "body": {
+        "grant_id": "grant-abc-006",
+        "requester": "agent://requester.example.com",
+        "target": "agent://target.example.com",
+        "scopes": ["execute:tools"],
+        "reason": "Tool execution privilege no longer necessary",
+        "effective_at": null
+      }
+    },
+    {
+      "description": "Wrapped in AgentMessage envelope",
+      "body_type": "data.consent_revoke",
+      "valid": true,
+      "envelope": {
+        "sender": "agent://requester.example.com",
+        "recipient": "agent://target.example.com",
+        "body_type": "data.consent_revoke",
+        "headers": {
+          "Protocol-Version": "0.1.6",
+          "Session-Id": "sess-consent-revoke-001"
+        },
+        "body": {
+          "grant_id": "grant-abc-007",
+          "requester": "agent://requester.example.com",
+          "target": "agent://target.example.com",
+          "scopes": ["read:analytics"],
+          "reason": "Revoking analytics scope per data governance review",
+          "effective_at": null
+        }
+      },
+      "note": "DataConsentRevokeBody inside a full AgentMessage envelope."
+    },
+    {
+      "description": "Invalid — missing grant_id (required)",
+      "body_type": "data.consent_revoke",
+      "valid": false,
+      "expected_error": "grant_id",
+      "body": {
+        "requester": "agent://requester.example.com",
+        "target": "agent://target.example.com",
+        "scopes": [],
+        "reason": "Missing grant_id"
+      }
+    },
+    {
+      "description": "Invalid — missing requester (required)",
+      "body_type": "data.consent_revoke",
+      "valid": false,
+      "expected_error": "requester",
+      "body": {
+        "grant_id": "grant-bad-001",
+        "target": "agent://target.example.com",
+        "scopes": [],
+        "reason": "Missing requester"
+      }
+    },
+    {
+      "description": "Invalid — missing target (required)",
+      "body_type": "data.consent_revoke",
+      "valid": false,
+      "expected_error": "target",
+      "body": {
+        "grant_id": "grant-bad-002",
+        "requester": "agent://requester.example.com",
+        "scopes": [],
+        "reason": "Missing target"
+      }
+    },
+    {
+      "description": "Invalid — missing reason (required)",
+      "body_type": "data.consent_revoke",
+      "valid": false,
+      "expected_error": "reason",
+      "body": {
+        "grant_id": "grant-bad-003",
+        "requester": "agent://requester.example.com",
+        "target": "agent://target.example.com",
+        "scopes": []
+      }
+    }
+  ]
+}

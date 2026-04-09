@@ -32,6 +32,7 @@ from ampro.body_schemas import (
     TaskRerouteBody, TaskTransferBody, TaskAcknowledgeBody,
     TaskRejectBody, TaskCompleteBody, TaskErrorBody,
     TaskResponseBody, validate_body,
+    DataConsentRequestBody, DataConsentResponseBody,
 )
 
 # --- Delegation ---
@@ -52,7 +53,7 @@ from ampro.attachment_types import Attachment, validate_attachment_url
 
 # --- Compliance ---
 from ampro.compliance_types import (
-    ContentClassification, JurisdictionInfo, RetentionPolicy,
+    ContentClassification, RetentionPolicy,
     ErasureRequest, ErasureResponse, ExportRequest, ExportResponse,
 )
 from ampro.compliance_middleware import (
@@ -161,11 +162,23 @@ from ampro.task_revoke import TaskRevokeBody
 # --- Priority ---
 from ampro.priority import Priority
 
+# --- Jurisdiction ---
+from ampro.jurisdiction import JurisdictionInfo, validate_jurisdiction_code, check_jurisdiction_conflict
+
+# --- Erasure propagation ---
+from ampro.erasure_propagation import ErasurePropagationStatus, ErasurePropagationStatusBody
+
+# --- Consent revocation ---
+from ampro.consent_revoke import DataConsentRevokeBody
+
+# --- Data residency ---
+from ampro.data_residency import DataResidency, validate_residency_region, check_residency_violation
+
 # --- Negotiation & versioning ---
 from ampro.negotiation import NegotiationResult, CapabilityNegotiator
 from ampro.versioning import SUPPORTED_VERSIONS, CURRENT_VERSION, check_version, negotiate_version
 
-__version__ = "0.1.5"
+__version__ = "0.1.6"
 
 __all__ = [
     # Core
@@ -185,6 +198,7 @@ __all__ = [
     "TaskRerouteBody", "TaskTransferBody", "TaskAcknowledgeBody",
     "TaskRejectBody", "TaskCompleteBody", "TaskErrorBody",
     "TaskResponseBody", "validate_body",
+    "DataConsentRequestBody", "DataConsentResponseBody",
     # Delegation
     "DelegationLink", "DelegationChain",
     "validate_chain", "validate_scope_narrowing", "sign_delegation",
@@ -260,6 +274,14 @@ __all__ = [
     "TaskRevokeBody",
     # Priority
     "Priority",
+    # Jurisdiction
+    "JurisdictionInfo", "validate_jurisdiction_code", "check_jurisdiction_conflict",
+    # Erasure propagation
+    "ErasurePropagationStatus", "ErasurePropagationStatusBody",
+    # Consent revocation
+    "DataConsentRevokeBody",
+    # Data residency
+    "DataResidency", "validate_residency_region", "check_residency_violation",
     # Negotiation & versioning
     "NegotiationResult", "CapabilityNegotiator",
     "SUPPORTED_VERSIONS", "CURRENT_VERSION", "check_version", "negotiate_version",
