@@ -59,6 +59,9 @@ STANDARD_HEADERS = frozenset({
     "Transaction-Id",
     "Correlation-Group",
     "Commitment-Level",
+    # v0.1.2 — Defense
+    "Key-Revoked-At",
+    "Anonymous-Sender-Hint",
 })
 
 

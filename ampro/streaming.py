@@ -1,7 +1,7 @@
 """
 Agent Protocol — Streaming Events.
 
-10 event types for real-time agent processing updates via SSE.
+13 event types for real-time agent processing updates via SSE.
 """
 
 from __future__ import annotations
@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field
 
 
 class StreamingEventType(str, Enum):
-    """The 10 protocol streaming event types."""
+    """The 13 protocol streaming event types."""
 
     THINKING = "thinking"          # Agent is reasoning
     TOOL_CALL = "tool_call"        # Agent is invoking a tool
@@ -26,6 +26,11 @@ class StreamingEventType(str, Enum):
     ERROR = "error"                # Something went wrong
     HEARTBEAT = "heartbeat"        # Keepalive ping (no payload)
     DONE = "done"                  # Final event — stream complete
+
+    # Backpressure flow control (see ampro.backpressure)
+    STREAM_ACK = "stream.ack"         # Client ACKs processed events
+    STREAM_PAUSE = "stream.pause"     # Server pauses the stream
+    STREAM_RESUME = "stream.resume"   # Client signals ready for more
 
 
 class StreamingEvent(BaseModel):

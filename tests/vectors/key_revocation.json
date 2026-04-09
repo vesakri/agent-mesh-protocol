@@ -1,0 +1,119 @@
+{
+  "description": "Test vectors for key.revocation body type (AMP v0.1.2). Covers all 3 revocation reasons, optional fields, and invalid payloads.",
+  "vectors": [
+    {
+      "description": "Valid revocation — key_compromise with replacement key and JWKS URL",
+      "body_type": "key.revocation",
+      "valid": true,
+      "body": {
+        "agent_id": "agent://compromise-victim@registry.amp-protocol.dev",
+        "revoked_key_id": "kid-ed25519-2026-04-01",
+        "revoked_at": "2026-04-09T14:30:00Z",
+        "reason": "key_compromise",
+        "replacement_key_id": "kid-ed25519-2026-04-09",
+        "jwks_url": "https://registry.amp-protocol.dev/.well-known/jwks.json",
+        "signature": "base64url-ed25519-sig-over-revocation-payload-aabbccdd"
+      }
+    },
+    {
+      "description": "Valid revocation — key_rotation without replacement key (optional field absent)",
+      "body_type": "key.revocation",
+      "valid": true,
+      "body": {
+        "agent_id": "agent://scheduler@ops.example.com",
+        "revoked_key_id": "kid-rsa-2025-01-15",
+        "revoked_at": "2026-04-09T10:00:00Z",
+        "reason": "key_rotation",
+        "signature": "base64url-ed25519-sig-rotation-eeff0011"
+      }
+    },
+    {
+      "description": "Valid revocation — key_rotation with replacement key but no JWKS URL",
+      "body_type": "key.revocation",
+      "valid": true,
+      "body": {
+        "agent_id": "agent://did:web:example.com:agents:billing",
+        "revoked_key_id": "kid-ed25519-2025-12-01",
+        "revoked_at": "2026-04-09T08:15:00Z",
+        "reason": "key_rotation",
+        "replacement_key_id": "kid-ed25519-2026-04-09-v2",
+        "signature": "base64url-ed25519-sig-rotation-22334455"
+      }
+    },
+    {
+      "description": "Valid revocation — agent_decommissioned, no replacement key, no JWKS URL",
+      "body_type": "key.revocation",
+      "valid": true,
+      "body": {
+        "agent_id": "agent://legacy-processor@registry.amp-protocol.dev",
+        "revoked_key_id": "kid-ed25519-2024-06-01",
+        "revoked_at": "2026-04-09T18:00:00Z",
+        "reason": "agent_decommissioned",
+        "signature": "base64url-ed25519-sig-decommission-66778899"
+      }
+    },
+    {
+      "description": "Valid revocation — agent_decommissioned with JWKS URL but no replacement key",
+      "body_type": "key.revocation",
+      "valid": true,
+      "body": {
+        "agent_id": "agent://old-analytics@example.com",
+        "revoked_key_id": "kid-ed25519-2025-03-01",
+        "revoked_at": "2026-04-09T20:00:00Z",
+        "reason": "agent_decommissioned",
+        "jwks_url": "https://example.com/.well-known/agent-jwks.json",
+        "signature": "base64url-ed25519-sig-decommission-aabb0011"
+      }
+    },
+    {
+      "description": "Invalid — missing signature field (required)",
+      "body_type": "key.revocation",
+      "valid": false,
+      "expected_error": "signature",
+      "body": {
+        "agent_id": "agent://no-sig-agent@example.com",
+        "revoked_key_id": "kid-ed25519-2026-01-01",
+        "revoked_at": "2026-04-09T12:00:00Z",
+        "reason": "key_compromise"
+      }
+    },
+    {
+      "description": "Invalid — missing agent_id field (required)",
+      "body_type": "key.revocation",
+      "valid": false,
+      "expected_error": "agent_id",
+      "body": {
+        "revoked_key_id": "kid-ed25519-2026-01-01",
+        "revoked_at": "2026-04-09T12:00:00Z",
+        "reason": "key_rotation",
+        "signature": "base64url-ed25519-sig-missing-agent-ccddee"
+      }
+    },
+    {
+      "description": "Invalid — missing revoked_key_id field (required)",
+      "body_type": "key.revocation",
+      "valid": false,
+      "expected_error": "revoked_key_id",
+      "body": {
+        "agent_id": "agent://broken@example.com",
+        "revoked_at": "2026-04-09T12:00:00Z",
+        "reason": "key_compromise",
+        "signature": "base64url-ed25519-sig-missing-keyid-ff0011"
+      }
+    },
+    {
+      "description": "Valid revocation — all optional fields explicitly null",
+      "body_type": "key.revocation",
+      "valid": true,
+      "body": {
+        "agent_id": "agent://minimal@example.com",
+        "revoked_key_id": "kid-ed25519-2026-04-09",
+        "revoked_at": "2026-04-09T16:00:00Z",
+        "reason": "key_compromise",
+        "replacement_key_id": null,
+        "jwks_url": null,
+        "signature": "base64url-ed25519-sig-minimal-00112233"
+      }
+    }
+  ]
+}

@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.1.2] - 2026-04-09
+
+### Added
+- `key.revocation` body type + `Key-Revoked-At` header — emergency key revocation broadcast
+- `task.challenge` / `task.challenge_response` body types — anti-abuse challenge mechanism
+- `tool.consent_request` / `tool.consent_grant` body types + `ToolDefinition` model — per-tool consent
+- `stream.ack` / `stream.pause` / `stream.resume` streaming event types — backpressure flow control
+- `trust.upgrade_request` / `trust.upgrade_response` body types — mid-conversation identity verification
+- `Anonymous-Sender-Hint` header — pseudonymous rate limiting
+- `previous_session_id` field on `SessionInitBody` — session resumption
+- `resumed` field on `SessionEstablishedBody` — resumption status
+- `RevocationReason` enum (key_compromise, key_rotation, agent_decommissioned)
+- `ChallengeReason` enum (first_contact, suspicious_behavior, rate_limit_exceeded, trust_upgrade)
+- 5 new test vector files, 4 new examples, 75 new tests
+
+### Changed
+- Standard headers grew from 41 to 43
+- Streaming event types grew from 10 to 13
+- Body type registry grew from 31 to 38
+- Exports grew from 135 to 148+
+
 ## [0.1.1] - 2026-04-09
 
 ### Added

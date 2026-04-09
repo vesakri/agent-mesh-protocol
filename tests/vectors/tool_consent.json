@@ -1,0 +1,152 @@
+{
+  "description": "Test vectors for tool.consent_request and tool.consent_grant body types (AMP v0.1.2). Covers consent request/grant, restrictions, denial, scope subsetting, and invalid payloads.",
+  "vectors": [
+    {
+      "description": "Consent request — 3 scopes, standard TTL",
+      "body_type": "tool.consent_request",
+      "valid": true,
+      "body": {
+        "tool_name": "web_search",
+        "scopes": ["search:public", "search:cached", "search:realtime"],
+        "reason": "Task requires real-time web search to answer user question about current events",
+        "session_id": "sess-a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+        "ttl_seconds": 3600
+      }
+    },
+    {
+      "description": "Consent grant — full scopes granted, no restrictions",
+      "body_type": "tool.consent_grant",
+      "valid": true,
+      "body": {
+        "tool_name": "web_search",
+        "scopes": ["search:public", "search:cached", "search:realtime"],
+        "grant_id": "grant-001-websearch-full",
+        "valid_for_session": "sess-a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+        "expires_at": "2026-04-09T15:30:00Z",
+        "restrictions": {}
+      }
+    },
+    {
+      "description": "Consent grant with restrictions — max_invocations and allowed_params",
+      "body_type": "tool.consent_grant",
+      "valid": true,
+      "body": {
+        "tool_name": "database_query",
+        "scopes": ["db:read"],
+        "grant_id": "grant-002-db-restricted",
+        "valid_for_session": "sess-db-query-session-001",
+        "expires_at": "2026-04-09T16:00:00Z",
+        "restrictions": {
+          "max_invocations": 10,
+          "allowed_params": {
+            "table": ["users", "orders"],
+            "operation": ["SELECT"]
+          },
+          "max_rows_returned": 100
+        }
+      }
+    },
+    {
+      "description": "Consent denied — grant with empty scopes signals denial",
+      "body_type": "tool.consent_grant",
+      "valid": true,
+      "body": {
+        "tool_name": "file_system_write",
+        "scopes": [],
+        "grant_id": "grant-003-denied",
+        "valid_for_session": "sess-fs-write-attempt-001",
+        "expires_at": "2026-04-09T14:30:00Z",
+        "restrictions": {}
+      },
+      "note": "Empty scopes array indicates consent was denied. Caller MUST NOT invoke the tool."
+    },
+    {
+      "description": "Scope subsetting — request 3 scopes, grant only 2",
+      "body_type": "tool.consent_request",
+      "valid": true,
+      "body": {
+        "tool_name": "email_send",
+        "scopes": ["email:send", "email:read_inbox", "email:manage_rules"],
+        "reason": "Need to send a confirmation email and verify delivery receipt",
+        "session_id": "sess-email-subset-001",
+        "ttl_seconds": 1800
+      }
+    },
+    {
+      "description": "Scope subsetting — grant is a strict subset of what was requested",
+      "body_type": "tool.consent_grant",
+      "valid": true,
+      "body": {
+        "tool_name": "email_send",
+        "scopes": ["email:send", "email:read_inbox"],
+        "grant_id": "grant-004-email-subset",
+        "valid_for_session": "sess-email-subset-001",
+        "expires_at": "2026-04-09T15:00:00Z",
+        "restrictions": {
+          "max_invocations": 5
+        }
+      },
+      "note": "email:manage_rules was not granted. Caller must operate within the subset."
+    },
+    {
+      "description": "Consent request — custom TTL (short-lived)",
+      "body_type": "tool.consent_request",
+      "valid": true,
+      "body": {
+        "tool_name": "payment_process",
+        "scopes": ["payment:charge"],
+        "reason": "One-time charge for service rendered",
+        "session_id": "sess-payment-once-001",
+        "ttl_seconds": 60
+      }
+    },
+    {
+      "description": "Invalid consent request — missing tool_name (required)",
+      "body_type": "tool.consent_request",
+      "valid": false,
+      "expected_error": "tool_name",
+      "body": {
+        "scopes": ["read"],
+        "reason": "Need access",
+        "session_id": "sess-invalid-001",
+        "ttl_seconds": 3600
+      }
+    },
+    {
+      "description": "Invalid consent request — missing scopes (required)",
+      "body_type": "tool.consent_request",
+      "valid": false,
+      "expected_error": "scopes",
+      "body": {
+        "tool_name": "web_search",
+        "reason": "Need search access",
+        "session_id": "sess-invalid-002",
+        "ttl_seconds": 3600
+      }
+    },
+    {
+      "description": "Invalid consent grant — missing grant_id (required)",
+      "body_type": "tool.consent_grant",
+      "valid": false,
+      "expected_error": "grant_id",
+      "body": {
+        "tool_name": "web_search",
+        "scopes": ["search:public"],
+        "valid_for_session": "sess-invalid-003",
+        "expires_at": "2026-04-09T15:00:00Z"
+      }
+    },
+    {
+      "description": "Consent grant — restrictions field absent (defaults to empty dict)",
+      "body_type": "tool.consent_grant",
+      "valid": true,
+      "body": {
+        "tool_name": "calendar_read",
+        "scopes": ["calendar:read"],
+        "grant_id": "grant-005-cal-norestrictions",
+        "valid_for_session": "sess-calendar-001",
+        "expires_at": "2026-04-09T18:00:00Z"
+      }
+    }
+  ]
+}

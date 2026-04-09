@@ -1,0 +1,152 @@
+{
+  "description": "Test vectors for trust.upgrade_request and trust.upgrade_response body types (AMP v0.1.2). Covers upgrade requests with multiple verification methods, responses with and without new_score, and timeout scenarios.",
+  "vectors": [
+    {
+      "description": "Upgrade request — multiple verification methods with verification URL",
+      "body_type": "trust.upgrade_request",
+      "valid": true,
+      "body": {
+        "session_id": "sess-upgrade-001",
+        "current_tier": "anonymous",
+        "required_tier": "verified",
+        "verification_methods": ["jwt", "did:web", "oauth2"],
+        "verification_url": "https://auth.example.com/verify?session=sess-upgrade-001",
+        "reason": "Task requires access to sensitive financial data; identity verification needed",
+        "timeout_seconds": 300
+      }
+    },
+    {
+      "description": "Upgrade request — single verification method, no verification URL",
+      "body_type": "trust.upgrade_request",
+      "valid": true,
+      "body": {
+        "session_id": "sess-upgrade-002",
+        "current_tier": "verified",
+        "required_tier": "trusted",
+        "verification_methods": ["did:web"],
+        "reason": "Elevated privileges required for administrative action",
+        "timeout_seconds": 120
+      }
+    },
+    {
+      "description": "Upgrade request — default timeout (300s), verification_url absent",
+      "body_type": "trust.upgrade_request",
+      "valid": true,
+      "body": {
+        "session_id": "sess-upgrade-003",
+        "current_tier": "anonymous",
+        "required_tier": "verified",
+        "verification_methods": ["jwt", "oauth2"],
+        "reason": "Cannot proceed without at least verified trust tier"
+      }
+    },
+    {
+      "description": "Upgrade response — jwt method with new_score provided",
+      "body_type": "trust.upgrade_response",
+      "valid": true,
+      "body": {
+        "session_id": "sess-upgrade-001",
+        "method": "jwt",
+        "proof": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCIsImtpZCI6ImtpZC1lZDI1NTE5LTIwMjYtMDQtMDkifQ.eyJzdWIiOiJhZ2VudDovL2FsaWNlQGV4YW1wbGUuY29tIiwiaWF0IjoxNzQ0MjA1MDAwLCJleHAiOjE3NDQyMDg2MDB9.signature-placeholder",
+        "new_tier": "verified",
+        "new_score": 75
+      }
+    },
+    {
+      "description": "Upgrade response — did:web method with new_score provided",
+      "body_type": "trust.upgrade_response",
+      "valid": true,
+      "body": {
+        "session_id": "sess-upgrade-002",
+        "method": "did:web",
+        "proof": "did:web:example.com#proof-linked-data-2026-04-09",
+        "new_tier": "trusted",
+        "new_score": 90
+      }
+    },
+    {
+      "description": "Upgrade response — new_score absent (optional field omitted)",
+      "body_type": "trust.upgrade_response",
+      "valid": true,
+      "body": {
+        "session_id": "sess-upgrade-003",
+        "method": "oauth2",
+        "proof": "ya29.a0AfB_byBx-oauth2-access-token-placeholder",
+        "new_tier": "verified"
+      }
+    },
+    {
+      "description": "Upgrade response — new_score explicitly null",
+      "body_type": "trust.upgrade_response",
+      "valid": true,
+      "body": {
+        "session_id": "sess-upgrade-003",
+        "method": "jwt",
+        "proof": "eyJhbGciOiJFZERTQSJ9.eyJzdWIiOiJ0ZXN0In0.sig",
+        "new_tier": "verified",
+        "new_score": null
+      }
+    },
+    {
+      "description": "Timeout scenario — upgrade request with very short timeout",
+      "body_type": "trust.upgrade_request",
+      "valid": true,
+      "body": {
+        "session_id": "sess-upgrade-timeout-001",
+        "current_tier": "anonymous",
+        "required_tier": "trusted",
+        "verification_methods": ["jwt", "did:web", "oauth2", "x509"],
+        "verification_url": "https://auth.example.com/urgent-verify",
+        "reason": "Urgent action requires trusted tier — short window for verification",
+        "timeout_seconds": 10
+      },
+      "note": "With a 10-second timeout, the sender must verify almost immediately or the session will be terminated."
+    },
+    {
+      "description": "Invalid upgrade request — missing session_id (required)",
+      "body_type": "trust.upgrade_request",
+      "valid": false,
+      "expected_error": "session_id",
+      "body": {
+        "current_tier": "anonymous",
+        "required_tier": "verified",
+        "verification_methods": ["jwt"],
+        "reason": "Need verification"
+      }
+    },
+    {
+      "description": "Invalid upgrade request — missing verification_methods (required)",
+      "body_type": "trust.upgrade_request",
+      "valid": false,
+      "expected_error": "verification_methods",
+      "body": {
+        "session_id": "sess-invalid-001",
+        "current_tier": "anonymous",
+        "required_tier": "verified",
+        "reason": "Need verification"
+      }
+    },
+    {
+      "description": "Invalid upgrade response — missing proof (required)",
+      "body_type": "trust.upgrade_response",
+      "valid": false,
+      "expected_error": "proof",
+      "body": {
+        "session_id": "sess-invalid-002",
+        "method": "jwt",
+        "new_tier": "verified"
+      }
+    },
+    {
+      "description": "Invalid upgrade response — missing method (required)",
+      "body_type": "trust.upgrade_response",
+      "valid": false,
+      "expected_error": "method",
+      "body": {
+        "session_id": "sess-invalid-003",
+        "proof": "some-proof-value",
+        "new_tier": "verified"
+      }
+    }
+  ]
+}

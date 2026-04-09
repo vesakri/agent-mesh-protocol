@@ -1,0 +1,116 @@
+{
+  "description": "Test vectors for stream.ack, stream.pause, and stream.resume event types (AMP v0.1.2). Covers ack/pause/resume sequences, optional buffer_capacity, and invalid payloads.",
+  "vectors": [
+    {
+      "description": "stream.ack — client acknowledges processing through sequence 42",
+      "event_type": "stream.ack",
+      "valid": true,
+      "body": {
+        "last_seq": 42,
+        "timestamp": "2026-04-09T14:30:01Z"
+      }
+    },
+    {
+      "description": "stream.pause — server pauses because client is behind",
+      "event_type": "stream.pause",
+      "valid": true,
+      "body": {
+        "reason": "client_behind",
+        "resume_after_ack": 42
+      }
+    },
+    {
+      "description": "stream.resume — client ready for more, with buffer_capacity",
+      "event_type": "stream.resume",
+      "valid": true,
+      "body": {
+        "from_seq": 43,
+        "buffer_capacity": 100
+      }
+    },
+    {
+      "description": "stream.resume — client ready for more, without buffer_capacity (optional field absent)",
+      "event_type": "stream.resume",
+      "valid": true,
+      "body": {
+        "from_seq": 43
+      }
+    },
+    {
+      "description": "Full ack/pause/resume sequence — step 1: initial ack at seq 10",
+      "event_type": "stream.ack",
+      "valid": true,
+      "sequence_step": 1,
+      "body": {
+        "last_seq": 10,
+        "timestamp": "2026-04-09T14:30:00Z"
+      }
+    },
+    {
+      "description": "Full ack/pause/resume sequence — step 2: server pauses at seq 50",
+      "event_type": "stream.pause",
+      "valid": true,
+      "sequence_step": 2,
+      "body": {
+        "reason": "buffer_full",
+        "resume_after_ack": 50
+      }
+    },
+    {
+      "description": "Full ack/pause/resume sequence — step 3: client acks through seq 50",
+      "event_type": "stream.ack",
+      "valid": true,
+      "sequence_step": 3,
+      "body": {
+        "last_seq": 50,
+        "timestamp": "2026-04-09T14:30:05Z"
+      }
+    },
+    {
+      "description": "Full ack/pause/resume sequence — step 4: client resumes from seq 51 with buffer capacity",
+      "event_type": "stream.resume",
+      "valid": true,
+      "sequence_step": 4,
+      "body": {
+        "from_seq": 51,
+        "buffer_capacity": 200
+      }
+    },
+    {
+      "description": "stream.resume — buffer_capacity explicitly null (same as absent)",
+      "event_type": "stream.resume",
+      "valid": true,
+      "body": {
+        "from_seq": 1,
+        "buffer_capacity": null
+      }
+    },
+    {
+      "description": "Invalid stream.ack — missing last_seq (required)",
+      "event_type": "stream.ack",
+      "valid": false,
+      "expected_error": "last_seq",
+      "body": {
+        "timestamp": "2026-04-09T14:30:00Z"
+      }
+    },
+    {
+      "description": "Invalid stream.pause — missing resume_after_ack (required)",
+      "event_type": "stream.pause",
+      "valid": false,
+      "expected_error": "resume_after_ack",
+      "body": {
+        "reason": "client_behind"
+      }
+    },
+    {
+      "description": "Invalid stream.resume — missing from_seq (required)",
+      "event_type": "stream.resume",
+      "valid": false,
+      "expected_error": "from_seq",
+      "body": {
+        "buffer_capacity": 100
+      }
+    }
+  ]
+}

@@ -518,6 +518,41 @@ def _register_handshake_body_types() -> None:
 _register_handshake_body_types()
 
 
+def _register_challenge_body_types() -> None:
+    """Register anti-abuse challenge body types from challenge module."""
+    try:
+        from ampro.challenge import TaskChallengeBody, TaskChallengeResponseBody
+        _BODY_TYPE_REGISTRY["task.challenge"] = TaskChallengeBody
+        _BODY_TYPE_REGISTRY["task.challenge_response"] = TaskChallengeResponseBody
+    except ImportError:
+        pass  # challenge module not available — skip
+
+_register_challenge_body_types()
+
+
+def _register_v012_body_types() -> None:
+    """Register v0.1.2 body types: key revocation, tool consent, trust upgrade."""
+    try:
+        from ampro.key_revocation import KeyRevocationBody
+        _BODY_TYPE_REGISTRY["key.revocation"] = KeyRevocationBody
+    except ImportError:
+        pass
+    try:
+        from ampro.tool_consent import ToolConsentRequestBody, ToolConsentGrantBody
+        _BODY_TYPE_REGISTRY["tool.consent_request"] = ToolConsentRequestBody
+        _BODY_TYPE_REGISTRY["tool.consent_grant"] = ToolConsentGrantBody
+    except ImportError:
+        pass
+    try:
+        from ampro.trust_upgrade import TrustUpgradeRequestBody, TrustUpgradeResponseBody
+        _BODY_TYPE_REGISTRY["trust.upgrade_request"] = TrustUpgradeRequestBody
+        _BODY_TYPE_REGISTRY["trust.upgrade_response"] = TrustUpgradeResponseBody
+    except ImportError:
+        pass
+
+_register_v012_body_types()
+
+
 def validate_body(body_type: str, body: dict[str, Any]) -> BaseModel | dict[str, Any]:
     """Validate a body dict against its body_type schema.
 

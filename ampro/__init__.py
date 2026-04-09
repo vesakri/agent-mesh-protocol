@@ -101,6 +101,9 @@ from ampro.trust_score import (
 # --- Trust resolution ---
 from ampro.trust_resolver import resolve_trust_tier
 
+# --- Trust upgrade ---
+from ampro.trust_upgrade import TrustUpgradeRequestBody, TrustUpgradeResponseBody
+
 # --- Handshake ---
 from ampro.handshake import (
     HandshakeState, HandshakeStateMachine,
@@ -124,11 +127,23 @@ from ampro.session_binding import (
 # --- Context schemas ---
 from ampro.context_schema import ContextSchemaInfo, parse_schema_urn, check_schema_supported
 
+# --- Challenge (anti-abuse) ---
+from ampro.challenge import ChallengeReason, TaskChallengeBody, TaskChallengeResponseBody
+
+# --- Key revocation ---
+from ampro.key_revocation import RevocationReason, KeyRevocationBody
+
+# --- Tool consent ---
+from ampro.tool_consent import ToolConsentRequestBody, ToolConsentGrantBody, ToolDefinition
+
+# --- Backpressure ---
+from ampro.backpressure import StreamAckEvent, StreamPauseEvent, StreamResumeEvent
+
 # --- Negotiation & versioning ---
 from ampro.negotiation import NegotiationResult, CapabilityNegotiator
 from ampro.versioning import SUPPORTED_VERSIONS, CURRENT_VERSION, check_version, negotiate_version
 
-__version__ = "0.1.1"
+__version__ = "0.1.2"
 
 __all__ = [
     # Core
@@ -185,6 +200,8 @@ __all__ = [
     "calculate_trust_score", "score_to_policy",
     # Trust resolution
     "resolve_trust_tier",
+    # Trust upgrade
+    "TrustUpgradeRequestBody", "TrustUpgradeResponseBody",
     # Handshake
     "HandshakeState", "HandshakeStateMachine",
     "SessionInitBody", "SessionEstablishedBody", "SessionConfirmBody",
@@ -198,6 +215,14 @@ __all__ = [
     "create_message_binding", "verify_message_binding",
     # Context schemas
     "ContextSchemaInfo", "parse_schema_urn", "check_schema_supported",
+    # Challenge (anti-abuse)
+    "ChallengeReason", "TaskChallengeBody", "TaskChallengeResponseBody",
+    # Key revocation
+    "RevocationReason", "KeyRevocationBody",
+    # Tool consent
+    "ToolConsentRequestBody", "ToolConsentGrantBody", "ToolDefinition",
+    # Backpressure
+    "StreamAckEvent", "StreamPauseEvent", "StreamResumeEvent",
     # Negotiation & versioning
     "NegotiationResult", "CapabilityNegotiator",
     "SUPPORTED_VERSIONS", "CURRENT_VERSION", "check_version", "negotiate_version",

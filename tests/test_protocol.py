@@ -7,7 +7,7 @@ from pydantic import ValidationError
 class TestImports:
     def test_version(self):
         import ampro
-        assert ampro.__version__ == "0.1.1"
+        assert ampro.__version__ == "0.1.2"
 
     def test_all_exports(self):
         import ampro
@@ -56,7 +56,7 @@ class TestEnvelope:
 
     def test_headers_count(self):
         from ampro import STANDARD_HEADERS
-        assert len(STANDARD_HEADERS) == 41
+        assert len(STANDARD_HEADERS) == 43
 
 
 class TestBodySchemas:
@@ -111,9 +111,9 @@ class TestCapabilities:
 
 
 class TestStreaming:
-    def test_ten_events(self):
+    def test_thirteen_events(self):
         from ampro import StreamingEventType
-        assert len(StreamingEventType) == 10
+        assert len(StreamingEventType) == 13
 
     def test_heartbeat(self):
         from ampro import StreamingEventType
@@ -266,7 +266,7 @@ class TestV011Imports:
 
     def test_version_bumped(self):
         import ampro
-        assert ampro.__version__ == "0.1.1"
+        assert ampro.__version__ == "0.1.2"
 
     def test_handshake_imports(self):
         from ampro import (
@@ -321,3 +321,98 @@ class TestV011Imports:
     def test_all_exports_expanded(self):
         import ampro
         assert len(ampro.__all__) >= 115  # grew from 100+
+
+
+class TestV012Imports:
+    """Verify all v0.1.2 types are importable from ampro."""
+
+    def test_version_is_012(self):
+        import ampro
+        assert ampro.__version__ == "0.1.2"
+
+    def test_key_revocation_imports(self):
+        from ampro import RevocationReason, KeyRevocationBody
+        assert RevocationReason.KEY_COMPROMISE.value == "key_compromise"
+
+    def test_challenge_imports(self):
+        from ampro import ChallengeReason, TaskChallengeBody, TaskChallengeResponseBody
+        assert ChallengeReason.FIRST_CONTACT.value == "first_contact"
+
+    def test_tool_consent_imports(self):
+        from ampro import ToolConsentRequestBody, ToolConsentGrantBody, ToolDefinition
+        td = ToolDefinition(name="test", description="test tool")
+        assert td.consent_required is False
+
+    def test_backpressure_imports(self):
+        from ampro import StreamAckEvent, StreamPauseEvent, StreamResumeEvent
+        ack = StreamAckEvent(last_seq=1, timestamp="2026-01-01T00:00:00Z")
+        assert ack.last_seq == 1
+
+    def test_trust_upgrade_imports(self):
+        from ampro import TrustUpgradeRequestBody, TrustUpgradeResponseBody
+        assert TrustUpgradeRequestBody.model_fields["timeout_seconds"].default == 300
+
+    def test_streaming_event_type_backpressure_members(self):
+        from ampro import StreamingEventType
+        assert hasattr(StreamingEventType, "STREAM_ACK")
+        assert hasattr(StreamingEventType, "STREAM_PAUSE")
+        assert hasattr(StreamingEventType, "STREAM_RESUME")
+
+    def test_new_v012_headers(self):
+        from ampro import STANDARD_HEADERS
+        for h in ["Key-Revoked-At", "Anonymous-Sender-Hint"]:
+            assert h in STANDARD_HEADERS, f"Missing v0.1.2 header: {h}"
+
+    def test_all_exports_148(self):
+        import ampro
+        assert len(ampro.__all__) >= 148
+
+
+class TestSessionResumption:
+    """Test session resumption fields added in v0.1.2."""
+
+    def test_session_init_has_previous_session_id(self):
+        from ampro import SessionInitBody
+        body = SessionInitBody(
+            proposed_capabilities=["messaging"],
+            proposed_version="1.0.0",
+            client_nonce="nonce123",
+            previous_session_id="old-sess-1",
+        )
+        assert body.previous_session_id == "old-sess-1"
+
+    def test_session_init_previous_session_id_default_none(self):
+        from ampro import SessionInitBody
+        body = SessionInitBody(
+            proposed_capabilities=["messaging"],
+            proposed_version="1.0.0",
+            client_nonce="nonce123",
+        )
+        assert body.previous_session_id is None
+
+    def test_session_established_has_resumed(self):
+        from ampro import SessionEstablishedBody
+        body = SessionEstablishedBody(
+            session_id="sess-new",
+            negotiated_capabilities=["messaging"],
+            negotiated_version="1.0.0",
+            trust_tier="verified",
+            trust_score=500,
+            server_nonce="sn",
+            binding_token="bt",
+            resumed=True,
+        )
+        assert body.resumed is True
+
+    def test_session_established_resumed_default_false(self):
+        from ampro import SessionEstablishedBody
+        body = SessionEstablishedBody(
+            session_id="sess-fresh",
+            negotiated_capabilities=["messaging"],
+            negotiated_version="1.0.0",
+            trust_tier="external",
+            trust_score=100,
+            server_nonce="sn",
+            binding_token="bt",
+        )
+        assert body.resumed is False

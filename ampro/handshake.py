@@ -61,6 +61,10 @@ class SessionInitBody(BaseModel):
         default=None,
         description="Optional conversation ID to resume or bind to",
     )
+    previous_session_id: str | None = Field(
+        default=None,
+        description="Previous session ID for session resumption",
+    )
 
     model_config = {"extra": "ignore"}
 
@@ -92,6 +96,10 @@ class SessionEstablishedBody(BaseModel):
     )
     binding_token: str = Field(
         description="Token the client must prove possession of in session.confirm",
+    )
+    resumed: bool = Field(
+        default=False,
+        description="Whether the previous session was successfully resumed",
     )
 
     model_config = {"extra": "ignore"}

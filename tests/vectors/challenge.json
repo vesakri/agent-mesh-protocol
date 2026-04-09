@@ -1,0 +1,149 @@
+{
+  "description": "Test vectors for task.challenge and task.challenge_response body types (AMP v0.1.2). Covers all 4 challenge reasons, proof-of-work parameters, expiration, and complete challenge-response flows.",
+  "vectors": [
+    {
+      "description": "Challenge issued — first_contact reason with proof_of_work type and parameters",
+      "body_type": "task.challenge",
+      "valid": true,
+      "body": {
+        "challenge_id": "chal-001-first-contact",
+        "challenge_type": "proof_of_work",
+        "parameters": {
+          "algorithm": "sha256",
+          "difficulty": 20,
+          "prefix": "amp-pow-",
+          "nonce_hint": "start-from-zero"
+        },
+        "expires_at": "2026-04-09T15:00:00Z",
+        "reason": "first_contact"
+      }
+    },
+    {
+      "description": "Challenge response — valid solution to first_contact challenge",
+      "body_type": "task.challenge_response",
+      "valid": true,
+      "body": {
+        "challenge_id": "chal-001-first-contact",
+        "solution": "amp-pow-00000000003a7f2b"
+      }
+    },
+    {
+      "description": "Challenge issued — suspicious_behavior reason with captcha type",
+      "body_type": "task.challenge",
+      "valid": true,
+      "body": {
+        "challenge_id": "chal-002-suspicious",
+        "challenge_type": "captcha",
+        "parameters": {
+          "captcha_provider": "hcaptcha",
+          "site_key": "10000000-ffff-ffff-ffff-000000000001",
+          "page_url": "https://example.com/verify"
+        },
+        "expires_at": "2026-04-09T14:35:00Z",
+        "reason": "suspicious_behavior"
+      }
+    },
+    {
+      "description": "Challenge response — valid solution to suspicious_behavior captcha",
+      "body_type": "task.challenge_response",
+      "valid": true,
+      "body": {
+        "challenge_id": "chal-002-suspicious",
+        "solution": "hcaptcha-token-P0_eyJhbGciOiJIUzI1NiJ9.valid"
+      }
+    },
+    {
+      "description": "Challenge issued — rate_limit_exceeded with delay-based challenge",
+      "body_type": "task.challenge",
+      "valid": true,
+      "body": {
+        "challenge_id": "chal-003-ratelimit",
+        "challenge_type": "proof_of_work",
+        "parameters": {
+          "algorithm": "sha256",
+          "difficulty": 24,
+          "prefix": "amp-rl-"
+        },
+        "expires_at": "2026-04-09T14:40:00Z",
+        "reason": "rate_limit_exceeded"
+      }
+    },
+    {
+      "description": "Challenge issued — trust_upgrade reason with empty parameters",
+      "body_type": "task.challenge",
+      "valid": true,
+      "body": {
+        "challenge_id": "chal-004-upgrade",
+        "challenge_type": "identity_verification",
+        "parameters": {},
+        "expires_at": "2026-04-09T15:30:00Z",
+        "reason": "trust_upgrade"
+      }
+    },
+    {
+      "description": "Challenge response — valid solution to trust_upgrade challenge",
+      "body_type": "task.challenge_response",
+      "valid": true,
+      "body": {
+        "challenge_id": "chal-004-upgrade",
+        "solution": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.identity-proof"
+      }
+    },
+    {
+      "description": "Expired challenge — expires_at is in the past (validation should accept structurally, but runtime should reject)",
+      "body_type": "task.challenge",
+      "valid": true,
+      "body": {
+        "challenge_id": "chal-005-expired",
+        "challenge_type": "proof_of_work",
+        "parameters": {
+          "algorithm": "sha256",
+          "difficulty": 16,
+          "prefix": "amp-exp-"
+        },
+        "expires_at": "2025-01-01T00:00:00Z",
+        "reason": "first_contact"
+      },
+      "note": "Structurally valid but semantically expired. Runtime MUST reject solutions to this challenge."
+    },
+    {
+      "description": "Invalid challenge — missing challenge_id (required)",
+      "body_type": "task.challenge",
+      "valid": false,
+      "expected_error": "challenge_id",
+      "body": {
+        "challenge_type": "proof_of_work",
+        "parameters": {},
+        "expires_at": "2026-04-09T15:00:00Z",
+        "reason": "first_contact"
+      }
+    },
+    {
+      "description": "Invalid challenge response — missing solution (required)",
+      "body_type": "task.challenge_response",
+      "valid": false,
+      "expected_error": "solution",
+      "body": {
+        "challenge_id": "chal-006-no-solution"
+      }
+    },
+    {
+      "description": "Challenge with proof_of_work — high difficulty and custom parameters",
+      "body_type": "task.challenge",
+      "valid": true,
+      "body": {
+        "challenge_id": "chal-007-hard-pow",
+        "challenge_type": "proof_of_work",
+        "parameters": {
+          "algorithm": "sha256",
+          "difficulty": 32,
+          "prefix": "amp-hard-",
+          "max_attempts": 1000000,
+          "target_time_ms": 5000
+        },
+        "expires_at": "2026-04-09T16:00:00Z",
+        "reason": "suspicious_behavior"
+      }
+    }
+  ]
+}
