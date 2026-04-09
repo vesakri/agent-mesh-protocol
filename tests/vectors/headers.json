@@ -1,0 +1,28 @@
+{
+  "description": "Standard headers test vectors",
+  "standard_headers": [
+    "Authorization", "Content-Type", "Content-Classification",
+    "Identity-Context", "Delegation-Depth", "Visited-Agents",
+    "Session-Id", "In-Reply-To", "Priority", "Trust-Tier",
+    "Protocol-Version", "Capabilities", "Accept-Capabilities",
+    "Accept-Version", "Accept-Language", "Chain-Budget",
+    "Callback-URL", "Callback-Events", "Nonce", "Via", "Timeout",
+    "Negotiated-Capabilities", "Negotiated-Level", "Downgrade-Warning",
+    "X-Circuit-State", "X-Circuit-Failures", "X-Circuit-Reset-At",
+    "X-RateLimit-Limit", "X-RateLimit-Remaining", "X-RateLimit-Reset",
+    "X-Session-Restarted", "Content-Language", "Trust-Upgrade",
+    "Poll-Interval", "Retry-After",
+    "Session-Binding", "Trust-Score", "Context-Schema",
+    "Transaction-Id", "Correlation-Group", "Commitment-Level"
+  ],
+  "header_examples": [
+    {"header": "Session-Binding", "value": "abcdef0123456789...", "valid": true, "note": "HMAC-SHA256 hex digest"},
+    {"header": "Trust-Score", "value": "450/1000", "valid": true},
+    {"header": "Context-Schema", "value": "urn:schema:purchase-order:v1", "valid": true},
+    {"header": "Transaction-Id", "value": "txn-uuid-123", "valid": true},
+    {"header": "Correlation-Group", "value": "group-uuid-456", "valid": true},
+    {"header": "Commitment-Level", "value": "binding", "valid": true},
+    {"header": "Commitment-Level", "value": "informational", "valid": true},
+    {"header": "Commitment-Level", "value": "conditional", "valid": true}
+  ]
+}

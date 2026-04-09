@@ -1,0 +1,12 @@
+{
+  "description": "Agent address parsing test vectors",
+  "vectors": [
+    {"input": "agent://bakery.com", "expected": {"type": "host", "host": "bakery.com"}, "valid": true},
+    {"input": "agent://sales@acme.example.com", "expected": {"type": "slug", "slug": "sales", "registry": "acme.example.com"}, "valid": true},
+    {"input": "agent://did:web:example.com", "expected": {"type": "did", "did": "did:web:example.com"}, "valid": true},
+    {"input": "agent://did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK", "expected": {"type": "did", "did": "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK"}, "valid": true},
+    {"input": "http://not-agent.com", "expected": null, "valid": false, "error": "must start with agent://"},
+    {"input": "", "expected": null, "valid": false, "error": "empty URI"},
+    {"input": "agent://", "expected": null, "valid": false, "error": "missing authority"}
+  ]
+}

@@ -1,0 +1,12 @@
+*.pyc
+__pycache__/
+dist/
+build/
+*.egg-info/
+.pytest_cache/
+
+# Private docs — specs, amendments, roadmaps, implementation plans
+docs/SPEC.md
+docs/FEATURES.md
+docs/ROADMAP.md
+docs/amendments/

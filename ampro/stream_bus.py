@@ -1,0 +1,125 @@
+"""
+Agent Protocol — StreamBus.
+
+Per-task event bus backed by asyncio.Queue with ring-buffer replay
+for SSE reconnection support.  Each task_id gets its own StreamBus
+registered in a global ``_active_streams`` dict.
+
+Public API
+----------
+- ``get_or_create_stream(task_id)`` → ``StreamBus``
+- ``cleanup_stream(task_id)``
+- ``StreamBus.emit(event)``
+- ``StreamBus.events()``  (async iterator)
+- ``StreamBus.replay_from(last_event_id)``
+- ``StreamBus.close()``
+"""
+
+from __future__ import annotations
+
+import asyncio
+from collections import deque
+from typing import AsyncIterator
+
+from ampro.streaming import StreamingEvent, StreamingEventType
+
+
+# ---------------------------------------------------------------------------
+# Ring buffer capacity — keeps the latest N events for replay
+# ---------------------------------------------------------------------------
+_RING_BUFFER_CAPACITY = 100
+
+# Sentinel used to signal the consumer that the stream is finished.
+_SENTINEL = object()
+
+
+class StreamBus:
+    """Per-task event bus with async queue + ring-buffer replay."""
+
+    def __init__(self, task_id: str) -> None:
+        self.task_id = task_id
+        self._queue: asyncio.Queue[StreamingEvent | object] = asyncio.Queue()
+        self._ring: deque[StreamingEvent] = deque(maxlen=_RING_BUFFER_CAPACITY)
+        self._seq: int = 0  # monotonically increasing event id
+        self._closed: bool = False
+
+    # ----- writing side -----
+
+    def emit(self, event: StreamingEvent) -> None:
+        """Assign a sequential ID, store in ring buffer, and enqueue."""
+        if self._closed:
+            return
+        self._seq += 1
+        # Stamp the event with an integer id (as string for SSE spec)
+        event = event.model_copy(update={"id": str(self._seq), "seq": self._seq})
+        self._ring.append(event)
+        self._queue.put_nowait(event)
+
+    def close(self) -> None:
+        """Emit a DONE event (if not already closed) and signal end of stream."""
+        if self._closed:
+            return
+        self._closed = True
+        # Emit a terminal DONE event
+        done_event = StreamingEvent(
+            type=StreamingEventType.DONE,
+            data={"finish_reason": "stream_closed"},
+        )
+        self._seq += 1
+        done_event = done_event.model_copy(update={"id": str(self._seq), "seq": self._seq})
+        self._ring.append(done_event)
+        self._queue.put_nowait(done_event)
+        # Put sentinel so the async iterator exits
+        self._queue.put_nowait(_SENTINEL)
+
+    @property
+    def closed(self) -> bool:
+        return self._closed
+
+    @property
+    def last_event_id(self) -> int:
+        return self._seq
+
+    # ----- reading side -----
+
+    async def events(self) -> AsyncIterator[StreamingEvent]:
+        """Yield events as they arrive.  Stops when the bus is closed."""
+        while True:
+            item = await self._queue.get()
+            if item is _SENTINEL:
+                return
+            # item is a StreamingEvent at this point
+            yield item  # type: ignore[misc]
+
+    def replay_from(self, last_event_id: int) -> list[StreamingEvent]:
+        """Return buffered events with id > ``last_event_id``.
+
+        Used for SSE reconnection: the client sends ``Last-Event-ID``
+        and the server replays everything that was emitted after that id.
+        """
+        result: list[StreamingEvent] = []
+        for ev in self._ring:
+            ev_id = int(ev.id) if ev.id else 0
+            if ev_id > last_event_id:
+                result.append(ev)
+        return result
+
+
+# ---------------------------------------------------------------------------
+# Global stream registry
+# ---------------------------------------------------------------------------
+_active_streams: dict[str, StreamBus] = {}
+
+
+def get_or_create_stream(task_id: str) -> StreamBus:
+    """Return the existing StreamBus for *task_id*, or create a new one."""
+    if task_id not in _active_streams:
+        _active_streams[task_id] = StreamBus(task_id)
+    return _active_streams[task_id]
+
+
+def cleanup_stream(task_id: str) -> None:
+    """Remove the StreamBus for *task_id* from the global registry."""
+    bus = _active_streams.pop(task_id, None)
+    if bus and not bus.closed:
+        bus.close()

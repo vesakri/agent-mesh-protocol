@@ -1,0 +1,27 @@
+{
+  "description": "Visibility and contact policy test vectors",
+  "contact_policy_vectors": [
+    {"sender_tier": "external", "policy": "open", "allowed": true},
+    {"sender_tier": "external", "policy": "handshake_required", "allowed": true},
+    {"sender_tier": "external", "policy": "verified_only", "allowed": false},
+    {"sender_tier": "external", "policy": "delegation_only", "allowed": false},
+    {"sender_tier": "external", "policy": "explicit_invite", "allowed": false},
+    {"sender_tier": "verified", "policy": "open", "allowed": true},
+    {"sender_tier": "verified", "policy": "verified_only", "allowed": true},
+    {"sender_tier": "verified", "policy": "delegation_only", "allowed": false},
+    {"sender_tier": "verified", "policy": "explicit_invite", "allowed": false},
+    {"sender_tier": "owner", "policy": "delegation_only", "allowed": true},
+    {"sender_tier": "owner", "policy": "explicit_invite", "allowed": false},
+    {"sender_tier": "internal", "policy": "delegation_only", "allowed": true},
+    {"sender_tier": "internal", "policy": "explicit_invite", "allowed": false}
+  ],
+  "filter_vectors": [
+    {"caller_tier": "external", "visibility": "public", "expected_keys": "all"},
+    {"caller_tier": "external", "visibility": "authenticated", "expected_keys": ["protocol_version", "identifiers", "endpoint", "visibility"]},
+    {"caller_tier": "verified", "visibility": "authenticated", "expected_keys": "all"},
+    {"caller_tier": "external", "visibility": "private", "expected_keys": []},
+    {"caller_tier": "owner", "visibility": "private", "expected_keys": "all"},
+    {"caller_tier": "external", "visibility": "hidden", "expected_keys": []},
+    {"caller_tier": "internal", "visibility": "hidden", "expected_keys": "all"}
+  ]
+}

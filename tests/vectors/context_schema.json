@@ -1,0 +1,18 @@
+{
+  "description": "Context schema URN parsing and matching test vectors",
+  "parse_vectors": [
+    {"input": "urn:schema:purchase-order:v1", "expected": {"namespace": "schema", "name": "purchase-order", "version": "v1"}, "valid": true},
+    {"input": "urn:schema:com.example.invoice:v2", "expected": {"namespace": "schema", "name": "com.example.invoice", "version": "v2"}, "valid": true},
+    {"input": "urn:domain:shipping-manifest:v1", "expected": {"namespace": "domain", "name": "shipping-manifest", "version": "v1"}, "valid": true},
+    {"input": "", "valid": false, "error": "empty URN"},
+    {"input": "urn:schema:name", "valid": false, "error": "too few parts"},
+    {"input": "http:schema:name:v1", "valid": false, "error": "wrong prefix"}
+  ],
+  "match_vectors": [
+    {"urn": "urn:schema:purchase-order:v1", "supported": ["urn:schema:purchase-order:v1", "urn:schema:rfq:v2"], "expected": true},
+    {"urn": "urn:schema:invoice:v1", "supported": ["urn:schema:purchase-order:v1"], "expected": false},
+    {"urn": "URN:SCHEMA:PURCHASE-ORDER:V1", "supported": ["urn:schema:purchase-order:v1"], "expected": true, "note": "case insensitive"},
+    {"urn": "", "supported": ["urn:schema:x:v1"], "expected": false},
+    {"urn": "urn:schema:x:v1", "supported": [], "expected": false}
+  ]
+}

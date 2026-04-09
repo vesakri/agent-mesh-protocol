@@ -1,0 +1,21 @@
+{
+  "description": "Message envelope validation test vectors",
+  "vectors": [
+    {
+      "input": {"sender": "agent://a.com", "recipient": "agent://b.com", "body_type": "message", "body": {"text": "hi"}},
+      "valid": true,
+      "expected": {"has_id": true, "body_type": "message"}
+    },
+    {
+      "input": {"sender": "agent://a.com", "recipient": "agent://b.com", "body_type": "task.create", "headers": {"Session-Id": "sess-1"}, "body": {"description": "do something"}},
+      "valid": true,
+      "expected": {"body_type": "task.create"}
+    },
+    {
+      "input": {"sender": "", "recipient": "agent://b.com"},
+      "valid": true,
+      "expected": {"body_type": "message"},
+      "note": "empty sender is technically valid at schema level"
+    }
+  ]
+}

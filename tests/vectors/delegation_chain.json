@@ -1,0 +1,36 @@
+{
+  "description": "Delegation chain validation test vectors",
+  "vectors": [
+    {
+      "description": "Valid single-hop delegation",
+      "input": {
+        "chain": [
+          {"delegator": "agent://boss.com", "delegate": "agent://worker.com", "scope": ["task.create"], "timestamp": "2026-01-01T00:00:00Z"}
+        ]
+      },
+      "valid": true
+    },
+    {
+      "description": "Valid multi-hop delegation",
+      "input": {
+        "chain": [
+          {"delegator": "agent://owner.com", "delegate": "agent://manager.com", "scope": ["task.create", "task.assign"], "timestamp": "2026-01-01T00:00:00Z"},
+          {"delegator": "agent://manager.com", "delegate": "agent://worker.com", "scope": ["task.create"], "timestamp": "2026-01-01T00:01:00Z"}
+        ]
+      },
+      "valid": true,
+      "note": "scope narrows at each hop"
+    },
+    {
+      "description": "Invalid scope widening",
+      "input": {
+        "chain": [
+          {"delegator": "agent://owner.com", "delegate": "agent://manager.com", "scope": ["task.create"], "timestamp": "2026-01-01T00:00:00Z"},
+          {"delegator": "agent://manager.com", "delegate": "agent://worker.com", "scope": ["task.create", "task.assign"], "timestamp": "2026-01-01T00:01:00Z"}
+        ]
+      },
+      "valid": false,
+      "error": "scope widening not allowed"
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "description": "Complete handshake sequence test vectors",
+  "vectors": [
+    {
+      "description": "Full client-side handshake flow",
+      "steps": [
+        {"event": "send_init", "from_state": "idle", "to_state": "init_sent", "valid": true},
+        {"event": "receive_established", "from_state": "init_sent", "to_state": "established", "valid": true},
+        {"event": "send_confirm", "from_state": "established", "to_state": "confirmed", "valid": true},
+        {"event": "activate", "from_state": "confirmed", "to_state": "active", "valid": true}
+      ]
+    },
+    {
+      "description": "Full server-side handshake flow",
+      "steps": [
+        {"event": "receive_init", "from_state": "idle", "to_state": "init_received", "valid": true},
+        {"event": "send_established", "from_state": "init_received", "to_state": "established", "valid": true},
+        {"event": "receive_confirm", "from_state": "established", "to_state": "confirmed", "valid": true},
+        {"event": "activate", "from_state": "confirmed", "to_state": "active", "valid": true}
+      ]
+    },
+    {
+      "description": "Invalid transitions",
+      "steps": [
+        {"event": "activate", "from_state": "idle", "valid": false, "error": "cannot activate from idle"},
+        {"event": "send_init", "from_state": "active", "valid": false, "error": "cannot reinitiate from active"},
+        {"event": "resume", "from_state": "idle", "valid": false, "error": "cannot resume from idle"}
+      ]
+    },
+    {
+      "description": "Pause, resume, close lifecycle",
+      "initial_state": "active",
+      "steps": [
+        {"event": "pause", "from_state": "active", "to_state": "paused", "valid": true},
+        {"event": "resume", "from_state": "paused", "to_state": "active", "valid": true},
+        {"event": "close", "from_state": "active", "to_state": "closed", "valid": true}
+      ]
+    }
+  ]
+}
