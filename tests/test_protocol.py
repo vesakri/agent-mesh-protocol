@@ -7,7 +7,7 @@ from pydantic import ValidationError
 class TestImports:
     def test_version(self):
         import ampro
-        assert ampro.__version__ == "0.1.4"
+        assert ampro.__version__ == "0.1.5"
 
     def test_all_exports(self):
         import ampro
@@ -56,7 +56,7 @@ class TestEnvelope:
 
     def test_headers_count(self):
         from ampro import STANDARD_HEADERS
-        assert len(STANDARD_HEADERS) == 45
+        assert len(STANDARD_HEADERS) == 47
 
 
 class TestBodySchemas:
@@ -266,7 +266,7 @@ class TestV011Imports:
 
     def test_version_bumped(self):
         import ampro
-        assert ampro.__version__ == "0.1.4"
+        assert ampro.__version__ == "0.1.5"
 
     def test_handshake_imports(self):
         from ampro import (
@@ -326,9 +326,9 @@ class TestV011Imports:
 class TestV012Imports:
     """Verify all v0.1.2 types are importable from ampro."""
 
-    def test_version_is_014(self):
+    def test_version_is_015(self):
         import ampro
-        assert ampro.__version__ == "0.1.4"
+        assert ampro.__version__ == "0.1.5"
 
     def test_key_revocation_imports(self):
         from ampro import RevocationReason, KeyRevocationBody
@@ -497,3 +497,51 @@ class TestV014Imports:
     def test_all_exports_v014_count(self):
         import ampro
         assert len(ampro.__all__) >= 156
+
+
+class TestV015Imports:
+    """Verify all v0.1.5 types are importable from ampro."""
+
+    def test_trace_context_import(self):
+        from ampro import TraceContext
+        ctx = TraceContext(trace_id="a" * 32, span_id="b" * 16)
+        assert ctx.trace_id == "a" * 32
+
+    def test_generate_trace_id_import(self):
+        from ampro import generate_trace_id
+        tid = generate_trace_id()
+        assert len(tid) == 32
+
+    def test_generate_span_id_import(self):
+        from ampro import generate_span_id
+        sid = generate_span_id()
+        assert len(sid) == 16
+
+    def test_inject_trace_headers_import(self):
+        from ampro import inject_trace_headers, TraceContext
+        ctx = TraceContext(trace_id="a" * 32, span_id="b" * 16)
+        headers = inject_trace_headers(ctx)
+        assert "Trace-Id" in headers
+
+    def test_extract_trace_context_import(self):
+        from ampro import extract_trace_context
+        result = extract_trace_context({})
+        assert result is None
+
+    def test_task_revoke_body_import(self):
+        from ampro import TaskRevokeBody
+        body = TaskRevokeBody(task_id="t-1", reason="revoked")
+        assert body.task_id == "t-1"
+
+    def test_priority_import(self):
+        from ampro import Priority
+        assert Priority.URGENT == "urgent"
+
+    def test_trace_headers_in_standard_headers(self):
+        from ampro import STANDARD_HEADERS
+        assert "Trace-Id" in STANDARD_HEADERS
+        assert "Span-Id" in STANDARD_HEADERS
+
+    def test_all_exports_v015_count(self):
+        import ampro
+        assert len(ampro.__all__) >= 163

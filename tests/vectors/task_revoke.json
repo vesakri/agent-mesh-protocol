@@ -1,0 +1,108 @@
+{
+  "description": "Test vectors for TaskRevokeBody (body.type = task.revoke) (AMP v0.1.5). Covers cascade, revoke_children, both flags, minimal fields, and invalid payloads.",
+  "vectors": [
+    {
+      "description": "Revoke with cascade=true — follows delegation chains",
+      "body_type": "task.revoke",
+      "valid": true,
+      "body": {
+        "task_id": "task-parent-001",
+        "reason": "Data source became unavailable during pipeline run",
+        "cascade": true,
+        "revoke_children": false
+      },
+      "note": "cascade=true revokes all sub-delegated tasks in the delegation chain. Spawned children are unaffected."
+    },
+    {
+      "description": "Revoke with cascade=false, revoke_children=true — follows spawn relationships",
+      "body_type": "task.revoke",
+      "valid": true,
+      "body": {
+        "task_id": "task-parent-002",
+        "reason": "Requirements changed, spawned work is no longer needed",
+        "cascade": false,
+        "revoke_children": true
+      },
+      "note": "revoke_children=true revokes all tasks spawned via task.spawn. Delegation chain is not followed."
+    },
+    {
+      "description": "Revoke with both flags true — full cancellation",
+      "body_type": "task.revoke",
+      "valid": true,
+      "body": {
+        "task_id": "task-parent-003",
+        "reason": "Entire operation cancelled by upstream coordinator",
+        "cascade": true,
+        "revoke_children": true
+      },
+      "note": "Both flags are independent. When both are true, all delegated and all spawned tasks are revoked."
+    },
+    {
+      "description": "Minimal — required fields only, both flags default to false",
+      "body_type": "task.revoke",
+      "valid": true,
+      "body": {
+        "task_id": "task-minimal-001",
+        "reason": "Cancelled by operator"
+      },
+      "expected_defaults": {
+        "cascade": false,
+        "revoke_children": false
+      },
+      "note": "cascade and revoke_children both default to false. Only the target task is revoked."
+    },
+    {
+      "description": "Revoke with both flags explicitly false — same as minimal",
+      "body_type": "task.revoke",
+      "valid": true,
+      "body": {
+        "task_id": "task-explicit-001",
+        "reason": "Timeout exceeded, revoking this task only",
+        "cascade": false,
+        "revoke_children": false
+      }
+    },
+    {
+      "description": "Revoke wrapped in AgentMessage envelope",
+      "body_type": "task.revoke",
+      "valid": true,
+      "envelope": {
+        "sender": "agent://orchestrator.example.com",
+        "recipient": "agent://specialist.example.com",
+        "body_type": "task.revoke",
+        "headers": {
+          "Protocol-Version": "0.1.5",
+          "Session-Id": "sess-revoke-001",
+          "Priority": "urgent"
+        },
+        "body": {
+          "task_id": "task-envelope-001",
+          "reason": "Upstream dependency failed, cascade revocation",
+          "cascade": true,
+          "revoke_children": false
+        }
+      },
+      "note": "Shows the TaskRevokeBody inside a full AgentMessage envelope with Priority header."
+    },
+    {
+      "description": "Invalid — missing task_id (required)",
+      "body_type": "task.revoke",
+      "valid": false,
+      "expected_error": "task_id",
+      "body": {
+        "reason": "Cancelled by operator",
+        "cascade": true
+      }
+    },
+    {
+      "description": "Invalid — missing reason (required)",
+      "body_type": "task.revoke",
+      "valid": false,
+      "expected_error": "reason",
+      "body": {
+        "task_id": "task-bad-001",
+        "cascade": true
+      }
+    }
+  ]
+}

@@ -579,6 +579,17 @@ def _register_v014_body_types() -> None:
 _register_v014_body_types()
 
 
+def _register_v015_body_types() -> None:
+    """Register v0.1.5 body types: task revoke."""
+    try:
+        from ampro.task_revoke import TaskRevokeBody
+        _BODY_TYPE_REGISTRY["task.revoke"] = TaskRevokeBody
+    except ImportError:
+        pass
+
+_register_v015_body_types()
+
+
 def validate_body(body_type: str, body: dict[str, Any]) -> BaseModel | dict[str, Any]:
     """Validate a body dict against its body_type schema.
 

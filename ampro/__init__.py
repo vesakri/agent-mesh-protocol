@@ -149,11 +149,23 @@ from ampro.cost_receipt import CostReceipt, CostReceiptChain
 # --- Task redirect ---
 from ampro.task_redirect import TaskRedirectBody
 
+# --- Tracing ---
+from ampro.tracing import (
+    TraceContext, generate_trace_id, generate_span_id,
+    inject_trace_headers, extract_trace_context,
+)
+
+# --- Task revoke ---
+from ampro.task_revoke import TaskRevokeBody
+
+# --- Priority ---
+from ampro.priority import Priority
+
 # --- Negotiation & versioning ---
 from ampro.negotiation import NegotiationResult, CapabilityNegotiator
 from ampro.versioning import SUPPORTED_VERSIONS, CURRENT_VERSION, check_version, negotiate_version
 
-__version__ = "0.1.4"
+__version__ = "0.1.5"
 
 __all__ = [
     # Core
@@ -241,6 +253,13 @@ __all__ = [
     "CostReceipt", "CostReceiptChain",
     # Task redirect
     "TaskRedirectBody",
+    # Tracing
+    "TraceContext", "generate_trace_id", "generate_span_id",
+    "inject_trace_headers", "extract_trace_context",
+    # Task revoke
+    "TaskRevokeBody",
+    # Priority
+    "Priority",
     # Negotiation & versioning
     "NegotiationResult", "CapabilityNegotiator",
     "SUPPORTED_VERSIONS", "CURRENT_VERSION", "check_version", "negotiate_version",

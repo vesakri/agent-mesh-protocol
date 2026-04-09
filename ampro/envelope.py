@@ -66,6 +66,9 @@ STANDARD_HEADERS = frozenset({
     "Hop-Timeout",
     # v0.1.4 — Routing
     "X-Load-Level",
+    # v0.1.5 — Observability
+    "Trace-Id",
+    "Span-Id",
 })
 
 

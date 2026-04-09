@@ -1,0 +1,65 @@
+{
+  "description": "Test vectors for Priority enum (AMP v0.1.5). Covers all 5 valid values and invalid inputs.",
+  "vectors": [
+    {
+      "description": "Valid — batch (lowest priority, best-effort)",
+      "valid": true,
+      "value": "batch",
+      "note": "Lowest priority. Agents process these after all higher-priority work."
+    },
+    {
+      "description": "Valid — normal (default priority)",
+      "valid": true,
+      "value": "normal",
+      "note": "Default priority level when no Priority header is set."
+    },
+    {
+      "description": "Valid — priority (elevated)",
+      "valid": true,
+      "value": "priority",
+      "note": "Elevated priority. Processed before normal and batch."
+    },
+    {
+      "description": "Valid — urgent (time-sensitive)",
+      "valid": true,
+      "value": "urgent",
+      "note": "Time-sensitive work that should preempt normal processing."
+    },
+    {
+      "description": "Valid — critical (highest priority, immediate processing)",
+      "valid": true,
+      "value": "critical",
+      "note": "Highest priority. Requires immediate processing. Use sparingly."
+    },
+    {
+      "description": "Invalid — 'low' is not a valid priority value",
+      "valid": false,
+      "value": "low",
+      "expected_error": "not a valid Priority"
+    },
+    {
+      "description": "Invalid — 'high' is not a valid priority value",
+      "valid": false,
+      "value": "high",
+      "expected_error": "not a valid Priority"
+    },
+    {
+      "description": "Invalid — 'NORMAL' wrong case (enum values are lowercase)",
+      "valid": false,
+      "value": "NORMAL",
+      "expected_error": "not a valid Priority"
+    },
+    {
+      "description": "Invalid — empty string",
+      "valid": false,
+      "value": "",
+      "expected_error": "not a valid Priority"
+    },
+    {
+      "description": "Invalid — 'medium' is not a recognized priority level",
+      "valid": false,
+      "value": "medium",
+      "expected_error": "not a valid Priority"
+    }
+  ]
+}

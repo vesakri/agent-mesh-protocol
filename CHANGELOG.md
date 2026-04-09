@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.1.5] - 2026-04-09
+
+### Added
+- `TraceContext` model + `generate_trace_id` / `generate_span_id` / `inject_trace_headers` / `extract_trace_context` — W3C Trace Context for delegation chains
+- `task.revoke` body type (`TaskRevokeBody`) — revoke tasks with cascade and revoke_children flags
+- `Priority` enum (batch, normal, priority, urgent, critical) — standardized priority levels
+- `Trace-Id` + `Span-Id` headers
+
+### Changed
+- Standard headers grew from 45 to 47
+- Body type registry grew from 40 to 41
+- Exports grew from 156 to 163
+
 ## [0.1.4] - 2026-04-09
 
 ### Added

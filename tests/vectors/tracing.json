@@ -1,0 +1,140 @@
+{
+  "description": "Test vectors for TraceContext and inject_trace_headers (AMP v0.1.5). Covers root spans, child spans, header injection, and invalid trace identifiers.",
+  "vectors": [
+    {
+      "description": "Valid trace context with parent span — child delegation hop",
+      "valid": true,
+      "input": {
+        "trace_id": "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6",
+        "span_id": "1a2b3c4d5e6f7a8b",
+        "parent_span_id": "9f8e7d6c5b4a3210",
+        "trace_flags": 1
+      },
+      "note": "trace_id is 32 hex chars, span_id is 16 hex chars, parent_span_id links to the caller's span."
+    },
+    {
+      "description": "Valid trace context without parent span — root span",
+      "valid": true,
+      "input": {
+        "trace_id": "00112233445566778899aabbccddeeff",
+        "span_id": "aabbccddeeff0011",
+        "parent_span_id": null,
+        "trace_flags": 1
+      },
+      "note": "Root span has no parent_span_id. This is the first hop in a delegation chain."
+    },
+    {
+      "description": "Valid trace context — trace_flags=0 (not sampled)",
+      "valid": true,
+      "input": {
+        "trace_id": "deadbeefdeadbeefdeadbeefdeadbeef",
+        "span_id": "cafebabecafebabe",
+        "parent_span_id": null,
+        "trace_flags": 0
+      },
+      "note": "trace_flags=0 means the span is not sampled. Agents MAY skip recording."
+    },
+    {
+      "description": "Header injection — inject_trace_headers output for a root span",
+      "valid": true,
+      "input": {
+        "trace_id": "abcdef1234567890abcdef1234567890",
+        "span_id": "1234567890abcdef",
+        "parent_span_id": null,
+        "trace_flags": 1
+      },
+      "expected_headers": {
+        "Trace-Id": "abcdef1234567890abcdef1234567890",
+        "Span-Id": "1234567890abcdef"
+      },
+      "note": "inject_trace_headers returns Trace-Id and Span-Id as HTTP-style headers."
+    },
+    {
+      "description": "Header injection — inject_trace_headers output for a child span",
+      "valid": true,
+      "input": {
+        "trace_id": "abcdef1234567890abcdef1234567890",
+        "span_id": "fedcba0987654321",
+        "parent_span_id": "1234567890abcdef",
+        "trace_flags": 1
+      },
+      "expected_headers": {
+        "Trace-Id": "abcdef1234567890abcdef1234567890",
+        "Span-Id": "fedcba0987654321"
+      },
+      "note": "parent_span_id is not included in injected headers — it is tracked in the TraceContext model only."
+    },
+    {
+      "description": "Three-hop trace — gateway, specialist, worker share one trace_id",
+      "valid": true,
+      "spans": [
+        {
+          "label": "gateway",
+          "trace_id": "fedcba9876543210fedcba9876543210",
+          "span_id": "aaaa111122223333",
+          "parent_span_id": null,
+          "trace_flags": 1
+        },
+        {
+          "label": "specialist",
+          "trace_id": "fedcba9876543210fedcba9876543210",
+          "span_id": "bbbb444455556666",
+          "parent_span_id": "aaaa111122223333",
+          "trace_flags": 1
+        },
+        {
+          "label": "worker",
+          "trace_id": "fedcba9876543210fedcba9876543210",
+          "span_id": "cccc777788889999",
+          "parent_span_id": "bbbb444455556666",
+          "trace_flags": 1
+        }
+      ],
+      "note": "All spans share the same trace_id. Each span's parent_span_id points to the previous hop's span_id."
+    },
+    {
+      "description": "Invalid — trace_id too short (28 hex chars instead of 32)",
+      "valid": false,
+      "expected_error": "trace_id must be 32 hex characters",
+      "input": {
+        "trace_id": "a1b2c3d4e5f6a7b8c9d0e1f2a3b4",
+        "span_id": "1a2b3c4d5e6f7a8b",
+        "parent_span_id": null,
+        "trace_flags": 1
+      }
+    },
+    {
+      "description": "Invalid — span_id too short (12 hex chars instead of 16)",
+      "valid": false,
+      "expected_error": "span_id must be 16 hex characters",
+      "input": {
+        "trace_id": "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6",
+        "span_id": "1a2b3c4d5e6f",
+        "parent_span_id": null,
+        "trace_flags": 1
+      }
+    },
+    {
+      "description": "Invalid — empty trace_id",
+      "valid": false,
+      "expected_error": "trace_id must not be empty",
+      "input": {
+        "trace_id": "",
+        "span_id": "1a2b3c4d5e6f7a8b",
+        "parent_span_id": null,
+        "trace_flags": 1
+      }
+    },
+    {
+      "description": "Invalid — empty span_id",
+      "valid": false,
+      "expected_error": "span_id must not be empty",
+      "input": {
+        "trace_id": "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6",
+        "span_id": "",
+        "parent_span_id": null,
+        "trace_flags": 1
+      }
+    }
+  ]
+}
