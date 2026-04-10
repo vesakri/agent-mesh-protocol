@@ -233,6 +233,7 @@ _TRANSITIONS: dict[tuple[HandshakeState, str], HandshakeState] = {
     (HandshakeState.ACTIVE, "close"): HandshakeState.CLOSED,
     (HandshakeState.PAUSED, "close"): HandshakeState.CLOSED,
     (HandshakeState.ESTABLISHED, "close"): HandshakeState.CLOSED,
+    (HandshakeState.CONFIRMED, "close"): HandshakeState.CLOSED,
 }
 
 
@@ -247,6 +248,10 @@ class HandshakeStateMachine:
         sm.transition("activate")        # CONFIRMED → ACTIVE
 
         sm.transition("invalid_event")   # raises ValueError
+
+    Note: This state machine uses threading.Lock for thread safety.
+    In async contexts, ensure transitions are not called from the
+    event loop thread, or use asyncio.Lock instead.
     """
 
     def __init__(self) -> None:
@@ -256,7 +261,8 @@ class HandshakeStateMachine:
     @property
     def state(self) -> HandshakeState:
         """Current state of the handshake."""
-        return self._state
+        with self._lock:
+            return self._state
 
     def transition(self, event: str) -> HandshakeState:
         """Attempt a state transition triggered by *event*.

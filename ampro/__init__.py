@@ -133,7 +133,7 @@ from ampro.agent.context_schema import ContextSchemaInfo, parse_schema_urn, chec
 from ampro.security.challenge import ChallengeReason, TaskChallengeBody, TaskChallengeResponseBody
 
 # --- Key revocation ---
-from ampro.security.key_revocation import RevocationReason, KeyRevocationBody
+from ampro.security.key_revocation import RevocationReason, KeyRevocationBody, is_revocation_authentic
 
 # --- Tool consent ---
 from ampro.agent.tool_consent import ToolConsentRequestBody, ToolConsentGrantBody, ToolDefinition
@@ -286,7 +286,7 @@ __all__ = [
     # Challenge (anti-abuse)
     "ChallengeReason", "TaskChallengeBody", "TaskChallengeResponseBody",
     # Key revocation
-    "RevocationReason", "KeyRevocationBody",
+    "RevocationReason", "KeyRevocationBody", "is_revocation_authentic",
     # Tool consent
     "ToolConsentRequestBody", "ToolConsentGrantBody", "ToolDefinition",
     # Backpressure

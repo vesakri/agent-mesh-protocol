@@ -11,6 +11,7 @@ from ampro.security.circuit_breaker import CircuitState, CircuitBreakerInfo
 from ampro.security.encryption import EncryptedBody, CONTENT_ENCRYPTION_HEADER
 from ampro.security.key_revocation import (
     RevocationReason, KeyRevocationBody, validate_revocation_signature,
+    is_revocation_authentic,
 )
 from ampro.security.concurrency_limiter import ConcurrencyLimiter
 from ampro.security.sender_tracker import SenderTracker, SenderState
@@ -30,6 +31,7 @@ __all__ = [
     "EncryptedBody", "CONTENT_ENCRYPTION_HEADER",
     # Key revocation
     "RevocationReason", "KeyRevocationBody", "validate_revocation_signature",
+    "is_revocation_authentic",
     # Concurrency
     "ConcurrencyLimiter",
     # Sender tracker

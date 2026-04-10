@@ -8,6 +8,7 @@ Spec ref: Sections 2.3, 3.6
 
 from __future__ import annotations
 
+import hashlib
 import hmac
 import time
 
@@ -15,12 +16,13 @@ import time
 class ApiKeyStore:
     """In-memory API key allowlist with brute force protection.
 
-    WARNING: Keys are stored in plaintext. In production, hash keys with
-    SHA-256 before storage and compare against the hash.
+    Uses SHA-256 hash-based lookup for O(1) key validation, followed by
+    a constant-time comparison to prevent timing side-channels.
     """
 
     def __init__(self, max_failures: int = 10, block_seconds: int = 900):
-        self._keys: dict[str, str] = {}
+        self._keys: dict[str, str] = {}  # key → agent_id
+        self._key_hashes: dict[str, str] = {}  # sha256(key) → key
         self._failures: dict[str, list[float]] = {}
         self._blocked: dict[str, float] = {}
         self._max_failures = max_failures
@@ -28,15 +30,22 @@ class ApiKeyStore:
 
     def add_key(self, key: str, agent_id: str) -> None:
         self._keys[key] = agent_id
+        self._key_hashes[hashlib.sha256(key.encode()).hexdigest()] = key
 
     def remove_key(self, key: str) -> None:
         self._keys.pop(key, None)
+        self._key_hashes.pop(hashlib.sha256(key.encode()).hexdigest(), None)
 
     def validate(self, key: str) -> str | None:
-        """Validate an API key using constant-time comparison to prevent timing side-channels."""
-        for stored_key, agent_id in self._keys.items():
-            if hmac.compare_digest(stored_key, key):
-                return agent_id
+        """Validate an API key using O(1) hash lookup + constant-time comparison.
+
+        First narrows via SHA-256 hash (O(1) dict lookup), then confirms
+        with hmac.compare_digest to prevent timing side-channels.
+        """
+        key_hash = hashlib.sha256(key.encode()).hexdigest()
+        stored_key = self._key_hashes.get(key_hash)
+        if stored_key is not None and hmac.compare_digest(stored_key, key):
+            return self._keys.get(stored_key)
         return None
 
     def is_blocked(self, ip: str) -> bool:

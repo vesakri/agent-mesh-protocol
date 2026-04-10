@@ -45,7 +45,14 @@ def check_jurisdiction_conflict(
     that the receiver does not share **and** they operate under
     different primary jurisdictions.  If either condition is not met
     the pair is considered compatible.
+
+    Invalid jurisdiction codes are treated as conflicts (fail-closed).
     """
+    if not validate_jurisdiction_code(sender.primary):
+        return True, f"Invalid sender jurisdiction code: {sender.primary!r}"
+    if not validate_jurisdiction_code(receiver.primary):
+        return True, f"Invalid receiver jurisdiction code: {receiver.primary!r}"
+
     if sender.primary == receiver.primary:
         return False, None
 

@@ -48,14 +48,24 @@ class RateLimiter:
         return True, info
 
     def _evict_stale_senders(self) -> None:
-        """Evict a random 10% of senders when over max_senders limit."""
+        """Evict stalest senders when over max_senders limit.
+
+        Replaces random eviction with deterministic stalest-first eviction
+        to prevent attackers from surviving eviction by luck.
+        """
         if len(self._requests) <= self._max_senders:
             return
-        import random
-        keys = list(self._requests.keys())
-        evict_count = max(1, len(keys) // 10)
-        for key in random.sample(keys, evict_count):
-            del self._requests[key]
+        import heapq
+
+        evict_count = len(self._requests) - int(self._max_senders * 0.9)
+        # Sort by most recent request timestamp (ascending = stalest first)
+        stalest = heapq.nsmallest(
+            evict_count,
+            self._requests.items(),
+            key=lambda item: max(item[1]) if item[1] else 0,
+        )
+        for sender, _ in stalest:
+            del self._requests[sender]
 
     def sender_count(self) -> int:
         """Number of senders currently tracked."""

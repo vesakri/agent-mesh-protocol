@@ -25,14 +25,29 @@ class NonceTracker:
             del self._seen[k]
 
     def _evict_oldest(self) -> None:
-        """Evict oldest entries down to 90% of max_size to prevent unbounded growth."""
+        """Evict entries to prevent unbounded growth.
+
+        Phase 1: Remove expired entries (outside TTL window — useless anyway).
+        Phase 2: If still over limit, remove oldest by timestamp using heapq
+                 for O(n) instead of O(n log n).
+        """
         if len(self._seen) <= self._max_size:
             return
-        target = int(self._max_size * 0.9)
-        sorted_entries = sorted(self._seen.items(), key=lambda x: x[1])
-        to_remove = len(sorted_entries) - target
-        for key, _ in sorted_entries[:to_remove]:
-            del self._seen[key]
+        # Phase 1: Remove expired entries
+        now = time.monotonic()
+        expired = [k for k, v in self._seen.items() if now - v > self._window]
+        for k in expired:
+            del self._seen[k]
+        # Phase 2: If still over limit, remove oldest by timestamp
+        if len(self._seen) > self._max_size:
+            import heapq
+
+            target = int(self._max_size * 0.9)
+            oldest = heapq.nsmallest(
+                len(self._seen) - target, self._seen.items(), key=lambda x: x[1]
+            )
+            for k, _ in oldest:
+                del self._seen[k]
 
     def is_replay(self, nonce: str) -> bool:
         """Check if nonce was already seen. Returns True if replay detected."""

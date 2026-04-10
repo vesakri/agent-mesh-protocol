@@ -9,7 +9,7 @@ This module is PURE — no platform-specific imports.
 from __future__ import annotations
 
 import ipaddress
-from urllib.parse import urlparse
+from urllib.parse import unquote, urlparse
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -43,6 +43,7 @@ def validate_attachment_url(url: str) -> bool:
         return False
     parsed = urlparse(url)
     hostname = parsed.hostname or ""
+    hostname = unquote(hostname)  # Decode %2e → . etc. to prevent SSRF bypass
     if not hostname:
         return False  # Reject URLs with no valid hostname
     if hostname in _PRIVATE_HOSTS:
@@ -56,6 +57,20 @@ def validate_attachment_url(url: str) -> bool:
         if addr.is_private or addr.is_loopback or addr.is_link_local:
             return False
     except ValueError:
+        pass
+    # Check for alternative IP formats (octal, hex, decimal)
+    try:
+        # Decimal integer IP: 2130706433 → 127.0.0.1
+        if hostname.isdigit():
+            addr = ipaddress.ip_address(int(hostname))
+            if addr.is_private or addr.is_loopback or addr.is_link_local:
+                return False
+        # Hex IP: 0x7f000001
+        elif hostname.lower().startswith("0x"):
+            addr = ipaddress.ip_address(int(hostname, 16))
+            if addr.is_private or addr.is_loopback or addr.is_link_local:
+                return False
+    except (ValueError, OverflowError):
         pass
     if hostname.startswith("172."):
         try:

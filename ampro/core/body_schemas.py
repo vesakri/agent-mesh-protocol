@@ -663,6 +663,8 @@ def validate_body(body_type: str, body: dict[str, Any]) -> BaseModel | dict[str,
         pydantic.ValidationError: If the body fails schema validation for a
                                   known body_type.
     """
+    if not body_type:
+        return body  # None or empty string → pass through unvalidated
     model_cls = _BODY_TYPE_REGISTRY.get(body_type)
     if model_cls is None:
         return body

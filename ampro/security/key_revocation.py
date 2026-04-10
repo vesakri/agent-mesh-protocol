@@ -78,6 +78,10 @@ def validate_revocation_signature(body: KeyRevocationBody, public_key_bytes: byt
     The canonical message is a JSON object with fields sorted alphabetically,
     excluding the ``signature`` field itself.
 
+    Callers receiving a key.revocation message MUST call this function
+    to verify the signature before acting on the revocation. Unverified
+    revocations MUST be discarded.
+
     Args:
         body: The key revocation body containing the signature to verify.
         public_key_bytes: Raw 32-byte Ed25519 public key of the revoking agent.
@@ -115,3 +119,12 @@ def validate_revocation_signature(body: KeyRevocationBody, public_key_bytes: byt
     except Exception as exc:
         logger.warning("Revocation signature verification failed: %s", exc)
         return False
+
+
+def is_revocation_authentic(body: KeyRevocationBody, public_key_bytes: bytes) -> bool:
+    """Verify a key revocation is authentic before acting on it.
+
+    Returns True only if the signature is valid for the given public key.
+    Callers MUST call this before revoking any keys.
+    """
+    return validate_revocation_signature(body, public_key_bytes)

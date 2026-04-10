@@ -112,6 +112,11 @@ def calculate_trust_score(
     * 400-799 → ``"verified"``
     * 100-399 → ``"external"``
     * 0-99 → ``"external"``
+
+    Note: This function never produces the ``"owner"`` tier.  Owner status
+    is determined by the trust resolver (e.g. based on agent registration
+    metadata), not by the numeric score.  The ``"owner"`` tier is still
+    valid per :class:`TrustScore` and ``trust/tiers.py``.
     """
 
     factors: dict[str, int] = {

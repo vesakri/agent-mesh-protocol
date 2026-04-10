@@ -9,6 +9,7 @@ Cross-cutting concerns for POST /agent/message:
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from pydantic import BaseModel
@@ -17,6 +18,8 @@ from ampro.core.envelope import AgentMessage
 from ampro.core.body_schemas import validate_body
 from ampro.core.capabilities import CapabilityGroup, CapabilitySet
 from ampro.transport.negotiation import CapabilityNegotiator
+
+logger = logging.getLogger(__name__)
 
 
 class MessageSizeError(Exception):
@@ -43,7 +46,12 @@ def build_negotiation_headers(
     MAX_CAPABILITIES = 50
     client_groups: set[CapabilityGroup] = set()
     if client_caps_str:
-        parts = [p.strip() for p in client_caps_str.split(",")][:MAX_CAPABILITIES]
+        parts = [p.strip() for p in client_caps_str.split(",")]
+        if len(parts) > MAX_CAPABILITIES:
+            logger.warning(
+                "Capability list truncated from %d to %d", len(parts), MAX_CAPABILITIES
+            )
+            parts = parts[:MAX_CAPABILITIES]
         for cap in parts:
             try:
                 client_groups.add(CapabilityGroup(cap))

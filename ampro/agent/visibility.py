@@ -22,6 +22,7 @@ It is designed for extraction as part of `pip install agent-protocol`.
 
 from __future__ import annotations
 
+import copy
 from enum import Enum
 
 from pydantic import BaseModel, Field
@@ -128,6 +129,8 @@ _PUBLIC_STUB_KEYS = frozenset({
     "visibility",
 })
 
+_VALID_TIERS = frozenset({"internal", "owner", "verified", "external"})
+
 
 def filter_agent_json(
     full_json: dict,
@@ -136,11 +139,11 @@ def filter_agent_json(
 ) -> dict:
     """Return a filtered copy of an agent.json dict based on visibility.
 
-    The original *full_json* is never mutated.
+    The original *full_json* is never mutated (deep copy).
 
     Behaviour
     ---------
-    - **PUBLIC** → return the full dict (shallow copy).
+    - **PUBLIC** → return the full dict (deep copy).
     - **AUTHENTICATED** → full dict for internal/owner/verified callers;
       otherwise only ``protocol_version``, ``identifiers``, ``endpoint``,
       and ``visibility`` keys.
@@ -148,16 +151,21 @@ def filter_agent_json(
       else (semantically a 401).
     - **HIDDEN** → full dict for internal/owner; empty dict for everyone
       else (semantically a 404).
+
+    Unknown caller tiers receive an empty dict regardless of visibility level.
     """
+    if caller_tier not in _VALID_TIERS:
+        return {}  # Unknown tier gets nothing
+
     if visibility_level is VisibilityLevel.PUBLIC:
-        return dict(full_json)
+        return copy.deepcopy(full_json)
 
     if visibility_level is VisibilityLevel.AUTHENTICATED:
         if caller_tier in _VERIFIED_TIERS:
-            return dict(full_json)
-        return {k: v for k, v in full_json.items() if k in _PUBLIC_STUB_KEYS}
+            return copy.deepcopy(full_json)
+        return {k: copy.deepcopy(v) for k, v in full_json.items() if k in _PUBLIC_STUB_KEYS}
 
     # PRIVATE and HIDDEN — only internal/owner see anything
     if caller_tier in _INTERNAL_TIERS:
-        return dict(full_json)
+        return copy.deepcopy(full_json)
     return {}

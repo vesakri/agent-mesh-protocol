@@ -13,6 +13,7 @@ import logging
 from typing import Any
 
 from ampro.core.addressing import parse_agent_uri, AddressType
+from ampro.transport.attachment import validate_attachment_url
 
 logger = logging.getLogger(__name__)
 
@@ -89,8 +90,15 @@ async def cross_verify_identifiers(
             # and compare endpoint + public key
             if fetch_agent_json:
                 try:
-                    # NOTE: Callers should validate the URL via validate_attachment_url() before fetching
-                    remote_json = await fetch_agent_json(addr.agent_json_url())
+                    url = addr.agent_json_url()
+                    if not validate_attachment_url(url):
+                        results.append(VerificationResult(
+                            identifier=identifier,
+                            verified=False,
+                            reason=f"Unsafe URL blocked by SSRF check: {url}",
+                        ))
+                        continue
+                    remote_json = await fetch_agent_json(url)
                     if remote_json is None:
                         results.append(VerificationResult(
                             identifier=identifier,
@@ -132,8 +140,14 @@ async def cross_verify_identifiers(
             # Would resolve via registry and compare
             if fetch_agent_json:
                 try:
-                    # NOTE: Callers should validate the URL via validate_attachment_url() before fetching
                     registry_url = addr.registry_resolve_url()
+                    if not validate_attachment_url(registry_url):
+                        results.append(VerificationResult(
+                            identifier=identifier,
+                            verified=False,
+                            reason=f"Unsafe registry URL blocked by SSRF check: {registry_url}",
+                        ))
+                        continue
                     remote_data = await fetch_agent_json(registry_url)
                     if remote_data is None:
                         results.append(VerificationResult(

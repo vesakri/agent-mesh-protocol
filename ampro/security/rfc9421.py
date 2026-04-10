@@ -81,8 +81,15 @@ def create_signature_base(
     Returns:
         The signature base string ready for signing.
     """
+    # Reject all forms of newlines and line separators
     if "\n" in url or "\r" in url:
         raise ValueError("URL must not contain newline characters")
+    if "%0a" in url.lower() or "%0d" in url.lower():
+        raise ValueError("URL must not contain encoded newline characters")
+    if "\u2028" in url or "\u2029" in url:
+        raise ValueError("URL must not contain Unicode line separators")
+    if "\x00" in url:
+        raise ValueError("URL must not contain null bytes")
 
     if created is None:
         created = int(time.time())

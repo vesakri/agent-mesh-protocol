@@ -229,6 +229,10 @@ def validate_chain(
     now = datetime.now(timezone.utc)
 
     for i, link in enumerate(chain.links):
+        # --- 0. Self-delegation check ---
+        if link.delegator == link.delegate:
+            return False, f"link {i}: self-delegation not allowed ({link.delegator})"
+
         # --- 1. Public key lookup ---
         pub_bytes = public_keys.get(link.delegator)
         if pub_bytes is None:

@@ -46,6 +46,7 @@ class StreamBus:
         self._ring: deque[StreamingEvent] = deque(maxlen=_RING_BUFFER_CAPACITY)
         self._seq: int = 0  # monotonically increasing event id
         self._closed: bool = False
+        self._dropped_count: int = 0
 
     # ----- writing side -----
 
@@ -60,7 +61,7 @@ class StreamBus:
         try:
             self._queue.put_nowait(event)
         except asyncio.QueueFull:
-            pass  # Drop event if consumer is too slow
+            self._dropped_count += 1  # Track drops so consumers can detect gaps
 
     def close(self) -> None:
         """Emit a DONE event (if not already closed) and signal end of stream."""
@@ -86,6 +87,11 @@ class StreamBus:
     @property
     def last_event_id(self) -> int:
         return self._seq
+
+    @property
+    def dropped_count(self) -> int:
+        """Number of events dropped because the consumer queue was full."""
+        return self._dropped_count
 
     # ----- reading side -----
 
