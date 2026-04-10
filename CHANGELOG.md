@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.1.9] - 2026-04-10
+
+### Added
+- `EncryptedBody` model + `CONTENT_ENCRYPTION_HEADER` — end-to-end JWE encryption
+- `Content-Encryption` header
+- `trust.proof` body type (`TrustProofBody`) — zero-knowledge trust proofs
+- `CertificationLink` model + `certifications` array in `AgentJson`
+
+### Changed
+- Standard headers grew from 50 to 51
+- Body type registry grew from 48 to 49
+- Exports grew from 184 to 188
+
 ## [0.1.8] - 2026-04-10
 
 ### Added

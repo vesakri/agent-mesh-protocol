@@ -74,6 +74,8 @@ STANDARD_HEADERS = frozenset({
     "Data-Residency",
     # v0.1.7 — Streaming at Scale
     "Stream-Channel",
+    # v0.1.9 — Hardening
+    "Content-Encryption",
 })
 
 

@@ -51,5 +51,10 @@ class AgentJson(BaseModel):
         default=None,
         description="agent:// URI this agent has migrated to",
     )
+    # v0.1.9 — Certifications
+    certifications: list[dict[str, Any]] = Field(
+        default_factory=list,
+        description="Compliance certifications (SOC2, ISO27001, etc.)",
+    )
 
     model_config = {"extra": "allow"}

@@ -195,11 +195,20 @@ from ampro.identity_migration import IdentityMigrationBody
 # --- Audit attestation ---
 from ampro.audit_attestation import AuditAttestationBody
 
+# --- Encryption ---
+from ampro.encryption import EncryptedBody, CONTENT_ENCRYPTION_HEADER
+
+# --- Trust proof ---
+from ampro.trust_proof import TrustProofBody
+
+# --- Certifications ---
+from ampro.certifications import CertificationLink
+
 # --- Negotiation & versioning ---
 from ampro.negotiation import NegotiationResult, CapabilityNegotiator
 from ampro.versioning import SUPPORTED_VERSIONS, CURRENT_VERSION, check_version, negotiate_version
 
-__version__ = "0.1.8"
+__version__ = "0.1.9"
 
 __all__ = [
     # Core
@@ -317,6 +326,12 @@ __all__ = [
     "IdentityMigrationBody",
     # Audit attestation
     "AuditAttestationBody",
+    # Encryption
+    "EncryptedBody", "CONTENT_ENCRYPTION_HEADER",
+    # Trust proof
+    "TrustProofBody",
+    # Certifications
+    "CertificationLink",
     # Negotiation & versioning
     "NegotiationResult", "CapabilityNegotiator",
     "SUPPORTED_VERSIONS", "CURRENT_VERSION", "check_version", "negotiate_version",

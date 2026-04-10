@@ -1,0 +1,149 @@
+{
+  "description": "Test vectors for EncryptedBody and Content-Encryption header (AMP v0.1.9). Covers A256GCM and A128CBC-HS256 algorithms, envelope wrapping, and invalid payloads.",
+  "vectors": [
+    {
+      "description": "Encrypted envelope — A256GCM algorithm",
+      "body_type": "message",
+      "valid": true,
+      "envelope": {
+        "sender": "agent://requester.example.com",
+        "recipient": "agent://executor.example.com",
+        "body_type": "message",
+        "headers": {
+          "Protocol-Version": "0.1.9",
+          "Session-Id": "sess-enc-001",
+          "Content-Encryption": "A256GCM"
+        },
+        "body": {
+          "ciphertext": "dGhpcyBpcyBhIHNpbXVsYXRlZCBjaXBoZXJ0ZXh0IGJsb2I=",
+          "iv": "AAAAAAAAAAAAAAAAAAAAAA==",
+          "tag": "kMbTHlCzQ3GP9v7NrF2xYQ==",
+          "algorithm": "A256GCM",
+          "recipient_key_id": "key-executor-2026-04"
+        }
+      },
+      "note": "When Content-Encryption header is present, body contains EncryptedBody instead of the typed body payload."
+    },
+    {
+      "description": "Encrypted envelope — A128CBC-HS256 algorithm",
+      "body_type": "task.create",
+      "valid": true,
+      "envelope": {
+        "sender": "agent://coordinator.example.com",
+        "recipient": "agent://worker.example.com",
+        "body_type": "task.create",
+        "headers": {
+          "Protocol-Version": "0.1.9",
+          "Session-Id": "sess-enc-002",
+          "Content-Encryption": "A128CBC-HS256"
+        },
+        "body": {
+          "ciphertext": "YW5vdGhlciBzaW11bGF0ZWQgY2lwaGVydGV4dCBwYXlsb2Fk",
+          "iv": "AQEBAQEBAQEBAQEBAQEBAQ==",
+          "tag": "xYz3aBcDeF1gHiJkLmNoPq==",
+          "algorithm": "A128CBC-HS256",
+          "recipient_key_id": "key-worker-2026-03"
+        }
+      },
+      "note": "A128CBC-HS256 uses AES-CBC with HMAC-SHA-256 for authentication."
+    },
+    {
+      "description": "EncryptedBody standalone — A256GCM with long ciphertext",
+      "valid": true,
+      "encrypted_body": {
+        "ciphertext": "U2ltdWxhdGVkIGxvbmcgY2lwaGVydGV4dCBibG9iIGZvciB0ZXN0aW5nIHB1cnBvc2VzIG9ubHk=",
+        "iv": "AgICAgICAgICAgICAgICAg==",
+        "tag": "pQrStUvWxYz0123456789A==",
+        "algorithm": "A256GCM",
+        "recipient_key_id": "key-recipient-long-001"
+      }
+    },
+    {
+      "description": "EncryptedBody standalone — A128CBC-HS256",
+      "valid": true,
+      "encrypted_body": {
+        "ciphertext": "c2hvcnQgcGF5bG9hZA==",
+        "iv": "AwMDAwMDAwMDAwMDAwMDAw==",
+        "tag": "AbCdEfGhIjKlMnOpQrStUv==",
+        "algorithm": "A128CBC-HS256",
+        "recipient_key_id": "key-recipient-cbc-002"
+      }
+    },
+    {
+      "description": "Decrypted envelope — plaintext body after decryption",
+      "body_type": "task.create",
+      "valid": true,
+      "envelope": {
+        "sender": "agent://requester.example.com",
+        "recipient": "agent://executor.example.com",
+        "body_type": "task.create",
+        "headers": {
+          "Protocol-Version": "0.1.9",
+          "Session-Id": "sess-enc-001"
+        },
+        "body": {
+          "description": "Find the nearest available courier",
+          "priority": "high",
+          "tools_required": ["routing", "dispatch"],
+          "timeout_seconds": 120
+        }
+      },
+      "note": "After decryption, the Content-Encryption header is removed and the body contains the original typed payload."
+    },
+    {
+      "description": "Invalid EncryptedBody — missing ciphertext (required)",
+      "valid": false,
+      "expected_error": "ciphertext",
+      "encrypted_body": {
+        "iv": "AAAAAAAAAAAAAAAAAAAAAA==",
+        "tag": "kMbTHlCzQ3GP9v7NrF2xYQ==",
+        "algorithm": "A256GCM",
+        "recipient_key_id": "key-executor-2026-04"
+      }
+    },
+    {
+      "description": "Invalid EncryptedBody — missing iv (required)",
+      "valid": false,
+      "expected_error": "iv",
+      "encrypted_body": {
+        "ciphertext": "dGhpcyBpcyBhIHNpbXVsYXRlZCBjaXBoZXJ0ZXh0IGJsb2I=",
+        "tag": "kMbTHlCzQ3GP9v7NrF2xYQ==",
+        "algorithm": "A256GCM",
+        "recipient_key_id": "key-executor-2026-04"
+      }
+    },
+    {
+      "description": "Invalid EncryptedBody — missing tag (required)",
+      "valid": false,
+      "expected_error": "tag",
+      "encrypted_body": {
+        "ciphertext": "dGhpcyBpcyBhIHNpbXVsYXRlZCBjaXBoZXJ0ZXh0IGJsb2I=",
+        "iv": "AAAAAAAAAAAAAAAAAAAAAA==",
+        "algorithm": "A256GCM",
+        "recipient_key_id": "key-executor-2026-04"
+      }
+    },
+    {
+      "description": "Invalid EncryptedBody — missing algorithm (required)",
+      "valid": false,
+      "expected_error": "algorithm",
+      "encrypted_body": {
+        "ciphertext": "dGhpcyBpcyBhIHNpbXVsYXRlZCBjaXBoZXJ0ZXh0IGJsb2I=",
+        "iv": "AAAAAAAAAAAAAAAAAAAAAA==",
+        "tag": "kMbTHlCzQ3GP9v7NrF2xYQ==",
+        "recipient_key_id": "key-executor-2026-04"
+      }
+    },
+    {
+      "description": "Invalid EncryptedBody — missing recipient_key_id (required)",
+      "valid": false,
+      "expected_error": "recipient_key_id",
+      "encrypted_body": {
+        "ciphertext": "dGhpcyBpcyBhIHNpbXVsYXRlZCBjaXBoZXJ0ZXh0IGJsb2I=",
+        "iv": "AAAAAAAAAAAAAAAAAAAAAA==",
+        "tag": "kMbTHlCzQ3GP9v7NrF2xYQ==",
+        "algorithm": "A256GCM"
+      }
+    }
+  ]
+}

@@ -1,0 +1,152 @@
+{
+  "description": "Test vectors for CertificationLink in agent.json (AMP v0.1.9). Covers SOC2, ISO27001, multiple certifications, empty list, and invalid payloads.",
+  "vectors": [
+    {
+      "description": "agent.json with SOC2 + ISO27001 certifications",
+      "test_type": "agent_json",
+      "valid": true,
+      "agent_json": {
+        "protocol_version": "0.1.9",
+        "identifiers": ["agent://service.example.com"],
+        "endpoint": "https://service.example.com/agent/message",
+        "status": "active",
+        "certifications": [
+          {
+            "standard": "SOC2",
+            "url": "https://auditor.example.com/certs/service-soc2-2026.pdf",
+            "verified_by": "agent://auditor.example.com",
+            "expires_at": "2027-04-09T00:00:00Z"
+          },
+          {
+            "standard": "ISO27001",
+            "url": "https://auditor.example.com/certs/service-iso27001-2026.pdf",
+            "verified_by": "agent://auditor.example.com",
+            "expires_at": "2027-06-01T00:00:00Z"
+          }
+        ],
+        "capabilities": {
+          "groups": ["task", "data"],
+          "level": 3
+        }
+      },
+      "note": "Agent advertising both SOC2 and ISO27001 certifications. Callers can inspect these before delegating sensitive work."
+    },
+    {
+      "description": "agent.json with single GDPR certification",
+      "test_type": "agent_json",
+      "valid": true,
+      "agent_json": {
+        "protocol_version": "0.1.9",
+        "identifiers": ["agent://eu-service.example.com"],
+        "endpoint": "https://eu-service.example.com/agent/message",
+        "status": "active",
+        "certifications": [
+          {
+            "standard": "GDPR",
+            "url": "https://dpa.example.eu/certs/eu-service-gdpr-2026.pdf",
+            "verified_by": "agent://dpa.example.eu",
+            "expires_at": "2027-01-15T00:00:00Z"
+          }
+        ],
+        "capabilities": {
+          "groups": ["task"],
+          "level": 2
+        }
+      },
+      "note": "EU-based agent with GDPR compliance certification."
+    },
+    {
+      "description": "agent.json with empty certifications array",
+      "test_type": "agent_json",
+      "valid": true,
+      "agent_json": {
+        "protocol_version": "0.1.9",
+        "identifiers": ["agent://basic.example.com"],
+        "endpoint": "https://basic.example.com/agent/message",
+        "status": "active",
+        "certifications": [],
+        "capabilities": {
+          "groups": ["task"],
+          "level": 1
+        }
+      },
+      "note": "Agent with no certifications. The certifications field is present but empty."
+    },
+    {
+      "description": "agent.json without certifications field (defaults to empty list)",
+      "test_type": "agent_json",
+      "valid": true,
+      "agent_json": {
+        "protocol_version": "0.1.9",
+        "identifiers": ["agent://minimal.example.com"],
+        "endpoint": "https://minimal.example.com/agent/message",
+        "status": "active",
+        "capabilities": {
+          "groups": [],
+          "level": 0
+        }
+      },
+      "note": "Minimal agent.json omitting certifications entirely. The field defaults to an empty list."
+    },
+    {
+      "description": "Valid CertificationLink — SOC2 standalone",
+      "valid": true,
+      "certification": {
+        "standard": "SOC2",
+        "url": "https://auditor.example.com/certs/agent-soc2-2026.pdf",
+        "verified_by": "agent://auditor.example.com",
+        "expires_at": "2027-04-09T00:00:00Z"
+      }
+    },
+    {
+      "description": "Valid CertificationLink — ISO27001 standalone",
+      "valid": true,
+      "certification": {
+        "standard": "ISO27001",
+        "url": "https://certbody.example.com/certs/agent-iso27001-2026.pdf",
+        "verified_by": "agent://certbody.example.com",
+        "expires_at": "2027-12-31T23:59:59Z"
+      }
+    },
+    {
+      "description": "Invalid CertificationLink — missing standard (required)",
+      "valid": false,
+      "expected_error": "standard",
+      "certification": {
+        "url": "https://auditor.example.com/certs/agent-soc2-2026.pdf",
+        "verified_by": "agent://auditor.example.com",
+        "expires_at": "2027-04-09T00:00:00Z"
+      }
+    },
+    {
+      "description": "Invalid CertificationLink — missing url (required)",
+      "valid": false,
+      "expected_error": "url",
+      "certification": {
+        "standard": "SOC2",
+        "verified_by": "agent://auditor.example.com",
+        "expires_at": "2027-04-09T00:00:00Z"
+      }
+    },
+    {
+      "description": "Invalid CertificationLink — missing verified_by (required)",
+      "valid": false,
+      "expected_error": "verified_by",
+      "certification": {
+        "standard": "SOC2",
+        "url": "https://auditor.example.com/certs/agent-soc2-2026.pdf",
+        "expires_at": "2027-04-09T00:00:00Z"
+      }
+    },
+    {
+      "description": "Invalid CertificationLink — missing expires_at (required)",
+      "valid": false,
+      "expected_error": "expires_at",
+      "certification": {
+        "standard": "SOC2",
+        "url": "https://auditor.example.com/certs/agent-soc2-2026.pdf",
+        "verified_by": "agent://auditor.example.com"
+      }
+    }
+  ]
+}

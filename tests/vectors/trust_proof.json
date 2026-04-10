@@ -1,0 +1,139 @@
+{
+  "description": "Test vectors for TrustProofBody (body.type = trust.proof) (AMP v0.1.9). Covers ZKP proofs with different claims and proof types, envelope wrapping, and invalid payloads.",
+  "vectors": [
+    {
+      "description": "ZKP proof — score_above_500 claim",
+      "body_type": "trust.proof",
+      "valid": true,
+      "body": {
+        "agent_id": "agent://prover.example.com",
+        "claim": "score_above_500",
+        "proof_type": "zkp",
+        "proof": "eyJhbGciOiJ6a3AiLCJ0eXAiOiJ0cnVzdC1wcm9vZiJ9.eyJjbGFpbSI6InNjb3JlX2Fib3ZlXzUwMCIsInRzIjoiMjAyNi0wNC0wOVQxMDowMDowMFoifQ.ZKP_PROOF_BYTES",
+        "verifier_key_id": "key-verifier-2026-04"
+      },
+      "note": "Proves trust score >= 500 without revealing the exact score."
+    },
+    {
+      "description": "ZKP proof — score_above_800 claim (higher threshold)",
+      "body_type": "trust.proof",
+      "valid": true,
+      "body": {
+        "agent_id": "agent://prover.example.com",
+        "claim": "score_above_800",
+        "proof_type": "zkp",
+        "proof": "eyJhbGciOiJ6a3AiLCJ0eXAiOiJ0cnVzdC1wcm9vZiJ9.eyJjbGFpbSI6InNjb3JlX2Fib3ZlXzgwMCIsInRzIjoiMjAyNi0wNC0wOVQxMDowNTowMFoifQ.ZKP_PROOF_BYTES_800",
+        "verifier_key_id": "key-verifier-2026-04"
+      },
+      "note": "Higher threshold claim for premium operations."
+    },
+    {
+      "description": "Merkle proof — tier_at_least_verified claim",
+      "body_type": "trust.proof",
+      "valid": true,
+      "body": {
+        "agent_id": "agent://worker.example.com",
+        "claim": "tier_at_least_verified",
+        "proof_type": "merkle",
+        "proof": "bWVya2xlLXByb29mLWhhc2gtY2hhaW4tYWJjZGVmMTIzNDU2Nzg5MA==",
+        "verifier_key_id": "key-registry-2026-04"
+      },
+      "note": "Merkle proof showing agent is at least 'verified' tier."
+    },
+    {
+      "description": "Attestation proof — compliance_passed claim",
+      "body_type": "trust.proof",
+      "valid": true,
+      "body": {
+        "agent_id": "agent://service.example.com",
+        "claim": "compliance_passed",
+        "proof_type": "attestation",
+        "proof": "eyJhdHRlc3RlciI6ImF1ZGl0b3IuZXhhbXBsZS5jb20iLCJwYXNzZWQiOnRydWV9.ATTESTATION_SIG",
+        "verifier_key_id": "key-auditor-2026-04"
+      },
+      "note": "Third-party attestation that agent passed compliance review."
+    },
+    {
+      "description": "Trust proof wrapped in AgentMessage envelope",
+      "body_type": "trust.proof",
+      "valid": true,
+      "envelope": {
+        "sender": "agent://prover.example.com",
+        "recipient": "agent://verifier.example.com",
+        "body_type": "trust.proof",
+        "headers": {
+          "Protocol-Version": "0.1.9",
+          "Session-Id": "sess-proof-001"
+        },
+        "body": {
+          "agent_id": "agent://prover.example.com",
+          "claim": "score_above_500",
+          "proof_type": "zkp",
+          "proof": "eyJhbGciOiJ6a3AifQ.PROOF",
+          "verifier_key_id": "key-verifier-2026-04"
+        }
+      },
+      "note": "TrustProofBody inside a full AgentMessage envelope."
+    },
+    {
+      "description": "Invalid trust proof — missing agent_id (required)",
+      "body_type": "trust.proof",
+      "valid": false,
+      "expected_error": "agent_id",
+      "body": {
+        "claim": "score_above_500",
+        "proof_type": "zkp",
+        "proof": "SOME_PROOF",
+        "verifier_key_id": "key-verifier-2026-04"
+      }
+    },
+    {
+      "description": "Invalid trust proof — missing claim (required)",
+      "body_type": "trust.proof",
+      "valid": false,
+      "expected_error": "claim",
+      "body": {
+        "agent_id": "agent://prover.example.com",
+        "proof_type": "zkp",
+        "proof": "SOME_PROOF",
+        "verifier_key_id": "key-verifier-2026-04"
+      }
+    },
+    {
+      "description": "Invalid trust proof — missing proof_type (required)",
+      "body_type": "trust.proof",
+      "valid": false,
+      "expected_error": "proof_type",
+      "body": {
+        "agent_id": "agent://prover.example.com",
+        "claim": "score_above_500",
+        "proof": "SOME_PROOF",
+        "verifier_key_id": "key-verifier-2026-04"
+      }
+    },
+    {
+      "description": "Invalid trust proof — missing proof (required)",
+      "body_type": "trust.proof",
+      "valid": false,
+      "expected_error": "proof",
+      "body": {
+        "agent_id": "agent://prover.example.com",
+        "claim": "score_above_500",
+        "proof_type": "zkp",
+        "verifier_key_id": "key-verifier-2026-04"
+      }
+    },
+    {
+      "description": "Invalid trust proof — missing verifier_key_id (required)",
+      "body_type": "trust.proof",
+      "valid": false,
+      "expected_error": "verifier_key_id",
+      "body": {
+        "agent_id": "agent://prover.example.com",
+        "claim": "score_above_500",
+        "proof_type": "zkp",
+        "proof": "SOME_PROOF"
+      }
+    }
+  ]
+}

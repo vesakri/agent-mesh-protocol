@@ -633,6 +633,17 @@ def _register_v018_body_types() -> None:
 _register_v018_body_types()
 
 
+def _register_v019_body_types() -> None:
+    """Register v0.1.9 body types: trust proof."""
+    try:
+        from ampro.trust_proof import TrustProofBody
+        _BODY_TYPE_REGISTRY["trust.proof"] = TrustProofBody
+    except ImportError:
+        pass
+
+_register_v019_body_types()
+
+
 def validate_body(body_type: str, body: dict[str, Any]) -> BaseModel | dict[str, Any]:
     """Validate a body dict against its body_type schema.
 

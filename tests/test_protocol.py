@@ -7,7 +7,7 @@ from pydantic import ValidationError
 class TestImports:
     def test_version(self):
         import ampro
-        assert ampro.__version__ == "0.1.8"
+        assert ampro.__version__ == "0.1.9"
 
     def test_all_exports(self):
         import ampro
@@ -56,7 +56,7 @@ class TestEnvelope:
 
     def test_headers_count(self):
         from ampro import STANDARD_HEADERS
-        assert len(STANDARD_HEADERS) == 50
+        assert len(STANDARD_HEADERS) == 51
 
 
 class TestBodySchemas:
@@ -266,7 +266,7 @@ class TestV011Imports:
 
     def test_version_bumped(self):
         import ampro
-        assert ampro.__version__ == "0.1.8"
+        assert ampro.__version__ == "0.1.9"
 
     def test_handshake_imports(self):
         from ampro import (
@@ -328,7 +328,7 @@ class TestV012Imports:
 
     def test_version_is_016(self):
         import ampro
-        assert ampro.__version__ == "0.1.8"
+        assert ampro.__version__ == "0.1.9"
 
     def test_key_revocation_imports(self):
         from ampro import RevocationReason, KeyRevocationBody
@@ -722,3 +722,47 @@ class TestV018Imports:
     def test_all_exports_v018_count(self):
         import ampro
         assert len(ampro.__all__) >= 184
+
+
+class TestV019Imports:
+    """Verify all v0.1.9 types are importable from ampro."""
+
+    def test_encrypted_body_import(self):
+        from ampro import EncryptedBody
+        body = EncryptedBody(
+            ciphertext="ct",
+            iv="iv",
+            tag="tg",
+            algorithm="A256GCM",
+            recipient_key_id="rk-1",
+        )
+        assert body.algorithm == "A256GCM"
+
+    def test_content_encryption_header_import(self):
+        from ampro import CONTENT_ENCRYPTION_HEADER
+        assert CONTENT_ENCRYPTION_HEADER == "Content-Encryption"
+
+    def test_trust_proof_body_import(self):
+        from ampro import TrustProofBody
+        body = TrustProofBody(
+            agent_id="agent://prover.com",
+            claim="score_above_500",
+            proof_type="zkp",
+            proof="proof-data",
+            verifier_key_id="vk-1",
+        )
+        assert body.claim == "score_above_500"
+
+    def test_certification_link_import(self):
+        from ampro import CertificationLink
+        link = CertificationLink(
+            standard="SOC2",
+            url="https://example.com/soc2.pdf",
+            verified_by="agent://auditor.com",
+            expires_at="2027-01-01T00:00:00Z",
+        )
+        assert link.standard == "SOC2"
+
+    def test_all_exports_v019_count(self):
+        import ampro
+        assert len(ampro.__all__) >= 188
