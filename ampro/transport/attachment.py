@@ -34,7 +34,7 @@ class Attachment(BaseModel):
 
 
 _PRIVATE_PREFIXES = ("127.", "10.", "192.168.", "169.254.", "0.")
-_PRIVATE_HOSTS = {"localhost", "localhost.localdomain", "[::1]"}
+_PRIVATE_HOSTS = {"localhost", "localhost.localdomain", "[::1]", "::1"}
 
 
 def validate_attachment_url(url: str) -> bool:
@@ -43,12 +43,16 @@ def validate_attachment_url(url: str) -> bool:
         return False
     parsed = urlparse(url)
     hostname = parsed.hostname or ""
+    if not hostname:
+        return False  # Reject URLs with no valid hostname
     if hostname in _PRIVATE_HOSTS:
         return False
     if any(hostname.startswith(p) for p in _PRIVATE_PREFIXES):
         return False
+    # Strip IPv6 zone ID (e.g. "fe80::1%eth0" → "fe80::1") to prevent bypass
+    clean_hostname = hostname.split("%")[0]
     try:
-        addr = ipaddress.ip_address(hostname)
+        addr = ipaddress.ip_address(clean_hostname)
         if addr.is_private or addr.is_loopback or addr.is_link_local:
             return False
     except ValueError:

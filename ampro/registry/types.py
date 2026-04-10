@@ -15,7 +15,10 @@ class RegistryResolution(BaseModel):
     """Response from GET /agent/resolve/{slug}."""
 
     agent_uri: str = Field(description="Canonical agent:// URI")
-    endpoint: str = Field(description="HTTPS endpoint for /agent/message")
+    endpoint: str = Field(
+        description="HTTPS endpoint for /agent/message. "
+        "Consumers MUST validate this is HTTPS before connecting.",
+    )
     agent_json_url: str = Field(default="", description="URL to fetch agent.json")
     ttl_seconds: int = Field(default=3600, ge=1)
     # v0.1.3 — Agent lifecycle

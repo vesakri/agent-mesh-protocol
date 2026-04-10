@@ -37,7 +37,11 @@ class ConcurrencyLimiter:
         return True
 
     def release(self, sender: str) -> None:
-        """Release a task slot when task completes."""
+        """Release a task slot when task completes.
+
+        WARNING: release() must be called after task completion. Consider using
+        a context manager or timeout mechanism to prevent leaked slots.
+        """
         count = self._active.get(sender, 0)
         if count <= 1:
             self._active.pop(sender, None)

@@ -81,6 +81,9 @@ def create_signature_base(
     Returns:
         The signature base string ready for signing.
     """
+    if "\n" in url or "\r" in url:
+        raise ValueError("URL must not contain newline characters")
+
     if created is None:
         created = int(time.time())
 

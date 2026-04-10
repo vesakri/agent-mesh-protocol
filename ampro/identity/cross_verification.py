@@ -68,11 +68,12 @@ async def cross_verify_identifiers(
             # For did:web, would need DID resolution
             if addr.did and addr.did.startswith("did:key:"):
                 # did:key encodes the public key — cross-verify requires
-                # comparing it against expected_public_key
+                # extracting the multicodec-encoded key and comparing it
+                # against expected_public_key. Not yet implemented.
                 results.append(VerificationResult(
                     identifier=identifier,
-                    verified=True,  # DID:key is self-verifying
-                    reason="did:key is self-verifying (key IS the identifier)",
+                    verified=False,
+                    reason="DID key verification not yet implemented",
                 ))
             else:
                 # did:web requires resolution — not yet implemented
@@ -88,6 +89,7 @@ async def cross_verify_identifiers(
             # and compare endpoint + public key
             if fetch_agent_json:
                 try:
+                    # NOTE: Callers should validate the URL via validate_attachment_url() before fetching
                     remote_json = await fetch_agent_json(addr.agent_json_url())
                     if remote_json is None:
                         results.append(VerificationResult(
@@ -130,6 +132,7 @@ async def cross_verify_identifiers(
             # Would resolve via registry and compare
             if fetch_agent_json:
                 try:
+                    # NOTE: Callers should validate the URL via validate_attachment_url() before fetching
                     registry_url = addr.registry_resolve_url()
                     remote_data = await fetch_agent_json(registry_url)
                     if remote_data is None:

@@ -9,8 +9,11 @@ Spec ref: Section 3.8
 
 from __future__ import annotations
 
+import logging
 import time
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 
 class JWKSCache:
@@ -38,8 +41,18 @@ class JWKSCache:
 
     @staticmethod
     def is_key_revoked(jwks: dict[str, Any], kid: str) -> bool:
+        """Check if a key ID appears in the JWKS revocation list.
+
+        NOTE: The ``revoked`` field is a custom extension to the JWKS format
+        (RFC 7517 does not define key revocation). This is an AMP-specific
+        convention where the JWKS response includes a top-level ``revoked``
+        array of ``{"kid": "..."}`` objects.
+        """
         revoked = jwks.get("revoked", [])
-        return any(r.get("kid") == kid for r in revoked)
+        if not isinstance(revoked, list):
+            logger.warning("JWKS 'revoked' field is not a list — ignoring")
+            return False
+        return any(r.get("kid") == kid for r in revoked if isinstance(r, dict))
 
     @staticmethod
     def get_non_expired_keys(jwks: dict[str, Any], kid: str) -> list[dict[str, Any]]:

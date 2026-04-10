@@ -49,7 +49,8 @@ class AgentJson(BaseModel):
     # v0.1.8 — Identity migration
     moved_to: str | None = Field(
         default=None,
-        description="agent:// URI this agent has migrated to",
+        description="agent:// URI this agent has migrated to. "
+        "Consumers MUST validate this is a valid agent:// URI before following.",
     )
     # v0.1.9 — Certifications
     certifications: list[dict[str, Any]] = Field(

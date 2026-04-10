@@ -44,6 +44,7 @@ class SessionConfig(BaseModel):
     max_messages: int = Field(
         default=100,
         ge=1,
+        le=10000,
         description="Maximum number of messages allowed in this session",
     )
     context_window: int = Field(

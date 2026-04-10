@@ -54,7 +54,8 @@ class TrustTier(str, Enum):
         return self in (TrustTier.INTERNAL, TrustTier.OWNER, TrustTier.VERIFIED)
 
 
-# Clock skew tolerance for cross-platform timestamp comparisons (Section 12.1)
+# Clock skew tolerance for cross-platform timestamp comparisons (Section 12.1).
+# 60 seconds is intentional for cross-region deployments. Reduce to 10-30s for high-security contexts.
 CLOCK_SKEW_SECONDS: int = 60
 
 

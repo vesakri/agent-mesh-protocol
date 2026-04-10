@@ -23,7 +23,13 @@ class ContentClassification(str, Enum):
     CONFIDENTIAL = "confidential"
 
 
-class JurisdictionInfo(BaseModel):
+class ComplianceJurisdictionInfo(BaseModel):
+    """Extended jurisdiction info for compliance declarations (GDPR, data processing, PII).
+
+    Not to be confused with ``ampro.compliance.jurisdiction.JurisdictionInfo``
+    which is a lightweight model for cross-border conflict detection.
+    """
+
     jurisdiction: str = Field(description="Primary jurisdiction (ISO 3166-1 alpha-2)")
     additional_jurisdictions: list[str] = Field(default_factory=list, description="Additional jurisdictions that apply (ISO 3166-1 alpha-2 codes)")
     data_processing_agreement_url: str | None = Field(default=None, description="URL to the data processing agreement, if any")

@@ -1,5 +1,44 @@
 # Changelog
 
+## [0.2.1] - 2026-04-10
+
+### Security Fixes
+- DID proof now fail-closed (returns EXTERNAL instead of VERIFIED without signature verification)
+- Session binding rejects empty shared_secret
+- HMAC nonce concatenation uses null byte delimiter to prevent collisions
+- Key revocation now includes `validate_revocation_signature()` helper
+- JWKS revocation check has defensive type validation
+- Trust resolver logs at WARNING on failure (was DEBUG)
+- API key validation uses constant-time comparison (hmac.compare_digest)
+- Cross-verification did:key returns fail-closed until key extraction implemented
+- Bearer token whitespace-only now correctly rejected
+- DID base64 payload has length limit (10KB)
+- RFC 9421 rejects URLs with newlines (signature base injection)
+- IPv6 zone ID stripped before SSRF validation
+- IPv6 loopback ::1 added to private hosts
+- Empty hostname URLs now rejected
+- Chain budget regex pre-compiled with non-backtracking pattern
+
+### DoS Protection
+- Dedup store bounded to 100K entries with LRU eviction
+- Nonce tracker bounded to 100K entries with LRU eviction
+- Rate limiter bounded to 100K senders with stale eviction
+- Sender tracker bounded to 100K senders with eviction
+- Stream bus bounded to 10K active streams
+- Streaming queue bounded to 1K events (drops on overflow)
+- Scope narrowing limited to 100 scopes per link
+- Capability string parsing limited to 50 entries
+- HandshakeStateMachine now thread-safe (threading.Lock)
+- ApiKeyStore.is_blocked() race condition fixed (pop vs del)
+
+### Code Quality
+- Duplicate JurisdictionInfo renamed to ComplianceJurisdictionInfo in compliance/types.py
+- TrustScore.tier validated against valid tier values
+- TrustScore.factors validated (0-200 per factor)
+- SessionConfig.max_messages capped at 10,000
+- All 11 subpackage __init__.py files now re-export their contents with __all__
+- Trust tier field descriptions updated across handshake and upgrade modules
+
 ## [0.2.0] - 2026-04-10
 
 ### Changed (BREAKING)

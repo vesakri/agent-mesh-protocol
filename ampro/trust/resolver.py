@@ -30,6 +30,9 @@ async def resolve_trust_tier(
     target_org_id: str | None,
     client_ip: str | None = None,
 ) -> TrustTier:
+    # Intentional: same org_id → INTERNAL trust. This is by design —
+    # agents within the same organization skip external auth checks.
+    # The org_id values are server-side derived, not user-supplied.
     if caller_org_id and target_org_id and caller_org_id == target_org_id:
         return TrustTier.INTERNAL
 
@@ -67,10 +70,13 @@ async def _resolve_jwt(token: str, caller_org_id: str | None, target_org_id: str
             target_org_id=target_org_id,
         )
     except ImportError:
-        logger.debug("JWT resolver not available — install a platform-specific jwt_trust_resolver")
+        # Fail-open: no JWT resolver installed → EXTERNAL (lowest trust).
+        # This is acceptable because EXTERNAL triggers all safety checks.
+        logger.warning("JWT resolver not available — install a platform-specific jwt_trust_resolver")
         return TrustTier.EXTERNAL
     except Exception as exc:
-        logger.debug("JWT resolution failed: %s", exc)
+        # Fail-open: resolution error → EXTERNAL (lowest trust).
+        logger.warning("JWT resolution failed: %s", exc)
         return TrustTier.EXTERNAL
 
 
@@ -93,6 +99,9 @@ async def _resolve_did(token: str) -> TrustTier:
 
         # Decode payload
         payload_b64 = parts[1]
+        if len(payload_b64) > 10000:
+            logger.warning("DID proof payload too large (%d bytes)", len(payload_b64))
+            return TrustTier.EXTERNAL
         # Add padding
         remainder = len(payload_b64) % 4
         if remainder:
@@ -105,10 +114,16 @@ async def _resolve_did(token: str) -> TrustTier:
             logger.debug("DID proof missing 'did' field")
             return TrustTier.EXTERNAL
 
-        # did:key is self-verifying — the public key is embedded in the DID
+        # did:key is self-verifying — the public key is embedded in the DID.
+        # However, full Ed25519 signature verification over the JWT proof
+        # is not yet implemented (requires key material extraction from
+        # multicodec-encoded did:key). Fail closed: treat as EXTERNAL.
         if did.startswith("did:key:"):
-            logger.info("DID auth verified via did:key: %s", did[:40])
-            return TrustTier.VERIFIED
+            logger.warning(
+                "DID signature verification not implemented — treating as EXTERNAL: %s",
+                did[:40],
+            )
+            return TrustTier.EXTERNAL
 
         # did:web requires fetching DID document — not yet implemented
         if did.startswith("did:web:"):

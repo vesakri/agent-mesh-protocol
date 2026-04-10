@@ -28,11 +28,13 @@ class SenderTracker:
         failure_window: int = 300,
         throttle_duration: int = 900,
         block_duration: int = 3600,
+        max_senders: int = 100_000,
     ):
         self._threshold = failure_threshold
         self._window = failure_window
         self._throttle_dur = throttle_duration
         self._block_dur = block_duration
+        self._max_senders = max_senders
         self._failures: dict[str, list[float]] = {}
         self._state: dict[str, tuple[SenderState, float]] = {}
 
@@ -68,7 +70,22 @@ class SenderTracker:
             self._state[sender] = (SenderState.THROTTLED, now + self._throttle_dur)
             return SenderState.THROTTLED
 
+        self._evict_oldest_senders()
         return SenderState.NORMAL
+
+    def _evict_oldest_senders(self) -> None:
+        """Evict oldest failure entries when over max_senders limit."""
+        if len(self._failures) <= self._max_senders:
+            return
+        # Find senders with the oldest last-failure timestamp and evict them
+        senders_by_age = sorted(
+            self._failures.items(),
+            key=lambda item: item[1][-1] if item[1] else 0,
+        )
+        evict_count = len(self._failures) - int(self._max_senders * 0.9)
+        for sender, _ in senders_by_age[:evict_count]:
+            del self._failures[sender]
+            self._state.pop(sender, None)
 
     def record_success(self, sender: str) -> None:
         """Record successful processing — resets failure count."""

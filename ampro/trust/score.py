@@ -21,7 +21,7 @@ from __future__ import annotations
 
 from enum import Enum
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class TrustFactor(str, Enum):
@@ -50,6 +50,22 @@ class TrustScore(BaseModel):
 
     model_config = {"extra": "ignore"}
 
+    @field_validator("tier")
+    @classmethod
+    def validate_tier(cls, v: str) -> str:
+        valid = {"internal", "owner", "verified", "external"}
+        if v not in valid:
+            raise ValueError(f"tier must be one of {valid}, got {v!r}")
+        return v
+
+    @field_validator("factors")
+    @classmethod
+    def validate_factors(cls, v: dict[str, int]) -> dict[str, int]:
+        for key, val in v.items():
+            if val < 0 or val > 200:
+                raise ValueError(f"Factor {key!r} must be 0-200, got {val}")
+        return v
+
 
 class TrustPolicy(BaseModel):
     """Rate-limit and content-filter policy derived from a trust score."""
@@ -62,6 +78,10 @@ class TrustPolicy(BaseModel):
 
 # ---------------------------------------------------------------------------
 # Identity-method strength lookup
+#
+# Maps identity verification methods to their score contribution (0-200).
+# Higher scores reflect stronger cryptographic guarantees.
+# Override by subclassing TrustScore or providing a custom scoring function.
 # ---------------------------------------------------------------------------
 
 _IDENTITY_SCORES: dict[str, int] = {
@@ -71,6 +91,7 @@ _IDENTITY_SCORES: dict[str, int] = {
     "mtls": 200,
 }
 
+# Fallback score for unrecognised identity methods.
 _DEFAULT_IDENTITY_SCORE: int = 25
 
 

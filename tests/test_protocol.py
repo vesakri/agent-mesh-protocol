@@ -7,7 +7,7 @@ from pydantic import ValidationError
 class TestImports:
     def test_version(self):
         import ampro
-        assert ampro.__version__ == "0.2.0"
+        assert ampro.__version__ == "0.2.1"
 
     def test_all_exports(self):
         import ampro
@@ -251,14 +251,16 @@ class TestAgentJson:
 
 
 class TestCrossVerification:
-    def test_did_key_self_verifying(self):
+    def test_did_key_not_verified_without_implementation(self):
+        """C9: did:key cross-verification is fail-closed until key extraction is implemented."""
         import asyncio
         from ampro import cross_verify_identifiers
         results = asyncio.run(cross_verify_identifiers(
             identifiers=["agent://did:key:z6MkTest"],
             expected_endpoint="https://example.com/agent/message",
         ))
-        assert results[0].verified is True
+        assert results[0].verified is False
+        assert "not yet implemented" in results[0].reason
 
 
 class TestV011Imports:
@@ -266,7 +268,7 @@ class TestV011Imports:
 
     def test_version_bumped(self):
         import ampro
-        assert ampro.__version__ == "0.2.0"
+        assert ampro.__version__ == "0.2.1"
 
     def test_handshake_imports(self):
         from ampro import (
@@ -328,7 +330,7 @@ class TestV012Imports:
 
     def test_version_is_016(self):
         import ampro
-        assert ampro.__version__ == "0.2.0"
+        assert ampro.__version__ == "0.2.1"
 
     def test_key_revocation_imports(self):
         from ampro import RevocationReason, KeyRevocationBody

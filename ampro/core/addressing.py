@@ -48,6 +48,11 @@ class AgentAddress(BaseModel):
         return f"https://{self.host}/.well-known/agent.json"
 
     def registry_resolve_url(self) -> str:
+        """Build the registry resolution URL for a SLUG address.
+
+        WARNING: Callers MUST validate the returned URL against SSRF
+        before fetching (e.g. via ``validate_attachment_url``).
+        """
         if self.address_type != AddressType.SLUG:
             raise ValueError(f"registry_resolve_url() requires SLUG address, got {self.address_type}")
         return f"https://{self.registry}/agent/resolve/{self.slug}"

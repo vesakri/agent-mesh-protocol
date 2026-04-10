@@ -40,10 +40,11 @@ def build_negotiation_headers(
     server_caps: CapabilitySet,
     client_caps_str: str,
 ) -> dict[str, str]:
+    MAX_CAPABILITIES = 50
     client_groups: set[CapabilityGroup] = set()
     if client_caps_str:
-        for cap in client_caps_str.split(","):
-            cap = cap.strip()
+        parts = [p.strip() for p in client_caps_str.split(",")][:MAX_CAPABILITIES]
+        for cap in parts:
             try:
                 client_groups.add(CapabilityGroup(cap))
             except ValueError:

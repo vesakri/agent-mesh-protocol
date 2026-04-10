@@ -17,6 +17,7 @@ PURE — zero platform-specific imports. Only pydantic and stdlib.
 
 from __future__ import annotations
 
+import threading
 from enum import Enum
 
 from pydantic import BaseModel, Field
@@ -55,7 +56,11 @@ class SessionInitBody(BaseModel):
         description="Protocol version the client proposes (e.g. 1.0.0)",
     )
     client_nonce: str = Field(
-        description="Random 256-bit hex string for replay protection",
+        description=(
+            "Random 256-bit hex string for replay protection. "
+            "MUST be cryptographically random and globally unique. "
+            "Use secrets.token_hex(32) or equivalent."
+        ),
     )
     conversation_id: str | None = Field(
         default=None,
@@ -82,7 +87,7 @@ class SessionEstablishedBody(BaseModel):
         description="Protocol version both sides agreed on",
     )
     trust_tier: str = Field(
-        description="Trust tier granted to the client (internal, owner, verified, external)",
+        description="Trust tier granted to the client. Must be one of: internal, owner, verified, external",
     )
     trust_score: int = Field(
         description="Numeric trust score from 0-1000",
@@ -246,6 +251,7 @@ class HandshakeStateMachine:
 
     def __init__(self) -> None:
         self._state = HandshakeState.IDLE
+        self._lock = threading.Lock()
 
     @property
     def state(self) -> HandshakeState:
@@ -254,6 +260,8 @@ class HandshakeStateMachine:
 
     def transition(self, event: str) -> HandshakeState:
         """Attempt a state transition triggered by *event*.
+
+        Thread-safe: uses a lock to prevent concurrent state mutations.
 
         Args:
             event: The transition event name (e.g., "send_init", "close").
@@ -264,12 +272,13 @@ class HandshakeStateMachine:
         Raises:
             ValueError: If the event is not valid for the current state.
         """
-        key = (self._state, event)
-        next_state = _TRANSITIONS.get(key)
-        if next_state is None:
-            raise ValueError(
-                f"Invalid transition: event '{event}' is not allowed "
-                f"in state '{self._state.value}'"
-            )
-        self._state = next_state
-        return self._state
+        with self._lock:
+            key = (self._state, event)
+            next_state = _TRANSITIONS.get(key)
+            if next_state is None:
+                raise ValueError(
+                    f"Invalid transition: event '{event}' is not allowed "
+                    f"in state '{self._state.value}'"
+                )
+            self._state = next_state
+            return self._state

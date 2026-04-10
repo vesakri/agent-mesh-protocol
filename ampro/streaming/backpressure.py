@@ -10,6 +10,10 @@ overwhelming a slow consumer.
 
 The protocol defines the event types. Implementation strategies
 (ACK frequency, buffer sizing) are guidance, not protocol.
+
+NOTE: Backpressure events are protocol primitives. Enforcement (pausing
+producers, dropping events) is the responsibility of the runtime
+implementation, not this library.
 """
 
 from __future__ import annotations

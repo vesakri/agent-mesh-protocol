@@ -41,6 +41,10 @@ async def deliver_callback(
     Deliver a message to a callback URL with retry.
 
     Returns True if delivery succeeded, False if all retries failed.
+
+    WARNING: This implementation does not pin DNS resolution. Production
+    deployments should resolve DNS once and pin the IP for the duration
+    of delivery attempts to prevent DNS rebinding attacks.
     """
     import asyncio
 

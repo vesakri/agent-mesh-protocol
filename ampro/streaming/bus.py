@@ -29,6 +29,10 @@ from ampro.streaming.events import StreamingEvent, StreamingEventType
 # ---------------------------------------------------------------------------
 _RING_BUFFER_CAPACITY = 100
 
+# Maximum number of active streams in the global registry.
+# Prevents unbounded memory growth from leaked or abandoned streams.
+MAX_ACTIVE_STREAMS = 10_000
+
 # Sentinel used to signal the consumer that the stream is finished.
 _SENTINEL = object()
 
@@ -38,7 +42,7 @@ class StreamBus:
 
     def __init__(self, task_id: str) -> None:
         self.task_id = task_id
-        self._queue: asyncio.Queue[StreamingEvent | object] = asyncio.Queue()
+        self._queue: asyncio.Queue[StreamingEvent | object] = asyncio.Queue(maxsize=1000)
         self._ring: deque[StreamingEvent] = deque(maxlen=_RING_BUFFER_CAPACITY)
         self._seq: int = 0  # monotonically increasing event id
         self._closed: bool = False
@@ -53,7 +57,10 @@ class StreamBus:
         # Stamp the event with an integer id (as string for SSE spec)
         event = event.model_copy(update={"id": str(self._seq), "seq": self._seq})
         self._ring.append(event)
-        self._queue.put_nowait(event)
+        try:
+            self._queue.put_nowait(event)
+        except asyncio.QueueFull:
+            pass  # Drop event if consumer is too slow
 
     def close(self) -> None:
         """Emit a DONE event (if not already closed) and signal end of stream."""
@@ -112,8 +119,17 @@ _active_streams: dict[str, StreamBus] = {}
 
 
 def get_or_create_stream(task_id: str) -> StreamBus:
-    """Return the existing StreamBus for *task_id*, or create a new one."""
+    """Return the existing StreamBus for *task_id*, or create a new one.
+
+    Raises RuntimeError if the global stream registry has reached
+    MAX_ACTIVE_STREAMS to prevent unbounded memory growth.
+    """
     if task_id not in _active_streams:
+        if len(_active_streams) >= MAX_ACTIVE_STREAMS:
+            raise RuntimeError(
+                f"Maximum active streams ({MAX_ACTIVE_STREAMS}) reached. "
+                "Clean up completed streams before creating new ones."
+            )
         _active_streams[task_id] = StreamBus(task_id)
     return _active_streams[task_id]
 

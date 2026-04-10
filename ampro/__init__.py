@@ -208,7 +208,7 @@ from ampro.compliance.certifications import CertificationLink
 from ampro.transport.negotiation import NegotiationResult, CapabilityNegotiator
 from ampro.core.versioning import SUPPORTED_VERSIONS, CURRENT_VERSION, check_version, negotiate_version
 
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 
 __all__ = [
     # Core

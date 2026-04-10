@@ -143,6 +143,10 @@ def validate_scope_narrowing(
 
     Returns True if the child scopes are a valid narrowing.
     """
+    MAX_SCOPES = 100
+    if len(child_scopes) > MAX_SCOPES or len(parent_scopes) > MAX_SCOPES:
+        return False
+
     if not child_scopes:
         return False
 
@@ -311,10 +315,13 @@ def validate_chain(
 # Chain budget + visited agents helpers
 # ---------------------------------------------------------------------------
 
+# Pre-compiled regex for chain budget parsing (non-backtracking pattern)
+_BUDGET_RE = re.compile(r"remaining=(\d+(?:\.\d+)?)USD;max=(\d+(?:\.\d+)?)USD")
+
 
 def parse_chain_budget(budget: str) -> tuple[float, float]:
     """Parse a Chain-Budget header value into (remaining, max) floats."""
-    match = re.match(r"remaining=(\d+\.?\d*)USD;max=(\d+\.?\d*)USD", budget)
+    match = _BUDGET_RE.match(budget)
     if not match:
         raise ValueError(f"Invalid chain budget format: {budget!r}")
     return float(match.group(1)), float(match.group(2))

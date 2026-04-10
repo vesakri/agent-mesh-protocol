@@ -20,8 +20,8 @@ class TrustUpgradeRequestBody(BaseModel):
     """body.type = 'trust.upgrade_request' — Request a trust tier upgrade."""
 
     session_id: str = Field(description="Session requiring the trust upgrade")
-    current_tier: str = Field(description="Sender's current trust tier")
-    required_tier: str = Field(description="Trust tier needed to proceed")
+    current_tier: str = Field(description="Sender's current trust tier. Must be one of: internal, owner, verified, external")
+    required_tier: str = Field(description="Trust tier needed to proceed. Must be one of: internal, owner, verified, external")
     verification_methods: list[str] = Field(
         description="Accepted verification methods (e.g. ['jwt', 'did:web', 'oauth2'])",
     )
@@ -44,7 +44,7 @@ class TrustUpgradeResponseBody(BaseModel):
     session_id: str = Field(description="Session the upgrade applies to")
     method: str = Field(description="Verification method used")
     proof: str = Field(description="The identity proof (JWT, DID proof, etc.)")
-    new_tier: str = Field(description="Resulting trust tier after verification")
+    new_tier: str = Field(description="Resulting trust tier after verification. Must be one of: internal, owner, verified, external")
     new_score: int | None = Field(
         default=None,
         description="Updated trust score, if available",

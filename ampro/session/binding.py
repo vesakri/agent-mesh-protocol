@@ -66,7 +66,7 @@ def derive_binding_token(
     """
     Derive the binding token from the handshake nonces and shared secret.
 
-    Computes ``HMAC-SHA256(shared_secret, client_nonce + server_nonce + session_id)``
+    Computes ``HMAC-SHA256(shared_secret, client_nonce + "\\x00" + server_nonce + "\\x00" + session_id)``
     and returns the hex digest.
 
     Args:
@@ -77,8 +77,13 @@ def derive_binding_token(
 
     Returns:
         Hex-encoded HMAC-SHA256 digest used as the binding token.
+
+    Raises:
+        ValueError: If shared_secret is empty.
     """
-    message = (client_nonce + server_nonce + session_id).encode("utf-8")
+    if not shared_secret:
+        raise ValueError("shared_secret must not be empty")
+    message = (client_nonce + "\x00" + server_nonce + "\x00" + session_id).encode("utf-8")
     return hmac.new(
         key=shared_secret.encode("utf-8"),
         msg=message,
@@ -99,7 +104,7 @@ def create_message_binding(
     """
     Create the per-message HMAC proof for the ``Session-Binding`` header.
 
-    Computes ``HMAC-SHA256(binding_token, session_id + message_id)``
+    Computes ``HMAC-SHA256(binding_token, session_id + "\\x00" + message_id)``
     and returns the hex digest.
 
     Args:
@@ -110,7 +115,7 @@ def create_message_binding(
     Returns:
         Hex-encoded HMAC-SHA256 digest to attach as the binding proof.
     """
-    message = (session_id + message_id).encode("utf-8")
+    message = (session_id + "\x00" + message_id).encode("utf-8")
     return hmac.new(
         key=binding_token.encode("utf-8"),
         msg=message,

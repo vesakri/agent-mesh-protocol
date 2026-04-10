@@ -15,9 +15,13 @@ PURE — zero platform-specific imports. Only pydantic and stdlib.
 
 from __future__ import annotations
 
+import json
+import logging
 from enum import Enum
 
 from pydantic import BaseModel, Field
+
+logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
@@ -66,3 +70,48 @@ class KeyRevocationBody(BaseModel):
     )
 
     model_config = {"extra": "ignore"}
+
+
+def validate_revocation_signature(body: KeyRevocationBody, public_key_bytes: bytes) -> bool:
+    """Verify the Ed25519 signature over the canonical revocation fields.
+
+    The canonical message is a JSON object with fields sorted alphabetically,
+    excluding the ``signature`` field itself.
+
+    Args:
+        body: The key revocation body containing the signature to verify.
+        public_key_bytes: Raw 32-byte Ed25519 public key of the revoking agent.
+
+    Returns:
+        True if the signature is valid, False otherwise.
+    """
+    try:
+        from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+    except ImportError:
+        logger.error(
+            "cryptography package not installed — cannot verify revocation signature. "
+            "Install with: pip install cryptography"
+        )
+        return False
+
+    # Build canonical message: all fields except 'signature', sorted by key
+    canonical = {
+        "agent_id": body.agent_id,
+        "jwks_url": body.jwks_url,
+        "reason": body.reason,
+        "replacement_key_id": body.replacement_key_id,
+        "revoked_at": body.revoked_at,
+        "revoked_key_id": body.revoked_key_id,
+    }
+    message = json.dumps(canonical, sort_keys=True, separators=(",", ":")).encode("utf-8")
+
+    try:
+        import base64
+
+        signature_bytes = base64.urlsafe_b64decode(body.signature + "==")
+        public_key = Ed25519PublicKey.from_public_bytes(public_key_bytes)
+        public_key.verify(signature_bytes, message)
+        return True
+    except Exception as exc:
+        logger.warning("Revocation signature verification failed: %s", exc)
+        return False

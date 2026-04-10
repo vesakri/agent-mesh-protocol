@@ -14,9 +14,10 @@ from ampro.security.rate_limit import RateLimitInfo
 class RateLimiter:
     """Per-sender sliding window rate limiter."""
 
-    def __init__(self, rpm: int = 60, window_seconds: int = 60):
+    def __init__(self, rpm: int = 60, window_seconds: int = 60, max_senders: int = 100_000):
         self._rpm = rpm
         self._window = window_seconds
+        self._max_senders = max_senders
         self._requests: dict[str, list[float]] = {}
 
     def check(self, sender: str) -> tuple[bool, RateLimitInfo]:
@@ -43,7 +44,18 @@ class RateLimiter:
 
         requests.append(now)
         info.remaining = max(0, self._rpm - len(requests))
+        self._evict_stale_senders()
         return True, info
+
+    def _evict_stale_senders(self) -> None:
+        """Evict a random 10% of senders when over max_senders limit."""
+        if len(self._requests) <= self._max_senders:
+            return
+        import random
+        keys = list(self._requests.keys())
+        evict_count = max(1, len(keys) // 10)
+        for key in random.sample(keys, evict_count):
+            del self._requests[key]
 
     def sender_count(self) -> int:
         """Number of senders currently tracked."""
