@@ -29,7 +29,7 @@ pub_keys = {}
 for name in ["alice", "bob", "charlie"]:
     private = Ed25519PrivateKey.generate()
     keys[name] = private.private_bytes_raw()
-    pub_keys[f"agent://{name}.com"] = private.public_key().public_bytes_raw()
+    pub_keys[f"agent://{name}.example.com"] = private.public_key().public_bytes_raw()
 
 now = datetime.now(timezone.utc)
 
@@ -38,8 +38,8 @@ print("=== Building Delegation Chain ===\n")
 
 # Link 1: Alice delegates to Bob
 link1_data = {
-    "delegator": "agent://alice.com",
-    "delegate": "agent://bob.com",
+    "delegator": "agent://alice.example.com",
+    "delegate": "agent://bob.example.com",
     "scopes": ["tool:read", "tool:execute"],
     "max_depth": 3,
     "created_at": now.isoformat(),
@@ -51,8 +51,8 @@ print(f"  Link 1: alice → bob (scopes: {link1.scopes})")
 
 # Link 2: Bob delegates to Charlie (narrowed scope)
 link2_data = {
-    "delegator": "agent://bob.com",
-    "delegate": "agent://charlie.com",
+    "delegator": "agent://bob.example.com",
+    "delegate": "agent://charlie.example.com",
     "scopes": ["tool:read"],  # Narrowed from tool:read + tool:execute
     "max_depth": 2,
     "created_at": now.isoformat(),
@@ -84,8 +84,8 @@ print(f"  Spent: ${max_budget - remaining}")
 
 # --- Visited-Agents Loop Detection ---
 print("\n=== Loop Detection ===\n")
-visited = "agent://alice.com,agent://bob.com"
+visited = "agent://alice.example.com,agent://bob.example.com"
 print(f"  Visited: {visited}")
-print(f"  Charlie joining: loop? {check_visited_agents_loop(visited, 'agent://charlie.com')}")
-print(f"  Alice re-joining: loop? {check_visited_agents_loop(visited, 'agent://alice.com')}")
+print(f"  Charlie joining: loop? {check_visited_agents_loop(visited, 'agent://charlie.example.com')}")
+print(f"  Alice re-joining: loop? {check_visited_agents_loop(visited, 'agent://alice.example.com')}")
 print(f"  Within 20 limit: {check_visited_agents_limit(visited)}")

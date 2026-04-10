@@ -21,7 +21,7 @@ class TestFederationRequest:
 
         with pytest.raises(ValidationError):
             RegistryFederationRequest(
-                registry_id="agent://reg.com",
+                registry_id="agent://reg.example.com",
                 # missing capabilities, trust_proof
             )
 
@@ -29,7 +29,7 @@ class TestFederationRequest:
         from ampro import RegistryFederationRequest
 
         req = RegistryFederationRequest(
-            registry_id="agent://reg.com",
+            registry_id="agent://reg.example.com",
             capabilities=["resolve"],
             trust_proof="proof",
             extra_field="ignored",
@@ -94,12 +94,12 @@ class TestBodyRegistryRequest:
         from ampro import validate_body, RegistryFederationRequest
 
         body = validate_body("registry.federation_request", {
-            "registry_id": "agent://reg-a.com",
+            "registry_id": "agent://reg-a.example.com",
             "capabilities": ["resolve", "search"],
             "trust_proof": "signed-proof",
         })
         assert isinstance(body, RegistryFederationRequest)
-        assert body.registry_id == "agent://reg-a.com"
+        assert body.registry_id == "agent://reg-a.example.com"
 
     def test_validate_body_invalid(self):
         from ampro import validate_body

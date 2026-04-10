@@ -17,9 +17,9 @@ class TestImports:
 class TestAddressing:
     def test_parse_host(self):
         from ampro import parse_agent_uri, AddressType
-        addr = parse_agent_uri("agent://bakery.com")
+        addr = parse_agent_uri("agent://bakery.example.com")
         assert addr.address_type == AddressType.HOST
-        assert addr.host == "bakery.com"
+        assert addr.host == "bakery.example.com"
 
     def test_parse_slug(self):
         from ampro import parse_agent_uri, AddressType
@@ -40,18 +40,18 @@ class TestAddressing:
     def test_invalid_scheme(self):
         from ampro import parse_agent_uri
         with pytest.raises(ValueError):
-            parse_agent_uri("http://bakery.com")
+            parse_agent_uri("http://bakery.example.com")
 
 
 class TestEnvelope:
     def test_body_type_field(self):
         from ampro import AgentMessage
-        msg = AgentMessage(sender="agent://a.com", recipient="agent://b.com", body_type="task.create")
+        msg = AgentMessage(sender="agent://a.example.com", recipient="agent://b.example.com", body_type="task.create")
         assert msg.body_type == "task.create"
 
     def test_body_type_default(self):
         from ampro import AgentMessage
-        msg = AgentMessage(sender="agent://a.com", recipient="agent://b.com")
+        msg = AgentMessage(sender="agent://a.example.com", recipient="agent://b.example.com")
         assert msg.body_type == "message"
 
     def test_headers_count(self):
@@ -137,7 +137,7 @@ class TestDelegation:
         from ampro import DelegationLink
         from datetime import datetime, timezone
         link = DelegationLink(
-            delegator="agent://a.com", delegate="agent://b.com",
+            delegator="agent://a.example.com", delegate="agent://b.example.com",
             scopes=["tool:read"], max_fan_out=5, trust_tier="verified",
             chain_budget="remaining=3.50USD;max=5.00USD",
             created_at=datetime.now(timezone.utc),
@@ -154,8 +154,8 @@ class TestDelegation:
 
     def test_visited_agents(self):
         from ampro import check_visited_agents_loop
-        assert check_visited_agents_loop("agent://a.com,agent://b.com", "agent://a.com") is True
-        assert check_visited_agents_loop("agent://a.com,agent://b.com", "agent://c.com") is False
+        assert check_visited_agents_loop("agent://a.example.com,agent://b.example.com", "agent://a.example.com") is True
+        assert check_visited_agents_loop("agent://a.example.com,agent://b.example.com", "agent://c.example.com") is False
 
 
 class TestAuth:
@@ -314,7 +314,7 @@ class TestV011Imports:
 
     def test_agent_json_new_fields(self):
         from ampro import AgentJson
-        aj = AgentJson(protocol_version="1.0.0", identifiers=["agent://test.com"], endpoint="https://test.com/agent/message")
+        aj = AgentJson(protocol_version="1.0.0", identifiers=["agent://test.example.com"], endpoint="https://test.example.com/agent/message")
         assert aj.visibility == {"level": "public", "contact_policy": "open"}
         assert aj.supported_schemas == []
 
@@ -428,17 +428,17 @@ class TestV013Imports:
     def test_agent_deactivation_notice_body_import(self):
         from ampro import AgentDeactivationNoticeBody
         body = AgentDeactivationNoticeBody(
-            agent_id="agent://test.com",
+            agent_id="agent://test.example.com",
             reason="Shutdown",
             deactivation_time="2026-04-09T00:00:00Z",
             active_sessions=0,
         )
-        assert body.agent_id == "agent://test.com"
+        assert body.agent_id == "agent://test.example.com"
 
     def test_cost_receipt_import(self):
         from ampro import CostReceipt
         receipt = CostReceipt(
-            agent_id="agent://a.com",
+            agent_id="agent://a.example.com",
             task_id="t-1",
             cost_usd=0.01,
             issued_at="2026-04-09T00:00:00Z",
@@ -466,13 +466,13 @@ class TestV014Imports:
     def test_registry_search_match_import(self):
         from ampro import RegistrySearchMatch
         match = RegistrySearchMatch(
-            agent_id="agent://test.com",
-            endpoint="https://test.com/agent/message",
+            agent_id="agent://test.example.com",
+            endpoint="https://test.example.com/agent/message",
             capabilities=["messaging"],
             trust_score=700,
             trust_tier="verified",
         )
-        assert match.agent_id == "agent://test.com"
+        assert match.agent_id == "agent://test.example.com"
 
     def test_registry_search_result_import(self):
         from ampro import RegistrySearchResult
@@ -484,7 +484,7 @@ class TestV014Imports:
         from ampro import TaskRedirectBody
         body = TaskRedirectBody(
             task_id="t-1",
-            redirect_to="agent://alt.com",
+            redirect_to="agent://alt.example.com",
             reason="overloaded",
         )
         assert body.task_id == "t-1"
@@ -571,7 +571,7 @@ class TestV016Imports:
         from ampro import ErasurePropagationStatusBody
         body = ErasurePropagationStatusBody(
             erasure_id="er-1",
-            agent_id="agent://test.com",
+            agent_id="agent://test.example.com",
             status="completed",
             records_affected=5,
             timestamp="2026-04-09T00:00:00Z",
@@ -582,8 +582,8 @@ class TestV016Imports:
         from ampro import DataConsentRevokeBody
         body = DataConsentRevokeBody(
             grant_id="g-1",
-            requester="agent://a.com",
-            target="agent://b.com",
+            requester="agent://a.example.com",
+            target="agent://b.example.com",
             reason="user request",
         )
         assert body.grant_id == "g-1"
@@ -676,22 +676,22 @@ class TestV018Imports:
     def test_identity_link_proof_import(self):
         from ampro import IdentityLinkProofBody
         body = IdentityLinkProofBody(
-            source_id="agent://a.com",
-            target_id="agent://b.com",
+            source_id="agent://a.example.com",
+            target_id="agent://b.example.com",
             proof_type="ed25519_cross_sign",
             proof="sig",
             timestamp="2026-04-09T12:00:00Z",
         )
-        assert body.source_id == "agent://a.com"
+        assert body.source_id == "agent://a.example.com"
 
     def test_registry_federation_request_import(self):
         from ampro import RegistryFederationRequest
         req = RegistryFederationRequest(
-            registry_id="agent://reg.com",
+            registry_id="agent://reg.example.com",
             capabilities=["resolve", "search"],
             trust_proof="proof",
         )
-        assert req.registry_id == "agent://reg.com"
+        assert req.registry_id == "agent://reg.example.com"
 
     def test_registry_federation_response_import(self):
         from ampro import RegistryFederationResponse
@@ -701,20 +701,20 @@ class TestV018Imports:
     def test_identity_migration_body_import(self):
         from ampro import IdentityMigrationBody
         body = IdentityMigrationBody(
-            old_id="agent://old.com",
-            new_id="agent://new.com",
+            old_id="agent://old.example.com",
+            new_id="agent://new.example.com",
             migration_proof="proof",
             effective_at="2026-04-10T00:00:00Z",
         )
-        assert body.old_id == "agent://old.com"
+        assert body.old_id == "agent://old.example.com"
 
     def test_audit_attestation_body_import(self):
         from ampro import AuditAttestationBody
         body = AuditAttestationBody(
             audit_id="att-1",
-            agents=["agent://a.com", "agent://b.com"],
+            agents=["agent://a.example.com", "agent://b.example.com"],
             events_hash="sha256:abc",
-            attestation_signatures={"agent://a.com": "sig-a", "agent://b.com": "sig-b"},
+            attestation_signatures={"agent://a.example.com": "sig-a", "agent://b.example.com": "sig-b"},
             timestamp="2026-04-09T15:00:00Z",
         )
         assert body.audit_id == "att-1"
@@ -745,7 +745,7 @@ class TestV019Imports:
     def test_trust_proof_body_import(self):
         from ampro import TrustProofBody
         body = TrustProofBody(
-            agent_id="agent://prover.com",
+            agent_id="agent://prover.example.com",
             claim="score_above_500",
             proof_type="zkp",
             proof="proof-data",
@@ -758,11 +758,11 @@ class TestV019Imports:
         link = CertificationLink(
             standard="SOC2",
             url="https://example.com/soc2.pdf",
-            verified_by="agent://auditor.com",
+            verified_by="agent://auditor.example.com",
             expires_at="2027-01-01T00:00:00Z",
         )
         assert link.standard == "SOC2"
 
     def test_all_exports_v019_count(self):
         import ampro
-        assert len(ampro.__all__) >= 188
+        assert len(ampro.__all__) >= 187

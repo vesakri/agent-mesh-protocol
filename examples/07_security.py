@@ -45,7 +45,7 @@ def demo_rate_limit():
     limiter = RateLimiter(rpm=3)  # 3 requests per minute for demo
     
     for i in range(5):
-        allowed, info = limiter.check("agent://spammer.com")
+        allowed, info = limiter.check("agent://spammer.example.com")
         headers = format_rate_limit_headers(info)
         print(f"  Request {i+1}: allowed={allowed}, remaining={info.remaining}")
         if not allowed:
@@ -59,18 +59,18 @@ def demo_concurrency():
     
     print(f"  Max total: 4, per-sender cap: 50% = 2")
     for i in range(3):
-        acquired = limiter.acquire("agent://busy-sender.com")
-        print(f"  Task {i+1}: acquired={acquired}, active={limiter.sender_active('agent://busy-sender.com')}")
+        acquired = limiter.acquire("agent://busy-sender.example.com")
+        print(f"  Task {i+1}: acquired={acquired}, active={limiter.sender_active('agent://busy-sender.example.com')}")
     
-    limiter.release("agent://busy-sender.com")
-    print(f"  After release: acquired={limiter.acquire('agent://busy-sender.com')}")
+    limiter.release("agent://busy-sender.example.com")
+    print(f"  After release: acquired={limiter.acquire('agent://busy-sender.example.com')}")
 
 
 def demo_sender_tracking():
     print("\n=== Poison Message Protection ===\n")
     tracker = SenderTracker(failure_threshold=3, throttle_duration=900)
     
-    sender = "agent://bad-actor.com"
+    sender = "agent://bad-actor.example.com"
     for i in range(4):
         state = tracker.record_failure(sender)
         print(f"  Failure {i+1}: state={state.value}")

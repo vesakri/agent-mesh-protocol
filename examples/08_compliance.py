@@ -29,8 +29,8 @@ for cls in ContentClassification:
 # --- PII Rejection ---
 print("\n=== PII Rejection (accepts_pii=False) ===\n")
 pii_msg = AgentMessage(
-    sender="agent://sender.com",
-    recipient="agent://receiver.com",
+    sender="agent://sender.example.com",
+    recipient="agent://receiver.example.com",
     body_type="message",
     body={"text": "Here is the user's SSN: 123-45-6789"},
     headers={"Content-Classification": "pii"},
@@ -61,8 +61,8 @@ logger = AuditLogger()
 for i in range(3):
     entry = logger.log(AuditEntry(
         message_id=f"msg-{i}",
-        sender="agent://alice.com",
-        recipient="agent://bob.com",
+        sender="agent://alice.example.com",
+        recipient="agent://bob.example.com",
         body_type="task.create",
         content_classification="pii",
         trust_tier="verified",

@@ -25,18 +25,18 @@ logger = logging.getLogger(__name__)
 class AuditEntry(BaseModel):
     """A single audit log entry."""
 
-    message_id: str
-    timestamp: float = Field(default_factory=time.time)
-    sender: str
-    recipient: str
-    body_type: str
-    content_classification: str = "public"
-    trust_tier: str = "external"
-    session_id: str = ""
-    action_taken: str = "processed"
-    tools_invoked: list[str] = Field(default_factory=list)
-    hash: str = ""
-    previous_hash: str = ""
+    message_id: str = Field(description="Unique identifier of the audited message")
+    timestamp: float = Field(default_factory=time.time, description="Unix epoch timestamp when the entry was created")
+    sender: str = Field(description="Agent or user ID that sent the message")
+    recipient: str = Field(description="Agent or user ID that received the message")
+    body_type: str = Field(description="Protocol body type of the message (e.g. task.assign, message.send)")
+    content_classification: str = Field(default="public", description="Content sensitivity classification (public, internal, pii, etc.)")
+    trust_tier: str = Field(default="external", description="Trust tier of the sender (owner, verified, external)")
+    session_id: str = Field(default="", description="Session ID associated with the message, if any")
+    action_taken: str = Field(default="processed", description="Action taken on the message (processed, rejected, escalated)")
+    tools_invoked: list[str] = Field(default_factory=list, description="List of tool names invoked during message processing")
+    hash: str = Field(default="", description="SHA-256 hash of this entry for chain integrity")
+    previous_hash: str = Field(default="", description="SHA-256 hash of the preceding entry in the chain")
 
     model_config = {"extra": "ignore"}
 

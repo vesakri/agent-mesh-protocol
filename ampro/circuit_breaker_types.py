@@ -16,9 +16,9 @@ class CircuitState(str, Enum):
 class CircuitBreakerInfo(BaseModel):
     """Circuit breaker state for response headers."""
 
-    state: CircuitState
-    failures: int = 0
-    reset_at: str | None = None
+    state: CircuitState = Field(description="Current circuit breaker state (closed, open, half-open)")
+    failures: int = Field(default=0, description="Consecutive failure count since last successful call")
+    reset_at: str | None = Field(default=None, description="ISO 8601 timestamp when the circuit breaker will attempt reset")
 
     model_config = {"extra": "ignore"}
 

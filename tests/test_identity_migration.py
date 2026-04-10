@@ -8,13 +8,13 @@ class TestMigrationBody:
         from ampro import IdentityMigrationBody
 
         body = IdentityMigrationBody(
-            old_id="agent://alice.old-domain.com",
-            new_id="agent://alice.new-domain.com",
+            old_id="agent://alice.old-domain.example.com",
+            new_id="agent://alice.new-domain.example.com",
             migration_proof="dual-signed-proof-data",
             effective_at="2026-04-10T00:00:00Z",
         )
-        assert body.old_id == "agent://alice.old-domain.com"
-        assert body.new_id == "agent://alice.new-domain.com"
+        assert body.old_id == "agent://alice.old-domain.example.com"
+        assert body.new_id == "agent://alice.new-domain.example.com"
         assert body.migration_proof == "dual-signed-proof-data"
         assert body.effective_at == "2026-04-10T00:00:00Z"
 
@@ -23,7 +23,7 @@ class TestMigrationBody:
 
         with pytest.raises(ValidationError):
             IdentityMigrationBody(
-                old_id="agent://old.com",
+                old_id="agent://old.example.com",
                 # missing new_id, migration_proof, effective_at
             )
 
@@ -31,8 +31,8 @@ class TestMigrationBody:
         from ampro import IdentityMigrationBody
 
         body = IdentityMigrationBody(
-            old_id="agent://old.com",
-            new_id="agent://new.com",
+            old_id="agent://old.example.com",
+            new_id="agent://new.example.com",
             migration_proof="proof",
             effective_at="2026-04-10T00:00:00Z",
             unknown="ignored",

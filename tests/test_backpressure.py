@@ -69,6 +69,6 @@ class TestStreamingEventTypeBackpressure:
         from ampro import StreamingEventType
         assert StreamingEventType.STREAM_RESUME == "stream.resume"
 
-    def test_thirteen_total_events(self):
+    def test_seventeen_total_events(self):
         from ampro import StreamingEventType
-        assert len(StreamingEventType) == 13
+        assert len(StreamingEventType) == 17

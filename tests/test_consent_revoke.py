@@ -12,8 +12,8 @@ class TestConsentRevokeBody:
         """Empty scopes list means full revocation of all scopes."""
         body = DataConsentRevokeBody(
             grant_id="grant-001",
-            requester="agent://admin.com",
-            target="agent://worker.com",
+            requester="agent://admin.example.com",
+            target="agent://worker.example.com",
             scopes=[],
             reason="User requested full data removal",
         )
@@ -24,8 +24,8 @@ class TestConsentRevokeBody:
         """Subset of scopes for partial revocation."""
         body = DataConsentRevokeBody(
             grant_id="grant-002",
-            requester="agent://admin.com",
-            target="agent://worker.com",
+            requester="agent://admin.example.com",
+            target="agent://worker.example.com",
             scopes=["read:profile", "write:analytics"],
             reason="Reducing permissions",
         )
@@ -36,8 +36,8 @@ class TestConsentRevokeBody:
         """effective_at=None means immediate revocation."""
         body = DataConsentRevokeBody(
             grant_id="grant-003",
-            requester="agent://admin.com",
-            target="agent://worker.com",
+            requester="agent://admin.example.com",
+            target="agent://worker.example.com",
             reason="Immediate termination",
         )
         assert body.effective_at is None
@@ -46,8 +46,8 @@ class TestConsentRevokeBody:
         """effective_at set means scheduled revocation."""
         body = DataConsentRevokeBody(
             grant_id="grant-004",
-            requester="agent://admin.com",
-            target="agent://worker.com",
+            requester="agent://admin.example.com",
+            target="agent://worker.example.com",
             reason="Scheduled phase-out",
             effective_at="2026-05-01T00:00:00Z",
         )
@@ -59,8 +59,8 @@ class TestConsentRevokeBodyRegistry:
         """validate_body('data.consent_revoke', ...) returns correct type."""
         body = validate_body("data.consent_revoke", {
             "grant_id": "grant-099",
-            "requester": "agent://a.com",
-            "target": "agent://b.com",
+            "requester": "agent://a.example.com",
+            "target": "agent://b.example.com",
             "reason": "Policy change",
         })
         assert isinstance(body, DataConsentRevokeBody)
@@ -72,7 +72,7 @@ class TestConsentRevokeValidation:
         """grant_id is required — omitting it raises ValidationError."""
         with pytest.raises(ValidationError):
             DataConsentRevokeBody(
-                requester="agent://admin.com",
-                target="agent://worker.com",
+                requester="agent://admin.example.com",
+                target="agent://worker.example.com",
                 reason="Missing grant ID",
             )

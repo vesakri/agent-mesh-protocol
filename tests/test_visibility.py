@@ -57,8 +57,8 @@ class TestCheckContactAllowed:
 class TestFilterAgentJson:
     FULL_JSON = {
         "protocol_version": "1.0.0",
-        "identifiers": ["agent://test.com"],
-        "endpoint": "https://test.com/agent/message",
+        "identifiers": ["agent://test.example.com"],
+        "endpoint": "https://test.example.com/agent/message",
         "visibility": {"level": "authenticated"},
         "capabilities": {"groups": ["messaging"]},
         "constraints": {"max_tokens": 1000},

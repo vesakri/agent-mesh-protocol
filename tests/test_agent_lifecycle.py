@@ -39,7 +39,7 @@ class TestAgentDeactivationNoticeBody:
     def test_optional_fields_default_none(self):
         from ampro import AgentDeactivationNoticeBody
         body = AgentDeactivationNoticeBody(
-            agent_id="agent://test.com",
+            agent_id="agent://test.example.com",
             reason="Shutdown",
             deactivation_time="2026-04-09T00:00:00Z",
             active_sessions=0,
@@ -85,8 +85,8 @@ class TestAgentJsonLifecycle:
         from ampro import AgentJson
         aj = AgentJson(
             protocol_version="1.0.0",
-            identifiers=["agent://test.com"],
-            endpoint="https://test.com/agent/message",
+            identifiers=["agent://test.example.com"],
+            endpoint="https://test.example.com/agent/message",
         )
         assert aj.status == "active"
 
@@ -94,8 +94,8 @@ class TestAgentJsonLifecycle:
         from ampro import AgentJson
         aj = AgentJson(
             protocol_version="1.0.0",
-            identifiers=["agent://test.com"],
-            endpoint="https://test.com/agent/message",
+            identifiers=["agent://test.example.com"],
+            endpoint="https://test.example.com/agent/message",
             status="deactivating",
         )
         assert aj.status == "deactivating"
@@ -105,16 +105,16 @@ class TestRegistryResolutionLifecycle:
     def test_gone_defaults_false(self):
         from ampro import RegistryResolution
         res = RegistryResolution(
-            agent_uri="agent://test.com",
-            endpoint="https://test.com/agent/message",
+            agent_uri="agent://test.example.com",
+            endpoint="https://test.example.com/agent/message",
         )
         assert res.gone is False
 
     def test_gone_true_decommissioned(self):
         from ampro import RegistryResolution
         res = RegistryResolution(
-            agent_uri="agent://old.com",
-            endpoint="https://old.com/agent/message",
+            agent_uri="agent://old.example.com",
+            endpoint="https://old.example.com/agent/message",
             gone=True,
             status="decommissioned",
         )

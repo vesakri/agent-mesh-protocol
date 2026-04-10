@@ -23,9 +23,9 @@ class AuthMethod(str, Enum):
 
 
 class ParsedAuth(BaseModel):
-    method: AuthMethod = AuthMethod.NONE
-    token: str = ""
-    raw: str = ""
+    method: AuthMethod = Field(default=AuthMethod.NONE, description="Detected authorization method (jwt, did, api_key, mtls, none)")
+    token: str = Field(default="", description="Extracted token or credential value from the header")
+    raw: str = Field(default="", description="Original Authorization header value before parsing")
 
     model_config = {"extra": "ignore"}
 

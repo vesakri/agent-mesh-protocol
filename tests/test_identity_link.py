@@ -27,7 +27,7 @@ class TestLinkProofCreation:
 
         with pytest.raises(ValidationError):
             IdentityLinkProofBody(
-                source_id="agent://a.com",
+                source_id="agent://a.example.com",
                 # missing target_id, proof_type, proof, timestamp
             )
 
@@ -35,8 +35,8 @@ class TestLinkProofCreation:
         from ampro import IdentityLinkProofBody
 
         body = IdentityLinkProofBody(
-            source_id="agent://a.com",
-            target_id="agent://b.com",
+            source_id="agent://a.example.com",
+            target_id="agent://b.example.com",
             proof_type="ed25519_cross_sign",
             proof="sig",
             timestamp="2026-04-09T12:00:00Z",
@@ -50,14 +50,14 @@ class TestLinkProofBodyRegistry:
         from ampro import validate_body, IdentityLinkProofBody
 
         body = validate_body("identity.link_proof", {
-            "source_id": "agent://a.com",
-            "target_id": "agent://b.com",
+            "source_id": "agent://a.example.com",
+            "target_id": "agent://b.example.com",
             "proof_type": "ed25519_cross_sign",
             "proof": "sig-data",
             "timestamp": "2026-04-09T12:00:00Z",
         })
         assert isinstance(body, IdentityLinkProofBody)
-        assert body.source_id == "agent://a.com"
+        assert body.source_id == "agent://a.example.com"
 
     def test_validate_body_invalid(self):
         from ampro import validate_body
@@ -71,8 +71,8 @@ class TestJsonRoundTrip:
         from ampro import IdentityLinkProofBody
 
         original = IdentityLinkProofBody(
-            source_id="agent://alice.com",
-            target_id="agent://alice@registry.com",
+            source_id="agent://alice.example.com",
+            target_id="agent://alice@registry.example.com",
             proof_type="ed25519_cross_sign",
             proof="base64-proof-data",
             timestamp="2026-04-09T14:30:00Z",
@@ -89,8 +89,8 @@ class TestJsonRoundTrip:
         from ampro import IdentityLinkProofBody
 
         original = IdentityLinkProofBody(
-            source_id="agent://x.com",
-            target_id="agent://y.com",
+            source_id="agent://x.example.com",
+            target_id="agent://y.example.com",
             proof_type="hmac_shared_secret",
             proof="hmac-proof",
             timestamp="2026-04-09T15:00:00Z",

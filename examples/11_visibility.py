@@ -17,8 +17,8 @@ from ampro import (
 # Sample agent.json
 AGENT_JSON = {
     "protocol_version": "1.0.0",
-    "identifiers": ["agent://service-provider.com"],
-    "endpoint": "https://service-provider.com/agent/message",
+    "identifiers": ["agent://service-provider.example.com"],
+    "endpoint": "https://service-provider.example.com/agent/message",
     "visibility": {"level": "authenticated", "contact_policy": "handshake_required"},
     "capabilities": {"groups": ["messaging", "tools"], "level": 3},
     "constraints": {"max_tokens": 4000, "budget_usd": 10.0},

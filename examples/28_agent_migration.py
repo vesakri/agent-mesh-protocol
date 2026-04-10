@@ -25,8 +25,8 @@ from ampro import (
 # Setup
 # ---------------------------------------------------------------------------
 
-OLD_ADDRESS = "agent://assistant.old-host.com"
-NEW_ADDRESS = "agent://assistant.new-host.com"
+OLD_ADDRESS = "agent://assistant.old-host.example.com"
+NEW_ADDRESS = "agent://assistant.new-host.example.com"
 SESSION_ID = "sess-migration-001"
 
 print("=== Agent Migration ===\n")
@@ -60,7 +60,7 @@ print("\n=== Step 2: AgentJson with moved_to ===\n")
 agent_json = AgentJson(
     protocol_version="0.1.8",
     identifiers=[OLD_ADDRESS],
-    endpoint="https://old-host.com/agent/message",
+    endpoint="https://old-host.example.com/agent/message",
     status="deactivating",
     moved_to=NEW_ADDRESS,
 )
@@ -107,7 +107,7 @@ print("\n=== Step 4: Registry Federation ===\n")
 
 # Source registry requests federation with target registry
 fed_request = RegistryFederationRequest(
-    registry_id="agent://registry.old-host.com",
+    registry_id="agent://registry.old-host.example.com",
     capabilities=["resolve", "search"],
     trust_proof="eyJhbGciOiJFZDI1NTE5In0.eyJyZWdpc3RyeSI6InJlZ2lzdHJ5Lm9sZC1ob3N0LmNvbSJ9.SIGNATURE",
 )
@@ -118,8 +118,8 @@ print(f"    capabilities: {fed_request.capabilities}")
 print(f"    trust_proof:  {fed_request.trust_proof[:50]}...")
 
 fed_request_msg = AgentMessage(
-    sender="agent://registry.old-host.com",
-    recipient="agent://registry.new-host.com",
+    sender="agent://registry.old-host.example.com",
+    recipient="agent://registry.new-host.example.com",
     body_type="registry.federation_request",
     headers={"Protocol-Version": "0.1.8"},
     body=fed_request.model_dump(),
@@ -145,8 +145,8 @@ print(f"    federation_id: {fed_response.federation_id}")
 print(f"    terms:         {fed_response.terms}")
 
 fed_response_msg = AgentMessage(
-    sender="agent://registry.new-host.com",
-    recipient="agent://registry.old-host.com",
+    sender="agent://registry.new-host.example.com",
+    recipient="agent://registry.old-host.example.com",
     body_type="registry.federation_response",
     headers={"Protocol-Version": "0.1.8"},
     body=fed_response.model_dump(),

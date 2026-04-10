@@ -2,7 +2,7 @@
 Agent Protocol — agent:// URI Addressing.
 
 Parses agent:// URIs into structured addresses with three forms:
-  - Direct host:    agent://bakery.com
+  - Direct host:    agent://bakery.example.com
   - Registry slug:  agent://sales@example.com
   - DID:            agent://did:web:example.com
 

@@ -43,11 +43,11 @@ class TestAttestationBody:
 
         body = AuditAttestationBody(
             audit_id="att-002",
-            agents=["agent://a.com", "agent://b.com"],
+            agents=["agent://a.example.com", "agent://b.example.com"],
             events_hash="sha256:0" * 32,
             attestation_signatures={
-                "agent://a.com": "sig-a",
-                "agent://b.com": "sig-b",
+                "agent://a.example.com": "sig-a",
+                "agent://b.example.com": "sig-b",
             },
             timestamp="2026-04-09T16:00:00Z",
             extra_field="ignored",
@@ -61,11 +61,11 @@ class TestBodyRegistry:
 
         body = validate_body("audit.attestation", {
             "audit_id": "att-100",
-            "agents": ["agent://x.com", "agent://y.com"],
+            "agents": ["agent://x.example.com", "agent://y.example.com"],
             "events_hash": "sha256:deadbeef",
             "attestation_signatures": {
-                "agent://x.com": "sig-x",
-                "agent://y.com": "sig-y",
+                "agent://x.example.com": "sig-x",
+                "agent://y.example.com": "sig-y",
             },
             "timestamp": "2026-04-09T17:00:00Z",
         })

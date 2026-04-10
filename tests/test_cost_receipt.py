@@ -31,7 +31,7 @@ class TestCostReceipt:
     def test_optional_fields_default_none(self):
         from ampro import CostReceipt
         receipt = CostReceipt(
-            agent_id="agent://a.com",
+            agent_id="agent://a.example.com",
             task_id="t-1",
             cost_usd=0.01,
             issued_at="2026-04-09T00:00:00Z",
@@ -44,7 +44,7 @@ class TestCostReceipt:
     def test_currency_defaults_to_usd(self):
         from ampro import CostReceipt
         receipt = CostReceipt(
-            agent_id="agent://a.com",
+            agent_id="agent://a.example.com",
             task_id="t-1",
             cost_usd=1.00,
             issued_at="2026-04-09T00:00:00Z",
@@ -68,7 +68,7 @@ class TestCostReceiptChain:
         from ampro import CostReceiptChain, CostReceipt
         chain = CostReceiptChain()
         receipt = CostReceipt(
-            agent_id="agent://a.com",
+            agent_id="agent://a.example.com",
             task_id="t-1",
             cost_usd=0.10,
             issued_at="2026-04-09T00:00:00Z",
@@ -82,19 +82,19 @@ class TestCostReceiptChain:
         chain = CostReceiptChain()
 
         r1 = CostReceipt(
-            agent_id="agent://first.com",
+            agent_id="agent://first.example.com",
             task_id="t-1",
             cost_usd=0.05,
             issued_at="2026-04-09T00:00:00Z",
         )
         r2 = CostReceipt(
-            agent_id="agent://second.com",
+            agent_id="agent://second.example.com",
             task_id="t-1",
             cost_usd=0.15,
             issued_at="2026-04-09T00:01:00Z",
         )
         r3 = CostReceipt(
-            agent_id="agent://third.com",
+            agent_id="agent://third.example.com",
             task_id="t-1",
             cost_usd=0.30,
             issued_at="2026-04-09T00:02:00Z",
@@ -105,9 +105,9 @@ class TestCostReceiptChain:
         chain.add_receipt(r3)
 
         assert len(chain.receipts) == 3
-        assert chain.receipts[0].agent_id == "agent://first.com"
-        assert chain.receipts[1].agent_id == "agent://second.com"
-        assert chain.receipts[2].agent_id == "agent://third.com"
+        assert chain.receipts[0].agent_id == "agent://first.example.com"
+        assert chain.receipts[1].agent_id == "agent://second.example.com"
+        assert chain.receipts[2].agent_id == "agent://third.example.com"
         assert chain.total_cost_usd == pytest.approx(0.50)
 
 
@@ -118,7 +118,7 @@ class TestTaskCompleteBodyCostReceipt:
             task_id="t-99",
             result="done",
             cost_receipt={
-                "agent_id": "agent://worker.com",
+                "agent_id": "agent://worker.example.com",
                 "task_id": "t-99",
                 "cost_usd": 0.25,
                 "issued_at": "2026-04-09T00:00:00Z",

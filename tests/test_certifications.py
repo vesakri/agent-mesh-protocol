@@ -27,8 +27,8 @@ class TestCertificationLink:
 
         aj = AgentJson(
             protocol_version="0.1.9",
-            identifiers=["agent://test.com"],
-            endpoint="https://test.com/agent/message",
+            identifiers=["agent://test.example.com"],
+            endpoint="https://test.example.com/agent/message",
         )
         assert aj.certifications == []
 
@@ -37,19 +37,19 @@ class TestCertificationLink:
 
         aj = AgentJson(
             protocol_version="0.1.9",
-            identifiers=["agent://certified.com"],
-            endpoint="https://certified.com/agent/message",
+            identifiers=["agent://certified.example.com"],
+            endpoint="https://certified.example.com/agent/message",
             certifications=[
                 {
                     "standard": "SOC2",
                     "url": "https://certs.example.com/soc2.pdf",
-                    "verified_by": "agent://auditor.com",
+                    "verified_by": "agent://auditor.example.com",
                     "expires_at": "2027-06-01T00:00:00Z",
                 },
                 {
                     "standard": "ISO27001",
                     "url": "https://certs.example.com/iso27001.pdf",
-                    "verified_by": "agent://iso-auditor.com",
+                    "verified_by": "agent://iso-auditor.example.com",
                     "expires_at": "2027-12-31T00:00:00Z",
                 },
             ],
@@ -64,7 +64,7 @@ class TestCertificationLink:
         link = CertificationLink(
             standard="ISO27001",
             url="https://example.com/iso.pdf",
-            verified_by="agent://verifier.com",
+            verified_by="agent://verifier.example.com",
             expires_at="2028-06-15T12:00:00Z",
         )
         json_str = link.model_dump_json()

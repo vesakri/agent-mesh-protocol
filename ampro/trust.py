@@ -69,6 +69,8 @@ class TrustConfig(BaseModel):
     check_loop_detection: bool = False
     check_kill_switch: bool = True  # Always checked, even for internal
 
+    model_config = {"extra": "ignore"}
+
     @classmethod
     def from_tier(cls, tier: TrustTier) -> TrustConfig:
         return cls(

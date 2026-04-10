@@ -58,7 +58,7 @@ _LEVEL_REQUIREMENTS: dict[CapabilityLevel, set[CapabilityGroup]] = {
 class CapabilitySet(BaseModel):
     """Declares which capability groups an agent supports."""
 
-    groups: set[CapabilityGroup] = Field(default_factory=set)
+    groups: set[CapabilityGroup] = Field(default_factory=set, description="Set of protocol capability groups this agent supports")
 
     @property
     def level(self) -> CapabilityLevel:

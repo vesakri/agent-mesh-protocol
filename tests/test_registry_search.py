@@ -87,7 +87,7 @@ class TestRegistrySearchMatchRequired:
     def test_missing_agent_id_raises(self):
         with pytest.raises(ValidationError):
             RegistrySearchMatch(
-                endpoint="https://x.com/agent/message",
+                endpoint="https://x.example.com/agent/message",
                 capabilities=["messaging"],
                 trust_score=500,
                 trust_tier="external",
@@ -96,7 +96,7 @@ class TestRegistrySearchMatchRequired:
     def test_missing_endpoint_raises(self):
         with pytest.raises(ValidationError):
             RegistrySearchMatch(
-                agent_id="agent://x.com",
+                agent_id="agent://x.example.com",
                 capabilities=["messaging"],
                 trust_score=500,
                 trust_tier="external",
@@ -105,8 +105,8 @@ class TestRegistrySearchMatchRequired:
     def test_missing_trust_score_raises(self):
         with pytest.raises(ValidationError):
             RegistrySearchMatch(
-                agent_id="agent://x.com",
-                endpoint="https://x.com/agent/message",
+                agent_id="agent://x.example.com",
+                endpoint="https://x.example.com/agent/message",
                 capabilities=["messaging"],
                 trust_tier="external",
             )
@@ -117,8 +117,8 @@ class TestRegistrySearchMatchOptional:
 
     def test_load_level_defaults_to_none(self):
         match = RegistrySearchMatch(
-            agent_id="agent://a.com",
-            endpoint="https://a.com/agent/message",
+            agent_id="agent://a.example.com",
+            endpoint="https://a.example.com/agent/message",
             capabilities=["messaging"],
             trust_score=500,
             trust_tier="external",
@@ -127,8 +127,8 @@ class TestRegistrySearchMatchOptional:
 
     def test_metadata_defaults_to_none(self):
         match = RegistrySearchMatch(
-            agent_id="agent://a.com",
-            endpoint="https://a.com/agent/message",
+            agent_id="agent://a.example.com",
+            endpoint="https://a.example.com/agent/message",
             capabilities=["messaging"],
             trust_score=500,
             trust_tier="external",
@@ -137,8 +137,8 @@ class TestRegistrySearchMatchOptional:
 
     def test_status_defaults_to_active(self):
         match = RegistrySearchMatch(
-            agent_id="agent://a.com",
-            endpoint="https://a.com/agent/message",
+            agent_id="agent://a.example.com",
+            endpoint="https://a.example.com/agent/message",
             capabilities=["messaging"],
             trust_score=500,
             trust_tier="external",
@@ -147,8 +147,8 @@ class TestRegistrySearchMatchOptional:
 
     def test_with_load_level(self):
         match = RegistrySearchMatch(
-            agent_id="agent://a.com",
-            endpoint="https://a.com/agent/message",
+            agent_id="agent://a.example.com",
+            endpoint="https://a.example.com/agent/message",
             capabilities=["messaging"],
             trust_score=500,
             trust_tier="external",
@@ -158,8 +158,8 @@ class TestRegistrySearchMatchOptional:
 
     def test_with_metadata(self):
         match = RegistrySearchMatch(
-            agent_id="agent://a.com",
-            endpoint="https://a.com/agent/message",
+            agent_id="agent://a.example.com",
+            endpoint="https://a.example.com/agent/message",
             capabilities=["messaging"],
             trust_score=500,
             trust_tier="external",
@@ -189,16 +189,16 @@ class TestRegistrySearchResultPopulated:
 
     def test_with_matches(self):
         match1 = RegistrySearchMatch(
-            agent_id="agent://a.com",
-            endpoint="https://a.com/agent/message",
+            agent_id="agent://a.example.com",
+            endpoint="https://a.example.com/agent/message",
             capabilities=["messaging"],
             trust_score=800,
             trust_tier="verified",
             load_level=20,
         )
         match2 = RegistrySearchMatch(
-            agent_id="agent://b.com",
-            endpoint="https://b.com/agent/message",
+            agent_id="agent://b.example.com",
+            endpoint="https://b.example.com/agent/message",
             capabilities=["tools", "messaging"],
             trust_score=600,
             trust_tier="owner",
@@ -212,7 +212,7 @@ class TestRegistrySearchResultPopulated:
         assert len(result.matches) == 2
         assert result.total_available == 42
         assert result.search_time_ms == 12.5
-        assert result.matches[0].agent_id == "agent://a.com"
+        assert result.matches[0].agent_id == "agent://a.example.com"
         assert result.matches[1].trust_tier == "owner"
 
 
@@ -237,8 +237,8 @@ class TestRegistrySearchJsonRoundTrip:
 
     def test_match_round_trip(self):
         match = RegistrySearchMatch(
-            agent_id="agent://roundtrip.com",
-            endpoint="https://roundtrip.com/agent/message",
+            agent_id="agent://roundtrip.example.com",
+            endpoint="https://roundtrip.example.com/agent/message",
             capabilities=["messaging", "tools", "streaming"],
             trust_score=900,
             trust_tier="internal",
@@ -254,8 +254,8 @@ class TestRegistrySearchJsonRoundTrip:
 
     def test_result_round_trip(self):
         match = RegistrySearchMatch(
-            agent_id="agent://rt.com",
-            endpoint="https://rt.com/agent/message",
+            agent_id="agent://rt.example.com",
+            endpoint="https://rt.example.com/agent/message",
             capabilities=["messaging"],
             trust_score=500,
             trust_tier="external",
@@ -276,8 +276,8 @@ class TestRegistrySearchJsonRoundTrip:
         result = RegistrySearchResult(
             matches=[
                 RegistrySearchMatch(
-                    agent_id="agent://a.com",
-                    endpoint="https://a.com/agent/message",
+                    agent_id="agent://a.example.com",
+                    endpoint="https://a.example.com/agent/message",
                     capabilities=["messaging"],
                     trust_score=500,
                     trust_tier="external",
@@ -290,4 +290,4 @@ class TestRegistrySearchJsonRoundTrip:
         json_str = json.dumps(dumped)
         loaded = json.loads(json_str)
         assert loaded["total_available"] == 1
-        assert loaded["matches"][0]["agent_id"] == "agent://a.com"
+        assert loaded["matches"][0]["agent_id"] == "agent://a.example.com"

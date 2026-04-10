@@ -1,7 +1,7 @@
 """
 Agent Protocol — Streaming Events.
 
-13 event types for real-time agent processing updates via SSE.
+17 event types for real-time agent processing updates via SSE.
 """
 
 from __future__ import annotations

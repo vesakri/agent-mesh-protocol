@@ -24,7 +24,7 @@ class TestTaskRedirectBodyRequired:
     def test_missing_task_id_raises(self):
         with pytest.raises(ValidationError):
             TaskRedirectBody(
-                redirect_to="agent://backup.com",
+                redirect_to="agent://backup.example.com",
                 reason="overloaded",
             )
 
@@ -39,7 +39,7 @@ class TestTaskRedirectBodyRequired:
         with pytest.raises(ValidationError):
             TaskRedirectBody(
                 task_id="t-1",
-                redirect_to="agent://backup.com",
+                redirect_to="agent://backup.example.com",
             )
 
 
@@ -49,7 +49,7 @@ class TestTaskRedirectBodyOptionalDefaults:
     def test_original_description_default_none(self):
         body = TaskRedirectBody(
             task_id="t-1",
-            redirect_to="agent://b.com",
+            redirect_to="agent://b.example.com",
             reason="maintenance",
         )
         assert body.original_description is None
@@ -57,7 +57,7 @@ class TestTaskRedirectBodyOptionalDefaults:
     def test_load_level_default_none(self):
         body = TaskRedirectBody(
             task_id="t-1",
-            redirect_to="agent://b.com",
+            redirect_to="agent://b.example.com",
             reason="maintenance",
         )
         assert body.load_level is None
@@ -65,7 +65,7 @@ class TestTaskRedirectBodyOptionalDefaults:
     def test_alternative_agents_default_none(self):
         body = TaskRedirectBody(
             task_id="t-1",
-            redirect_to="agent://b.com",
+            redirect_to="agent://b.example.com",
             reason="maintenance",
         )
         assert body.alternative_agents is None
@@ -73,7 +73,7 @@ class TestTaskRedirectBodyOptionalDefaults:
     def test_retry_after_seconds_default_none(self):
         body = TaskRedirectBody(
             task_id="t-1",
-            redirect_to="agent://b.com",
+            redirect_to="agent://b.example.com",
             reason="maintenance",
         )
         assert body.retry_after_seconds is None
@@ -85,7 +85,7 @@ class TestTaskRedirectBodyAlternativeAgents:
     def test_with_alternative_agents(self):
         body = TaskRedirectBody(
             task_id="t-99",
-            redirect_to="agent://primary-alt.com",
+            redirect_to="agent://primary-alt.example.com",
             reason="capability_mismatch",
             alternative_agents=[
                 "agent://alt1.example.com",
@@ -99,11 +99,11 @@ class TestTaskRedirectBodyAlternativeAgents:
     def test_with_all_optional_fields(self):
         body = TaskRedirectBody(
             task_id="t-100",
-            redirect_to="agent://target.com",
+            redirect_to="agent://target.example.com",
             reason="overloaded",
             original_description="Summarize quarterly report",
             load_level=95,
-            alternative_agents=["agent://fallback.com"],
+            alternative_agents=["agent://fallback.example.com"],
             retry_after_seconds=30,
         )
         assert body.original_description == "Summarize quarterly report"
@@ -113,7 +113,7 @@ class TestTaskRedirectBodyAlternativeAgents:
     def test_empty_alternative_agents_list(self):
         body = TaskRedirectBody(
             task_id="t-1",
-            redirect_to="agent://b.com",
+            redirect_to="agent://b.example.com",
             reason="overloaded",
             alternative_agents=[],
         )
@@ -126,21 +126,21 @@ class TestTaskRedirectValidateBody:
     def test_validate_body_returns_task_redirect_body(self):
         body = validate_body("task.redirect", {
             "task_id": "t-500",
-            "redirect_to": "agent://new-handler.com",
+            "redirect_to": "agent://new-handler.example.com",
             "reason": "overloaded",
         })
         assert isinstance(body, TaskRedirectBody)
         assert body.task_id == "t-500"
-        assert body.redirect_to == "agent://new-handler.com"
+        assert body.redirect_to == "agent://new-handler.example.com"
         assert body.reason == "overloaded"
 
     def test_validate_body_with_optional_fields(self):
         body = validate_body("task.redirect", {
             "task_id": "t-501",
-            "redirect_to": "agent://alt.com",
+            "redirect_to": "agent://alt.example.com",
             "reason": "maintenance",
             "load_level": 88,
-            "alternative_agents": ["agent://spare.com"],
+            "alternative_agents": ["agent://spare.example.com"],
         })
         assert isinstance(body, TaskRedirectBody)
         assert body.load_level == 88

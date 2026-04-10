@@ -241,7 +241,7 @@ __all__ = [
     # Attachments
     "Attachment", "validate_attachment_url",
     # Compliance
-    "ContentClassification", "JurisdictionInfo", "RetentionPolicy",
+    "ContentClassification", "RetentionPolicy",
     "ErasureRequest", "ErasureResponse", "ExportRequest", "ExportResponse",
     "check_content_classification", "check_minor_protection",
     "requires_audit", "ComplianceCheckResult",

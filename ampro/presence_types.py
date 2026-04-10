@@ -30,11 +30,11 @@ class PresenceState(str, Enum):
 class PresenceUpdate(BaseModel):
     """A presence heartbeat from an agent."""
 
-    agent_id: str
-    state: PresenceState
-    last_seen: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    active_tasks: int = 0
-    current_task_id: str | None = None
-    metadata: dict = Field(default_factory=dict)
+    agent_id: str = Field(description="Unique identifier of the agent reporting presence")
+    state: PresenceState = Field(description="Current presence state of the agent")
+    last_seen: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="UTC timestamp of the last heartbeat")
+    active_tasks: int = Field(default=0, description="Number of tasks the agent is currently processing")
+    current_task_id: str | None = Field(default=None, description="ID of the task the agent is actively working on, if any")
+    metadata: dict = Field(default_factory=dict, description="Arbitrary key-value metadata for the presence update")
 
     model_config = {"extra": "ignore"}

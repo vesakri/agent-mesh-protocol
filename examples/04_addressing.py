@@ -18,7 +18,7 @@ from ampro import (
 print("=== agent:// Addressing ===\n")
 
 # Form 1: Direct Host
-addr = parse_agent_uri("agent://weather-service.com")
+addr = parse_agent_uri("agent://weather-service.example.com")
 print(f"Direct Host: {addr.to_uri()}")
 print(f"  Type: {addr.address_type.value}")
 print(f"  Host: {addr.host}")
@@ -42,9 +42,9 @@ print(f"  DID: {addr.did}")
 print("\n=== Shorthand Normalization ===\n")
 shorthands = [
     ("@data-processor", "registry.example.com"),
-    ("https://weather-service.com", "registry.example.com"),
-    ("weather-service.com", "registry.example.com"),
-    ("agent://already-valid.com", "registry.example.com"),
+    ("https://weather-service.example.com", "registry.example.com"),
+    ("weather-service.example.com", "registry.example.com"),
+    ("agent://already-valid.example.com", "registry.example.com"),
 ]
 for value, registry in shorthands:
     result = normalize_shorthand(value, default_registry=registry)
