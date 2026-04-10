@@ -606,6 +606,33 @@ def _register_v016_body_types() -> None:
 _register_v016_body_types()
 
 
+def _register_v018_body_types() -> None:
+    """Register v0.1.8 body types: identity, federation, attestation."""
+    try:
+        from ampro.identity_link import IdentityLinkProofBody
+        _BODY_TYPE_REGISTRY["identity.link_proof"] = IdentityLinkProofBody
+    except ImportError:
+        pass
+    try:
+        from ampro.identity_migration import IdentityMigrationBody
+        _BODY_TYPE_REGISTRY["identity.migration"] = IdentityMigrationBody
+    except ImportError:
+        pass
+    try:
+        from ampro.audit_attestation import AuditAttestationBody
+        _BODY_TYPE_REGISTRY["audit.attestation"] = AuditAttestationBody
+    except ImportError:
+        pass
+    try:
+        from ampro.registry_federation import RegistryFederationRequest, RegistryFederationResponse
+        _BODY_TYPE_REGISTRY["registry.federation_request"] = RegistryFederationRequest
+        _BODY_TYPE_REGISTRY["registry.federation_response"] = RegistryFederationResponse
+    except ImportError:
+        pass
+
+_register_v018_body_types()
+
+
 def validate_body(body_type: str, body: dict[str, Any]) -> BaseModel | dict[str, Any]:
     """Validate a body dict against its body_type schema.
 

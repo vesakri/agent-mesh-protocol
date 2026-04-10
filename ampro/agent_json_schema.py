@@ -46,5 +46,10 @@ class AgentJson(BaseModel):
         default="active",
         description="Agent lifecycle status: active, deactivating, or decommissioned",
     )
+    # v0.1.8 — Identity migration
+    moved_to: str | None = Field(
+        default=None,
+        description="agent:// URI this agent has migrated to",
+    )
 
     model_config = {"extra": "allow"}

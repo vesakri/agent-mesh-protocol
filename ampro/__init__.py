@@ -183,11 +183,23 @@ from ampro.stream_checkpoint import StreamCheckpointEvent
 # --- Stream auth ---
 from ampro.stream_auth import StreamAuthRefreshEvent
 
+# --- Identity linking ---
+from ampro.identity_link import IdentityLinkProofBody
+
+# --- Registry federation ---
+from ampro.registry_federation import RegistryFederationRequest, RegistryFederationResponse
+
+# --- Identity migration ---
+from ampro.identity_migration import IdentityMigrationBody
+
+# --- Audit attestation ---
+from ampro.audit_attestation import AuditAttestationBody
+
 # --- Negotiation & versioning ---
 from ampro.negotiation import NegotiationResult, CapabilityNegotiator
 from ampro.versioning import SUPPORTED_VERSIONS, CURRENT_VERSION, check_version, negotiate_version
 
-__version__ = "0.1.7"
+__version__ = "0.1.8"
 
 __all__ = [
     # Core
@@ -297,6 +309,14 @@ __all__ = [
     "StreamCheckpointEvent",
     # Stream auth
     "StreamAuthRefreshEvent",
+    # Identity linking
+    "IdentityLinkProofBody",
+    # Registry federation
+    "RegistryFederationRequest", "RegistryFederationResponse",
+    # Identity migration
+    "IdentityMigrationBody",
+    # Audit attestation
+    "AuditAttestationBody",
     # Negotiation & versioning
     "NegotiationResult", "CapabilityNegotiator",
     "SUPPORTED_VERSIONS", "CURRENT_VERSION", "check_version", "negotiate_version",

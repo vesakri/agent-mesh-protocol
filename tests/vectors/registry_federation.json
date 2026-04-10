@@ -1,0 +1,152 @@
+{
+  "description": "Test vectors for RegistryFederationRequest and RegistryFederationResponse (AMP v0.1.8). Covers federation requests, accepted responses with terms, and rejected responses.",
+  "vectors": [
+    {
+      "description": "Valid federation request — resolve and search capabilities",
+      "body_type": "registry.federation_request",
+      "valid": true,
+      "body": {
+        "registry_id": "agent://registry.alpha.example.com",
+        "capabilities": ["resolve", "search"],
+        "trust_proof": "eyJhbGciOiJFZDI1NTE5In0.eyJyZWdpc3RyeSI6InJlZ2lzdHJ5LmFscGhhLmV4YW1wbGUuY29tIn0.SIGNATURE"
+      }
+    },
+    {
+      "description": "Valid federation request — resolve, search, and presence capabilities",
+      "body_type": "registry.federation_request",
+      "valid": true,
+      "body": {
+        "registry_id": "agent://registry.beta.example.com",
+        "capabilities": ["resolve", "search", "presence"],
+        "trust_proof": "eyJhbGciOiJFZDI1NTE5In0.eyJyZWdpc3RyeSI6InJlZ2lzdHJ5LmJldGEuZXhhbXBsZS5jb20ifQ.SIGNATURE"
+      }
+    },
+    {
+      "description": "Valid federation request — resolve only",
+      "body_type": "registry.federation_request",
+      "valid": true,
+      "body": {
+        "registry_id": "agent://registry.gamma.example.com",
+        "capabilities": ["resolve"],
+        "trust_proof": "eyJhbGciOiJFZDI1NTE5In0.eyJyZWdpc3RyeSI6InJlZ2lzdHJ5LmdhbW1hLmV4YW1wbGUuY29tIn0.SIGNATURE"
+      }
+    },
+    {
+      "description": "Accepted federation response — with rate limit and TTL terms",
+      "body_type": "registry.federation_response",
+      "valid": true,
+      "body": {
+        "accepted": true,
+        "federation_id": "fed-alpha-beta-001",
+        "terms": {
+          "rate_limit_rps": 100,
+          "ttl_seconds": 3600,
+          "retention_days": 90,
+          "allowed_capabilities": ["resolve", "search"]
+        }
+      },
+      "note": "Target registry accepts and specifies operational terms."
+    },
+    {
+      "description": "Accepted federation response — minimal terms",
+      "body_type": "registry.federation_response",
+      "valid": true,
+      "body": {
+        "accepted": true,
+        "federation_id": "fed-alpha-gamma-002",
+        "terms": {}
+      },
+      "note": "Acceptance with empty terms means defaults apply."
+    },
+    {
+      "description": "Rejected federation response — with reason",
+      "body_type": "registry.federation_response",
+      "valid": true,
+      "body": {
+        "accepted": false,
+        "federation_id": null,
+        "terms": {}
+      },
+      "note": "Rejection with no federation_id. Requesting registry may retry after addressing concerns."
+    },
+    {
+      "description": "Federation request wrapped in AgentMessage envelope",
+      "body_type": "registry.federation_request",
+      "valid": true,
+      "envelope": {
+        "sender": "agent://registry.alpha.example.com",
+        "recipient": "agent://registry.beta.example.com",
+        "body_type": "registry.federation_request",
+        "headers": {
+          "Protocol-Version": "0.1.8"
+        },
+        "body": {
+          "registry_id": "agent://registry.alpha.example.com",
+          "capabilities": ["resolve", "search"],
+          "trust_proof": "eyJhbGciOiJFZDI1NTE5In0.PROOF"
+        }
+      }
+    },
+    {
+      "description": "Federation response wrapped in AgentMessage envelope",
+      "body_type": "registry.federation_response",
+      "valid": true,
+      "envelope": {
+        "sender": "agent://registry.beta.example.com",
+        "recipient": "agent://registry.alpha.example.com",
+        "body_type": "registry.federation_response",
+        "headers": {
+          "Protocol-Version": "0.1.8"
+        },
+        "body": {
+          "accepted": true,
+          "federation_id": "fed-alpha-beta-003",
+          "terms": {
+            "rate_limit_rps": 50,
+            "ttl_seconds": 1800
+          }
+        }
+      }
+    },
+    {
+      "description": "Invalid federation request — missing registry_id (required)",
+      "body_type": "registry.federation_request",
+      "valid": false,
+      "expected_error": "registry_id",
+      "body": {
+        "capabilities": ["resolve"],
+        "trust_proof": "SOME_PROOF"
+      }
+    },
+    {
+      "description": "Invalid federation request — missing capabilities (required)",
+      "body_type": "registry.federation_request",
+      "valid": false,
+      "expected_error": "capabilities",
+      "body": {
+        "registry_id": "agent://registry.example.com",
+        "trust_proof": "SOME_PROOF"
+      }
+    },
+    {
+      "description": "Invalid federation request — missing trust_proof (required)",
+      "body_type": "registry.federation_request",
+      "valid": false,
+      "expected_error": "trust_proof",
+      "body": {
+        "registry_id": "agent://registry.example.com",
+        "capabilities": ["resolve"]
+      }
+    },
+    {
+      "description": "Invalid federation response — missing accepted (required)",
+      "body_type": "registry.federation_response",
+      "valid": false,
+      "expected_error": "accepted",
+      "body": {
+        "federation_id": "fed-bad-001",
+        "terms": {}
+      }
+    }
+  ]
+}

@@ -7,7 +7,7 @@ from pydantic import ValidationError
 class TestImports:
     def test_version(self):
         import ampro
-        assert ampro.__version__ == "0.1.7"
+        assert ampro.__version__ == "0.1.8"
 
     def test_all_exports(self):
         import ampro
@@ -266,7 +266,7 @@ class TestV011Imports:
 
     def test_version_bumped(self):
         import ampro
-        assert ampro.__version__ == "0.1.7"
+        assert ampro.__version__ == "0.1.8"
 
     def test_handshake_imports(self):
         from ampro import (
@@ -328,7 +328,7 @@ class TestV012Imports:
 
     def test_version_is_016(self):
         import ampro
-        assert ampro.__version__ == "0.1.7"
+        assert ampro.__version__ == "0.1.8"
 
     def test_key_revocation_imports(self):
         from ampro import RevocationReason, KeyRevocationBody
@@ -668,3 +668,57 @@ class TestV017Imports:
     def test_all_exports_v017_count(self):
         import ampro
         assert len(ampro.__all__) >= 179
+
+
+class TestV018Imports:
+    """Verify all v0.1.8 types are importable from ampro."""
+
+    def test_identity_link_proof_import(self):
+        from ampro import IdentityLinkProofBody
+        body = IdentityLinkProofBody(
+            source_id="agent://a.com",
+            target_id="agent://b.com",
+            proof_type="ed25519_cross_sign",
+            proof="sig",
+            timestamp="2026-04-09T12:00:00Z",
+        )
+        assert body.source_id == "agent://a.com"
+
+    def test_registry_federation_request_import(self):
+        from ampro import RegistryFederationRequest
+        req = RegistryFederationRequest(
+            registry_id="agent://reg.com",
+            capabilities=["resolve", "search"],
+            trust_proof="proof",
+        )
+        assert req.registry_id == "agent://reg.com"
+
+    def test_registry_federation_response_import(self):
+        from ampro import RegistryFederationResponse
+        resp = RegistryFederationResponse(accepted=True, federation_id="fed-1")
+        assert resp.accepted is True
+
+    def test_identity_migration_body_import(self):
+        from ampro import IdentityMigrationBody
+        body = IdentityMigrationBody(
+            old_id="agent://old.com",
+            new_id="agent://new.com",
+            migration_proof="proof",
+            effective_at="2026-04-10T00:00:00Z",
+        )
+        assert body.old_id == "agent://old.com"
+
+    def test_audit_attestation_body_import(self):
+        from ampro import AuditAttestationBody
+        body = AuditAttestationBody(
+            audit_id="att-1",
+            agents=["agent://a.com", "agent://b.com"],
+            events_hash="sha256:abc",
+            attestation_signatures={"agent://a.com": "sig-a", "agent://b.com": "sig-b"},
+            timestamp="2026-04-09T15:00:00Z",
+        )
+        assert body.audit_id == "att-1"
+
+    def test_all_exports_v018_count(self):
+        import ampro
+        assert len(ampro.__all__) >= 184

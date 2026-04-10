@@ -1,0 +1,139 @@
+{
+  "description": "Test vectors for IdentityMigrationBody (body.type = identity.migration) and AgentJson moved_to field (AMP v0.1.8). Covers valid migrations, agent.json with moved_to, and invalid payloads.",
+  "vectors": [
+    {
+      "description": "Valid migration — host to host",
+      "body_type": "identity.migration",
+      "valid": true,
+      "body": {
+        "old_id": "agent://assistant.old-host.com",
+        "new_id": "agent://assistant.new-host.com",
+        "migration_proof": "eyJhbGciOiJFZDI1NTE5In0.eyJvbGQiOiJhZ2VudDovL2Fzc2lzdGFudC5vbGQtaG9zdC5jb20iLCJuZXciOiJhZ2VudDovL2Fzc2lzdGFudC5uZXctaG9zdC5jb20ifQ.SIGNATURE",
+        "effective_at": "2026-04-10T00:00:00Z"
+      }
+    },
+    {
+      "description": "Valid migration — slug to host (leaving registry for self-hosted)",
+      "body_type": "identity.migration",
+      "valid": true,
+      "body": {
+        "old_id": "agent://worker@registry.example.com",
+        "new_id": "agent://worker.self-hosted.example.com",
+        "migration_proof": "eyJhbGciOiJFZDI1NTE5In0.eyJvbGQiOiJhZ2VudDovL3dvcmtlckByZWdpc3RyeS5leGFtcGxlLmNvbSJ9.SIGNATURE",
+        "effective_at": "2026-05-01T00:00:00Z"
+      },
+      "note": "Agent migrating from a registry slug to a self-hosted endpoint."
+    },
+    {
+      "description": "Valid migration — host to DID",
+      "body_type": "identity.migration",
+      "valid": true,
+      "body": {
+        "old_id": "agent://assistant.example.com",
+        "new_id": "agent://did:web:assistant.example.com",
+        "migration_proof": "eyJhbGciOiJFZDI1NTE5In0.eyJvbGQiOiJhZ2VudDovL2Fzc2lzdGFudC5leGFtcGxlLmNvbSJ9.SIGNATURE",
+        "effective_at": "2026-04-15T12:00:00Z"
+      },
+      "note": "Agent transitioning from host-based to DID-based addressing."
+    },
+    {
+      "description": "AgentJson with moved_to — deactivating agent at old address",
+      "test_type": "agent_json",
+      "valid": true,
+      "agent_json": {
+        "protocol_version": "0.1.8",
+        "identifiers": ["agent://assistant.old-host.com"],
+        "endpoint": "https://old-host.com/agent/message",
+        "status": "deactivating",
+        "moved_to": "agent://assistant.new-host.com",
+        "capabilities": {
+          "groups": [],
+          "level": 0
+        }
+      },
+      "note": "Callers fetching /.well-known/agent.json at the old address see moved_to and follow the redirect."
+    },
+    {
+      "description": "AgentJson without moved_to — active agent (no migration)",
+      "test_type": "agent_json",
+      "valid": true,
+      "agent_json": {
+        "protocol_version": "0.1.8",
+        "identifiers": ["agent://assistant.example.com"],
+        "endpoint": "https://assistant.example.com/agent/message",
+        "status": "active",
+        "moved_to": null,
+        "capabilities": {
+          "groups": ["task", "data"],
+          "level": 2
+        }
+      },
+      "note": "Normal active agent with no migration in progress."
+    },
+    {
+      "description": "Migration wrapped in AgentMessage envelope",
+      "body_type": "identity.migration",
+      "valid": true,
+      "envelope": {
+        "sender": "agent://assistant.old-host.com",
+        "recipient": "agent://assistant.new-host.com",
+        "body_type": "identity.migration",
+        "headers": {
+          "Protocol-Version": "0.1.8",
+          "Session-Id": "sess-migration-001"
+        },
+        "body": {
+          "old_id": "agent://assistant.old-host.com",
+          "new_id": "agent://assistant.new-host.com",
+          "migration_proof": "eyJhbGciOiJFZDI1NTE5In0.PROOF",
+          "effective_at": "2026-04-10T00:00:00Z"
+        }
+      },
+      "note": "IdentityMigrationBody inside a full AgentMessage envelope."
+    },
+    {
+      "description": "Invalid migration — missing old_id (required)",
+      "body_type": "identity.migration",
+      "valid": false,
+      "expected_error": "old_id",
+      "body": {
+        "new_id": "agent://assistant.new-host.com",
+        "migration_proof": "SOME_PROOF",
+        "effective_at": "2026-04-10T00:00:00Z"
+      }
+    },
+    {
+      "description": "Invalid migration — missing new_id (required)",
+      "body_type": "identity.migration",
+      "valid": false,
+      "expected_error": "new_id",
+      "body": {
+        "old_id": "agent://assistant.old-host.com",
+        "migration_proof": "SOME_PROOF",
+        "effective_at": "2026-04-10T00:00:00Z"
+      }
+    },
+    {
+      "description": "Invalid migration — missing migration_proof (required)",
+      "body_type": "identity.migration",
+      "valid": false,
+      "expected_error": "migration_proof",
+      "body": {
+        "old_id": "agent://assistant.old-host.com",
+        "new_id": "agent://assistant.new-host.com",
+        "effective_at": "2026-04-10T00:00:00Z"
+      }
+    },
+    {
+      "description": "Invalid migration — missing effective_at (required)",
+      "body_type": "identity.migration",
+      "valid": false,
+      "expected_error": "effective_at",
+      "body": {
+        "old_id": "agent://assistant.old-host.com",
+        "new_id": "agent://assistant.new-host.com",
+        "migration_proof": "SOME_PROOF"
+      }
+    }
+  ]
+}

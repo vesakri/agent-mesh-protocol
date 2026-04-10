@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.1.8] - 2026-04-10
+
+### Added
+- `identity.link_proof` body type — cryptographic proof two addresses are the same entity
+- `registry.federation_request` / `registry.federation_response` body types — inter-registry trust
+- `identity.migration` body type — agent address migration with proof
+- `audit.attestation` body type — signed proof both parties agree on session events
+- `moved_to` field on `AgentJson` — migration redirect pointer
+
+### Changed
+- Body type registry grew from 43 to 48
+- Exports grew from 179 to 184
+
 ## [0.1.7] - 2026-04-09
 
 ### Added

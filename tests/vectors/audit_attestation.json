@@ -1,0 +1,163 @@
+{
+  "description": "Test vectors for AuditAttestationBody (body.type = audit.attestation) (AMP v0.1.8). Covers two-party and three-party attestations, and invalid payloads.",
+  "vectors": [
+    {
+      "description": "Two-party attestation — sender and receiver agree on session events",
+      "body_type": "audit.attestation",
+      "valid": true,
+      "body": {
+        "audit_id": "att-sess-001",
+        "agents": [
+          "agent://requester.example.com",
+          "agent://executor.example.com"
+        ],
+        "events_hash": "a3f2b8c1d4e5f6071829304a5b6c7d8e9f0a1b2c3d4e5f60718293a4b5c6d7e8",
+        "attestation_signatures": {
+          "agent://requester.example.com": "SIG_REQUESTER_abc123def456ghi789",
+          "agent://executor.example.com": "SIG_EXECUTOR_jkl012mno345pqr678"
+        },
+        "timestamp": "2026-04-09T12:00:00Z"
+      },
+      "note": "Both parties sign the same events_hash, proving agreement on what happened."
+    },
+    {
+      "description": "Three-party attestation — delegation chain with intermediary",
+      "body_type": "audit.attestation",
+      "valid": true,
+      "body": {
+        "audit_id": "att-sess-002",
+        "agents": [
+          "agent://client.example.com",
+          "agent://coordinator.example.com",
+          "agent://worker.example.com"
+        ],
+        "events_hash": "b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3",
+        "attestation_signatures": {
+          "agent://client.example.com": "SIG_CLIENT_stu901vwx234yz5678",
+          "agent://coordinator.example.com": "SIG_COORDINATOR_abc901def234ghi567",
+          "agent://worker.example.com": "SIG_WORKER_jkl890mno123pqr456"
+        },
+        "timestamp": "2026-04-09T14:30:00Z"
+      },
+      "note": "Three agents in a delegation chain all attest to the same session events."
+    },
+    {
+      "description": "Two-party attestation — different events hash (separate session)",
+      "body_type": "audit.attestation",
+      "valid": true,
+      "body": {
+        "audit_id": "att-sess-003",
+        "agents": [
+          "agent://alpha.example.com",
+          "agent://beta.example.com"
+        ],
+        "events_hash": "1111111122222222333333334444444455555555666666667777777788888888",
+        "attestation_signatures": {
+          "agent://alpha.example.com": "SIG_ALPHA_aaa111bbb222",
+          "agent://beta.example.com": "SIG_BETA_ccc333ddd444"
+        },
+        "timestamp": "2026-04-09T09:00:00Z"
+      }
+    },
+    {
+      "description": "Wrapped in AgentMessage envelope",
+      "body_type": "audit.attestation",
+      "valid": true,
+      "envelope": {
+        "sender": "agent://requester.example.com",
+        "recipient": "agent://executor.example.com",
+        "body_type": "audit.attestation",
+        "headers": {
+          "Protocol-Version": "0.1.8",
+          "Session-Id": "sess-audit-001"
+        },
+        "body": {
+          "audit_id": "att-sess-004",
+          "agents": [
+            "agent://requester.example.com",
+            "agent://executor.example.com"
+          ],
+          "events_hash": "f0e1d2c3b4a596877869504a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d8e7f6a5b4",
+          "attestation_signatures": {
+            "agent://requester.example.com": "SIG_REQ_envelope_abc",
+            "agent://executor.example.com": "SIG_EXE_envelope_def"
+          },
+          "timestamp": "2026-04-09T16:00:00Z"
+        }
+      },
+      "note": "AuditAttestationBody inside a full AgentMessage envelope."
+    },
+    {
+      "description": "Invalid — missing audit_id (required)",
+      "body_type": "audit.attestation",
+      "valid": false,
+      "expected_error": "audit_id",
+      "body": {
+        "agents": [
+          "agent://a.example.com",
+          "agent://b.example.com"
+        ],
+        "events_hash": "abcdef1234567890",
+        "attestation_signatures": {},
+        "timestamp": "2026-04-09T12:00:00Z"
+      }
+    },
+    {
+      "description": "Invalid — missing agents (required)",
+      "body_type": "audit.attestation",
+      "valid": false,
+      "expected_error": "agents",
+      "body": {
+        "audit_id": "att-bad-001",
+        "events_hash": "abcdef1234567890",
+        "attestation_signatures": {},
+        "timestamp": "2026-04-09T12:00:00Z"
+      }
+    },
+    {
+      "description": "Invalid — missing events_hash (required)",
+      "body_type": "audit.attestation",
+      "valid": false,
+      "expected_error": "events_hash",
+      "body": {
+        "audit_id": "att-bad-002",
+        "agents": [
+          "agent://a.example.com",
+          "agent://b.example.com"
+        ],
+        "attestation_signatures": {},
+        "timestamp": "2026-04-09T12:00:00Z"
+      }
+    },
+    {
+      "description": "Invalid — missing attestation_signatures (required)",
+      "body_type": "audit.attestation",
+      "valid": false,
+      "expected_error": "attestation_signatures",
+      "body": {
+        "audit_id": "att-bad-003",
+        "agents": [
+          "agent://a.example.com",
+          "agent://b.example.com"
+        ],
+        "events_hash": "abcdef1234567890",
+        "timestamp": "2026-04-09T12:00:00Z"
+      }
+    },
+    {
+      "description": "Invalid — missing timestamp (required)",
+      "body_type": "audit.attestation",
+      "valid": false,
+      "expected_error": "timestamp",
+      "body": {
+        "audit_id": "att-bad-004",
+        "agents": [
+          "agent://a.example.com",
+          "agent://b.example.com"
+        ],
+        "events_hash": "abcdef1234567890",
+        "attestation_signatures": {}
+      }
+    }
+  ]
+}
