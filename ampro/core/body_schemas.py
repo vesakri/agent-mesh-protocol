@@ -487,7 +487,7 @@ _BODY_TYPE_REGISTRY: dict[str, type[BaseModel]] = {
 def _register_compliance_body_types() -> None:
     """Register erasure + export body types from compliance_types module."""
     try:
-        from ampro.compliance_types import (
+        from ampro.compliance.types import (
             ErasureRequest, ErasureResponse, ExportRequest, ExportResponse,
         )
         _BODY_TYPE_REGISTRY["data.erasure_request"] = ErasureRequest
@@ -503,7 +503,7 @@ _register_compliance_body_types()
 def _register_handshake_body_types() -> None:
     """Register session handshake body types from handshake module."""
     try:
-        from ampro.handshake import (
+        from ampro.session.handshake import (
             SessionInitBody, SessionEstablishedBody, SessionConfirmBody,
             SessionPingBody, SessionPongBody,
             SessionPauseBody, SessionResumeBody, SessionCloseBody,
@@ -525,7 +525,7 @@ _register_handshake_body_types()
 def _register_challenge_body_types() -> None:
     """Register anti-abuse challenge body types from challenge module."""
     try:
-        from ampro.challenge import TaskChallengeBody, TaskChallengeResponseBody
+        from ampro.security.challenge import TaskChallengeBody, TaskChallengeResponseBody
         _BODY_TYPE_REGISTRY["task.challenge"] = TaskChallengeBody
         _BODY_TYPE_REGISTRY["task.challenge_response"] = TaskChallengeResponseBody
     except ImportError:
@@ -537,18 +537,18 @@ _register_challenge_body_types()
 def _register_v012_body_types() -> None:
     """Register v0.1.2 body types: key revocation, tool consent, trust upgrade."""
     try:
-        from ampro.key_revocation import KeyRevocationBody
+        from ampro.security.key_revocation import KeyRevocationBody
         _BODY_TYPE_REGISTRY["key.revocation"] = KeyRevocationBody
     except ImportError:
         pass
     try:
-        from ampro.tool_consent import ToolConsentRequestBody, ToolConsentGrantBody
+        from ampro.agent.tool_consent import ToolConsentRequestBody, ToolConsentGrantBody
         _BODY_TYPE_REGISTRY["tool.consent_request"] = ToolConsentRequestBody
         _BODY_TYPE_REGISTRY["tool.consent_grant"] = ToolConsentGrantBody
     except ImportError:
         pass
     try:
-        from ampro.trust_upgrade import TrustUpgradeRequestBody, TrustUpgradeResponseBody
+        from ampro.trust.upgrade import TrustUpgradeRequestBody, TrustUpgradeResponseBody
         _BODY_TYPE_REGISTRY["trust.upgrade_request"] = TrustUpgradeRequestBody
         _BODY_TYPE_REGISTRY["trust.upgrade_response"] = TrustUpgradeResponseBody
     except ImportError:
@@ -560,7 +560,7 @@ _register_v012_body_types()
 def _register_v013_body_types() -> None:
     """Register v0.1.3 body types: agent lifecycle."""
     try:
-        from ampro.agent_lifecycle import AgentDeactivationNoticeBody
+        from ampro.agent.lifecycle import AgentDeactivationNoticeBody
         _BODY_TYPE_REGISTRY["agent.deactivation_notice"] = AgentDeactivationNoticeBody
     except ImportError:
         pass
@@ -571,7 +571,7 @@ _register_v013_body_types()
 def _register_v014_body_types() -> None:
     """Register v0.1.4 body types: task redirect."""
     try:
-        from ampro.task_redirect import TaskRedirectBody
+        from ampro.transport.task_redirect import TaskRedirectBody
         _BODY_TYPE_REGISTRY["task.redirect"] = TaskRedirectBody
     except ImportError:
         pass
@@ -582,7 +582,7 @@ _register_v014_body_types()
 def _register_v015_body_types() -> None:
     """Register v0.1.5 body types: task revoke."""
     try:
-        from ampro.task_revoke import TaskRevokeBody
+        from ampro.transport.task_revoke import TaskRevokeBody
         _BODY_TYPE_REGISTRY["task.revoke"] = TaskRevokeBody
     except ImportError:
         pass
@@ -593,12 +593,12 @@ _register_v015_body_types()
 def _register_v016_body_types() -> None:
     """Register v0.1.6 body types: erasure propagation, consent revoke."""
     try:
-        from ampro.erasure_propagation import ErasurePropagationStatusBody
+        from ampro.compliance.erasure_propagation import ErasurePropagationStatusBody
         _BODY_TYPE_REGISTRY["erasure.propagation_status"] = ErasurePropagationStatusBody
     except ImportError:
         pass
     try:
-        from ampro.consent_revoke import DataConsentRevokeBody
+        from ampro.compliance.consent_revoke import DataConsentRevokeBody
         _BODY_TYPE_REGISTRY["data.consent_revoke"] = DataConsentRevokeBody
     except ImportError:
         pass
@@ -609,22 +609,22 @@ _register_v016_body_types()
 def _register_v018_body_types() -> None:
     """Register v0.1.8 body types: identity, federation, attestation."""
     try:
-        from ampro.identity_link import IdentityLinkProofBody
+        from ampro.identity.link import IdentityLinkProofBody
         _BODY_TYPE_REGISTRY["identity.link_proof"] = IdentityLinkProofBody
     except ImportError:
         pass
     try:
-        from ampro.identity_migration import IdentityMigrationBody
+        from ampro.identity.migration import IdentityMigrationBody
         _BODY_TYPE_REGISTRY["identity.migration"] = IdentityMigrationBody
     except ImportError:
         pass
     try:
-        from ampro.audit_attestation import AuditAttestationBody
+        from ampro.compliance.audit_attestation import AuditAttestationBody
         _BODY_TYPE_REGISTRY["audit.attestation"] = AuditAttestationBody
     except ImportError:
         pass
     try:
-        from ampro.registry_federation import RegistryFederationRequest, RegistryFederationResponse
+        from ampro.registry.federation import RegistryFederationRequest, RegistryFederationResponse
         _BODY_TYPE_REGISTRY["registry.federation_request"] = RegistryFederationRequest
         _BODY_TYPE_REGISTRY["registry.federation_response"] = RegistryFederationResponse
     except ImportError:
@@ -636,7 +636,7 @@ _register_v018_body_types()
 def _register_v019_body_types() -> None:
     """Register v0.1.9 body types: trust proof."""
     try:
-        from ampro.trust_proof import TrustProofBody
+        from ampro.trust.proof import TrustProofBody
         _BODY_TYPE_REGISTRY["trust.proof"] = TrustProofBody
     except ImportError:
         pass

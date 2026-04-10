@@ -3,9 +3,9 @@
 import pytest
 from pydantic import ValidationError
 
-from ampro.task_redirect import TaskRedirectBody
-from ampro.body_schemas import validate_body
-from ampro.envelope import STANDARD_HEADERS
+from ampro.transport.task_redirect import TaskRedirectBody
+from ampro.core.body_schemas import validate_body
+from ampro.core.envelope import STANDARD_HEADERS
 
 
 class TestTaskRedirectBodyRequired:

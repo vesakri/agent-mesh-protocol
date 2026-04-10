@@ -14,7 +14,7 @@ import logging
 import time
 from typing import Any
 
-from ampro.compliance_types import ErasureRequest, ErasureResponse
+from ampro.compliance.types import ErasureRequest, ErasureResponse
 
 logger = logging.getLogger(__name__)
 

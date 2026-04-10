@@ -13,10 +13,10 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from ampro.envelope import AgentMessage
-from ampro.body_schemas import validate_body
-from ampro.capabilities import CapabilityGroup, CapabilitySet
-from ampro.negotiation import CapabilityNegotiator
+from ampro.core.envelope import AgentMessage
+from ampro.core.body_schemas import validate_body
+from ampro.core.capabilities import CapabilityGroup, CapabilitySet
+from ampro.transport.negotiation import CapabilityNegotiator
 
 
 class MessageSizeError(Exception):

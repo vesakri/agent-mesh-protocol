@@ -21,7 +21,7 @@ import asyncio
 from collections import deque
 from typing import AsyncIterator
 
-from ampro.streaming import StreamingEvent, StreamingEventType
+from ampro.streaming.events import StreamingEvent, StreamingEventType
 
 
 # ---------------------------------------------------------------------------

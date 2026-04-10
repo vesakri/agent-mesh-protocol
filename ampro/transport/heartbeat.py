@@ -12,7 +12,7 @@ from __future__ import annotations
 import asyncio
 from typing import AsyncIterator
 
-from ampro.streaming import StreamingEvent, StreamingEventType
+from ampro.streaming.events import StreamingEvent, StreamingEventType
 
 
 class HeartbeatEmitter:

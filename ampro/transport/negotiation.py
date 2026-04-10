@@ -15,7 +15,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from ampro.capabilities import CapabilityGroup, CapabilitySet
+from ampro.core.capabilities import CapabilityGroup, CapabilitySet
 
 
 class NegotiationResult(BaseModel):

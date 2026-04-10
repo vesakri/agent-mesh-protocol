@@ -8,7 +8,7 @@ Returns rate limit info for X-RateLimit-* response headers.
 from __future__ import annotations
 
 import time
-from ampro.rate_limit import RateLimitInfo
+from ampro.security.rate_limit import RateLimitInfo
 
 
 class RateLimiter:

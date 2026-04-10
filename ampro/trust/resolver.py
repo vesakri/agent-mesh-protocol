@@ -15,9 +15,9 @@ from __future__ import annotations
 
 import logging
 
-from ampro.auth_methods import AuthMethod, parse_authorization
-from ampro.trust import TrustTier
-from ampro.api_key_store import ApiKeyStore
+from ampro.identity.auth_methods import AuthMethod, parse_authorization
+from ampro.trust.tiers import TrustTier
+from ampro.transport.api_key_store import ApiKeyStore
 
 logger = logging.getLogger(__name__)
 

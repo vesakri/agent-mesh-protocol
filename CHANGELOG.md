@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.2.0] - 2026-04-10
+
+### Changed (BREAKING)
+- **Package reorganized into subdirectories.** Modules moved from flat `ampro/*.py` into 11 subpackages: `core/`, `trust/`, `session/`, `identity/`, `delegation/`, `streaming/`, `security/`, `compliance/`, `registry/`, `agent/`, `transport/`
+- Direct submodule imports (e.g. `from ampro.trust_score import ...`) must update to new paths (e.g. `from ampro.trust.score import ...`)
+- **Public API unchanged.** `from ampro import X` still works for all 187 exports
+
+### Migration Guide
+| Old import | New import |
+|------------|-----------|
+| `from ampro.trust_score import ...` | `from ampro.trust.score import ...` |
+| `from ampro.body_schemas import ...` | `from ampro.core.body_schemas import ...` |
+| `from ampro.streaming import ...` | `from ampro.streaming.events import ...` |
+| `from ampro.envelope import ...` | `from ampro.core.envelope import ...` |
+| `from ampro import X` | `from ampro import X` (unchanged) |
+
+See the full mapping in CONTRIBUTING.md.
+
 ## [0.1.9] - 2026-04-10
 
 ### Added

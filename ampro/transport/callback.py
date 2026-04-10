@@ -15,7 +15,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from ampro.attachment_types import validate_attachment_url
+from ampro.transport.attachment import validate_attachment_url
 
 logger = logging.getLogger(__name__)
 

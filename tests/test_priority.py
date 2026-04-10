@@ -2,7 +2,7 @@
 
 import pytest
 
-from ampro.priority import Priority
+from ampro.core.priority import Priority
 
 
 class TestPriorityEnum:

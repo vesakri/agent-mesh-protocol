@@ -12,7 +12,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from ampro.addressing import parse_agent_uri, AddressType
+from ampro.core.addressing import parse_agent_uri, AddressType
 
 logger = logging.getLogger(__name__)
 

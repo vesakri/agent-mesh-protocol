@@ -5,7 +5,7 @@ import json
 import pytest
 from pydantic import ValidationError
 
-from ampro.registry_search import (
+from ampro.registry.search import (
     RegistrySearchMatch,
     RegistrySearchRequest,
     RegistrySearchResult,

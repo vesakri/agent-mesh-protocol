@@ -9,8 +9,8 @@ Spec ref: Sections 8.1-8.3
 
 from __future__ import annotations
 
-from ampro.envelope import AgentMessage
-from ampro.compliance_types import ContentClassification
+from ampro.core.envelope import AgentMessage
+from ampro.compliance.types import ContentClassification
 
 
 class ComplianceCheckResult:

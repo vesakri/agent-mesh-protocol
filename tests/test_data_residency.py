@@ -2,12 +2,12 @@
 
 import pytest
 
-from ampro.data_residency import (
+from ampro.compliance.data_residency import (
     DataResidency,
     validate_residency_region,
     check_residency_violation,
 )
-from ampro.envelope import STANDARD_HEADERS
+from ampro.core.envelope import STANDARD_HEADERS
 
 
 class TestDataResidencyCreation:

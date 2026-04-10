@@ -115,7 +115,7 @@ def test_2_trust_score_policy_visibility():
 def test_3_delegation_cost_receipt_task_complete():
     """Delegation Chain -> Cost Receipt -> Task Complete"""
     from ampro import DelegationLink, validate_body, TaskCompleteBody, AgentMessage
-    from ampro.cost_receipt import CostReceipt, CostReceiptChain
+    from ampro.delegation.cost_receipt import CostReceipt, CostReceiptChain
 
     # Build delegation link
     link = DelegationLink(

@@ -3,8 +3,8 @@
 import pytest
 from pydantic import ValidationError
 
-from ampro.consent_revoke import DataConsentRevokeBody
-from ampro.body_schemas import validate_body
+from ampro.compliance.consent_revoke import DataConsentRevokeBody
+from ampro.core.body_schemas import validate_body
 
 
 class TestConsentRevokeBody:

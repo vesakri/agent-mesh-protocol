@@ -2,11 +2,11 @@
 
 import pytest
 
-from ampro.erasure_propagation import (
+from ampro.compliance.erasure_propagation import (
     ErasurePropagationStatus,
     ErasurePropagationStatusBody,
 )
-from ampro.body_schemas import validate_body
+from ampro.core.body_schemas import validate_body
 
 
 class TestErasurePropagationStatusEnum:

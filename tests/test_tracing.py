@@ -4,7 +4,7 @@ import re
 
 import pytest
 
-from ampro.tracing import (
+from ampro.delegation.tracing import (
     TraceContext,
     generate_trace_id,
     generate_span_id,
