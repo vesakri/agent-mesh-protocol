@@ -72,6 +72,8 @@ STANDARD_HEADERS = frozenset({
     # v0.1.6 — Compliance at Scale
     "Jurisdiction",
     "Data-Residency",
+    # v0.1.7 — Streaming at Scale
+    "Stream-Channel",
 })
 
 

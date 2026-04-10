@@ -1,0 +1,168 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Stream Channel Test Vectors",
+  "description": "Test vectors for stream channel open, close, and multiplexing events (AMP v0.1.7)",
+  "vectors": [
+    {
+      "id": "channel-open-valid",
+      "description": "Valid channel open event with task association",
+      "valid": true,
+      "input": {
+        "channel_id": "ch-monitoring",
+        "task_id": "task-health-001",
+        "created_at": "2026-04-09T12:00:00Z"
+      },
+      "expected": {
+        "type": "StreamChannelOpenEvent",
+        "channel_id": "ch-monitoring",
+        "task_id": "task-health-001",
+        "created_at": "2026-04-09T12:00:00Z"
+      }
+    },
+    {
+      "id": "channel-open-no-task",
+      "description": "Valid channel open event without task association",
+      "valid": true,
+      "input": {
+        "channel_id": "ch-broadcast",
+        "created_at": "2026-04-09T12:01:00Z"
+      },
+      "expected": {
+        "type": "StreamChannelOpenEvent",
+        "channel_id": "ch-broadcast",
+        "task_id": null,
+        "created_at": "2026-04-09T12:01:00Z"
+      }
+    },
+    {
+      "id": "channel-close-complete",
+      "description": "Valid channel close event with default reason (complete)",
+      "valid": true,
+      "input": {
+        "channel_id": "ch-monitoring"
+      },
+      "expected": {
+        "type": "StreamChannelCloseEvent",
+        "channel_id": "ch-monitoring",
+        "reason": "complete"
+      }
+    },
+    {
+      "id": "channel-close-error",
+      "description": "Valid channel close event with error reason",
+      "valid": true,
+      "input": {
+        "channel_id": "ch-processing",
+        "reason": "error"
+      },
+      "expected": {
+        "type": "StreamChannelCloseEvent",
+        "channel_id": "ch-processing",
+        "reason": "error"
+      }
+    },
+    {
+      "id": "channel-close-timeout",
+      "description": "Valid channel close event with timeout reason",
+      "valid": true,
+      "input": {
+        "channel_id": "ch-stale",
+        "reason": "timeout"
+      },
+      "expected": {
+        "type": "StreamChannelCloseEvent",
+        "channel_id": "ch-stale",
+        "reason": "timeout"
+      }
+    },
+    {
+      "id": "multi-channel-envelope",
+      "description": "Message envelope with Stream-Channel header for multiplexing",
+      "valid": true,
+      "input": {
+        "sender": "agent://processor.example.com",
+        "recipient": "agent://orchestrator.example.com",
+        "body_type": "message",
+        "headers": {
+          "Protocol-Version": "0.1.7",
+          "Session-Id": "sess-mux-001",
+          "Stream-Channel": "ch-processing"
+        },
+        "body": {
+          "text": "Pipeline stage 2 complete"
+        }
+      },
+      "expected": {
+        "type": "AgentMessage",
+        "headers_contains": {
+          "Stream-Channel": "ch-processing"
+        }
+      }
+    },
+    {
+      "id": "streaming-event-channel-open",
+      "description": "StreamingEvent wrapping a channel open payload",
+      "valid": true,
+      "input": {
+        "type": "stream.channel_open",
+        "data": {
+          "channel_id": "ch-analytics",
+          "task_id": "task-report-gen",
+          "created_at": "2026-04-09T12:00:00Z"
+        },
+        "id": "evt-open-ch-analytics",
+        "seq": 0
+      },
+      "expected": {
+        "type": "StreamingEvent",
+        "sse_contains": "event: stream.channel_open"
+      }
+    },
+    {
+      "id": "streaming-event-channel-close",
+      "description": "StreamingEvent wrapping a channel close payload",
+      "valid": true,
+      "input": {
+        "type": "stream.channel_close",
+        "data": {
+          "channel_id": "ch-analytics",
+          "reason": "complete"
+        },
+        "id": "evt-close-ch-analytics",
+        "seq": 51
+      },
+      "expected": {
+        "type": "StreamingEvent",
+        "sse_contains": "event: stream.channel_close"
+      }
+    },
+    {
+      "id": "invalid-missing-channel-id-open",
+      "description": "Invalid: channel open event missing required channel_id",
+      "valid": false,
+      "input": {
+        "task_id": "task-orphan",
+        "created_at": "2026-04-09T12:00:00Z"
+      },
+      "expected_error": "channel_id is required"
+    },
+    {
+      "id": "invalid-missing-channel-id-close",
+      "description": "Invalid: channel close event missing required channel_id",
+      "valid": false,
+      "input": {
+        "reason": "error"
+      },
+      "expected_error": "channel_id is required"
+    },
+    {
+      "id": "invalid-missing-created-at",
+      "description": "Invalid: channel open event missing required created_at",
+      "valid": false,
+      "input": {
+        "channel_id": "ch-incomplete"
+      },
+      "expected_error": "created_at is required"
+    }
+  ]
+}

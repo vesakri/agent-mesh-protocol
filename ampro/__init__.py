@@ -174,11 +174,20 @@ from ampro.consent_revoke import DataConsentRevokeBody
 # --- Data residency ---
 from ampro.data_residency import DataResidency, validate_residency_region, check_residency_violation
 
+# --- Stream channels ---
+from ampro.stream_channel import StreamChannel, StreamChannelOpenEvent, StreamChannelCloseEvent
+
+# --- Stream checkpoints ---
+from ampro.stream_checkpoint import StreamCheckpointEvent
+
+# --- Stream auth ---
+from ampro.stream_auth import StreamAuthRefreshEvent
+
 # --- Negotiation & versioning ---
 from ampro.negotiation import NegotiationResult, CapabilityNegotiator
 from ampro.versioning import SUPPORTED_VERSIONS, CURRENT_VERSION, check_version, negotiate_version
 
-__version__ = "0.1.6"
+__version__ = "0.1.7"
 
 __all__ = [
     # Core
@@ -282,6 +291,12 @@ __all__ = [
     "DataConsentRevokeBody",
     # Data residency
     "DataResidency", "validate_residency_region", "check_residency_violation",
+    # Stream channels
+    "StreamChannel", "StreamChannelOpenEvent", "StreamChannelCloseEvent",
+    # Stream checkpoints
+    "StreamCheckpointEvent",
+    # Stream auth
+    "StreamAuthRefreshEvent",
     # Negotiation & versioning
     "NegotiationResult", "CapabilityNegotiator",
     "SUPPORTED_VERSIONS", "CURRENT_VERSION", "check_version", "negotiate_version",

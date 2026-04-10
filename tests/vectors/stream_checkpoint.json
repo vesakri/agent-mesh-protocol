@@ -1,0 +1,188 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Stream Checkpoint Test Vectors",
+  "description": "Test vectors for stream checkpoint events and reconnection (AMP v0.1.7)",
+  "vectors": [
+    {
+      "id": "checkpoint-valid",
+      "description": "Valid checkpoint with state snapshot at seq 5",
+      "valid": true,
+      "input": {
+        "checkpoint_id": "chk-001",
+        "seq": 5,
+        "state_snapshot": {
+          "rows_loaded": 500,
+          "phase": "aggregation",
+          "cursor": "batch-1-complete"
+        },
+        "timestamp": "2026-04-09T12:00:05Z"
+      },
+      "expected": {
+        "type": "StreamCheckpointEvent",
+        "checkpoint_id": "chk-001",
+        "seq": 5,
+        "state_snapshot": {
+          "rows_loaded": 500,
+          "phase": "aggregation",
+          "cursor": "batch-1-complete"
+        },
+        "timestamp": "2026-04-09T12:00:05Z"
+      }
+    },
+    {
+      "id": "checkpoint-at-seq-zero",
+      "description": "Valid checkpoint at seq 0 (start of stream, initial state)",
+      "valid": true,
+      "input": {
+        "checkpoint_id": "chk-init",
+        "seq": 0,
+        "state_snapshot": {
+          "initialized": true,
+          "cursor": null
+        },
+        "timestamp": "2026-04-09T12:00:00Z"
+      },
+      "expected": {
+        "type": "StreamCheckpointEvent",
+        "checkpoint_id": "chk-init",
+        "seq": 0,
+        "state_snapshot": {
+          "initialized": true,
+          "cursor": null
+        },
+        "timestamp": "2026-04-09T12:00:00Z"
+      }
+    },
+    {
+      "id": "checkpoint-empty-snapshot",
+      "description": "Valid checkpoint with empty state snapshot",
+      "valid": true,
+      "input": {
+        "checkpoint_id": "chk-empty",
+        "seq": 10,
+        "state_snapshot": {},
+        "timestamp": "2026-04-09T12:00:10Z"
+      },
+      "expected": {
+        "type": "StreamCheckpointEvent",
+        "checkpoint_id": "chk-empty",
+        "seq": 10,
+        "state_snapshot": {},
+        "timestamp": "2026-04-09T12:00:10Z"
+      }
+    },
+    {
+      "id": "checkpoint-default-snapshot",
+      "description": "Valid checkpoint without explicit state_snapshot (defaults to empty dict)",
+      "valid": true,
+      "input": {
+        "checkpoint_id": "chk-no-snap",
+        "seq": 3,
+        "timestamp": "2026-04-09T12:00:03Z"
+      },
+      "expected": {
+        "type": "StreamCheckpointEvent",
+        "checkpoint_id": "chk-no-snap",
+        "seq": 3,
+        "state_snapshot": {},
+        "timestamp": "2026-04-09T12:00:03Z"
+      }
+    },
+    {
+      "id": "checkpoint-nested-snapshot",
+      "description": "Valid checkpoint with deeply nested state snapshot",
+      "valid": true,
+      "input": {
+        "checkpoint_id": "chk-nested",
+        "seq": 100,
+        "state_snapshot": {
+          "pipeline": {
+            "stages_completed": [1, 2, 3],
+            "current_stage": 4,
+            "metrics": {
+              "rows_processed": 15000,
+              "errors": 0,
+              "warnings": 3
+            }
+          },
+          "auth": {
+            "token_expires_at": "2026-04-09T14:00:00Z"
+          }
+        },
+        "timestamp": "2026-04-09T12:01:40Z"
+      },
+      "expected": {
+        "type": "StreamCheckpointEvent",
+        "checkpoint_id": "chk-nested",
+        "seq": 100
+      }
+    },
+    {
+      "id": "checkpoint-as-streaming-event",
+      "description": "StreamingEvent wrapping a checkpoint payload",
+      "valid": true,
+      "input": {
+        "type": "stream.checkpoint",
+        "data": {
+          "checkpoint_id": "chk-sse",
+          "seq": 15,
+          "state_snapshot": {
+            "phase": "summary"
+          },
+          "timestamp": "2026-04-09T12:00:15Z"
+        },
+        "id": "evt-chk-sse",
+        "seq": 15
+      },
+      "expected": {
+        "type": "StreamingEvent",
+        "sse_contains": "event: stream.checkpoint"
+      }
+    },
+    {
+      "id": "invalid-negative-seq",
+      "description": "Invalid: checkpoint with negative sequence number",
+      "valid": false,
+      "input": {
+        "checkpoint_id": "chk-bad-seq",
+        "seq": -1,
+        "state_snapshot": {},
+        "timestamp": "2026-04-09T12:00:00Z"
+      },
+      "expected_error": "seq must be >= 0"
+    },
+    {
+      "id": "invalid-missing-checkpoint-id",
+      "description": "Invalid: checkpoint missing required checkpoint_id",
+      "valid": false,
+      "input": {
+        "seq": 5,
+        "state_snapshot": {},
+        "timestamp": "2026-04-09T12:00:05Z"
+      },
+      "expected_error": "checkpoint_id is required"
+    },
+    {
+      "id": "invalid-missing-timestamp",
+      "description": "Invalid: checkpoint missing required timestamp",
+      "valid": false,
+      "input": {
+        "checkpoint_id": "chk-no-ts",
+        "seq": 5,
+        "state_snapshot": {}
+      },
+      "expected_error": "timestamp is required"
+    },
+    {
+      "id": "invalid-missing-seq",
+      "description": "Invalid: checkpoint missing required seq",
+      "valid": false,
+      "input": {
+        "checkpoint_id": "chk-no-seq",
+        "state_snapshot": {},
+        "timestamp": "2026-04-09T12:00:00Z"
+      },
+      "expected_error": "seq is required"
+    }
+  ]
+}

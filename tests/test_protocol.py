@@ -7,7 +7,7 @@ from pydantic import ValidationError
 class TestImports:
     def test_version(self):
         import ampro
-        assert ampro.__version__ == "0.1.6"
+        assert ampro.__version__ == "0.1.7"
 
     def test_all_exports(self):
         import ampro
@@ -56,7 +56,7 @@ class TestEnvelope:
 
     def test_headers_count(self):
         from ampro import STANDARD_HEADERS
-        assert len(STANDARD_HEADERS) == 49
+        assert len(STANDARD_HEADERS) == 50
 
 
 class TestBodySchemas:
@@ -111,9 +111,9 @@ class TestCapabilities:
 
 
 class TestStreaming:
-    def test_thirteen_events(self):
+    def test_seventeen_events(self):
         from ampro import StreamingEventType
-        assert len(StreamingEventType) == 13
+        assert len(StreamingEventType) == 17
 
     def test_heartbeat(self):
         from ampro import StreamingEventType
@@ -266,7 +266,7 @@ class TestV011Imports:
 
     def test_version_bumped(self):
         import ampro
-        assert ampro.__version__ == "0.1.6"
+        assert ampro.__version__ == "0.1.7"
 
     def test_handshake_imports(self):
         from ampro import (
@@ -328,7 +328,7 @@ class TestV012Imports:
 
     def test_version_is_016(self):
         import ampro
-        assert ampro.__version__ == "0.1.6"
+        assert ampro.__version__ == "0.1.7"
 
     def test_key_revocation_imports(self):
         from ampro import RevocationReason, KeyRevocationBody
@@ -612,3 +612,59 @@ class TestV016Imports:
     def test_all_exports_v016_count(self):
         import ampro
         assert len(ampro.__all__) >= 173
+
+
+class TestV017Imports:
+    """Verify all v0.1.7 types are importable from ampro."""
+
+    def test_stream_channel_import(self):
+        from ampro import StreamChannel
+        ch = StreamChannel(
+            channel_id="ch-test",
+            created_at="2026-04-09T12:00:00Z",
+        )
+        assert ch.channel_id == "ch-test"
+
+    def test_stream_channel_open_event_import(self):
+        from ampro import StreamChannelOpenEvent
+        event = StreamChannelOpenEvent(
+            channel_id="ch-open",
+            task_id="t-1",
+            created_at="2026-04-09T12:00:00Z",
+        )
+        assert event.channel_id == "ch-open"
+
+    def test_stream_channel_close_event_import(self):
+        from ampro import StreamChannelCloseEvent
+        event = StreamChannelCloseEvent(channel_id="ch-close")
+        assert event.reason == "complete"
+
+    def test_stream_checkpoint_event_import(self):
+        from ampro import StreamCheckpointEvent
+        cp = StreamCheckpointEvent(
+            checkpoint_id="cp-test",
+            seq=0,
+            timestamp="2026-04-09T12:00:00Z",
+        )
+        assert cp.state_snapshot == {}
+
+    def test_stream_auth_refresh_event_import(self):
+        from ampro import StreamAuthRefreshEvent
+        event = StreamAuthRefreshEvent(
+            method="jwt",
+            token="tok",
+            expires_at="2026-04-09T13:00:00Z",
+        )
+        assert event.method == "jwt"
+
+    def test_stream_channel_header(self):
+        from ampro import STANDARD_HEADERS
+        assert "Stream-Channel" in STANDARD_HEADERS
+
+    def test_streaming_event_type_count(self):
+        from ampro import StreamingEventType
+        assert len(StreamingEventType) == 17
+
+    def test_all_exports_v017_count(self):
+        import ampro
+        assert len(ampro.__all__) >= 179

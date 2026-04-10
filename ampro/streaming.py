@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field
 
 
 class StreamingEventType(str, Enum):
-    """The 13 protocol streaming event types."""
+    """The 17 protocol streaming event types."""
 
     THINKING = "thinking"          # Agent is reasoning
     TOOL_CALL = "tool_call"        # Agent is invoking a tool
@@ -31,6 +31,12 @@ class StreamingEventType(str, Enum):
     STREAM_ACK = "stream.ack"         # Client ACKs processed events
     STREAM_PAUSE = "stream.pause"     # Server pauses the stream
     STREAM_RESUME = "stream.resume"   # Client signals ready for more
+
+    # Stream multiplexing and lifecycle (see ampro.stream_channel, stream_checkpoint, stream_auth)
+    STREAM_CHANNEL_OPEN = "stream.channel_open"    # Open a logical channel
+    STREAM_CHANNEL_CLOSE = "stream.channel_close"  # Close a logical channel
+    STREAM_CHECKPOINT = "stream.checkpoint"         # Periodic state snapshot
+    STREAM_AUTH_REFRESH = "stream.auth_refresh"     # Mid-stream token renewal
 
 
 class StreamingEvent(BaseModel):

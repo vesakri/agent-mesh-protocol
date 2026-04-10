@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.1.7] - 2026-04-09
+
+### Added
+- `StreamChannel` / `StreamChannelOpenEvent` / `StreamChannelCloseEvent` — stream multiplexing
+- `StreamCheckpointEvent` — periodic state snapshots for reconnection
+- `StreamAuthRefreshEvent` — mid-stream JWT renewal
+- `Stream-Channel` header
+- 4 new streaming event types (channel_open, channel_close, checkpoint, auth_refresh)
+
+### Changed
+- Standard headers grew from 49 to 50
+- Streaming event types grew from 13 to 17
+- Exports grew from 174 to 179+
+
 ## [0.1.6] - 2026-04-09
 
 ### Added
