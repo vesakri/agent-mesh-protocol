@@ -30,7 +30,17 @@ class MessageSizeError(Exception):
 
 
 def validate_message_body(msg: AgentMessage) -> BaseModel | dict[str, Any]:
-    body = msg.body if isinstance(msg.body, dict) else {}
+    if isinstance(msg.body, dict):
+        body = msg.body
+    elif isinstance(msg.body, str):
+        # Convenience: a bare string body for body_type "message" wraps as {"text": body}
+        body = {"text": msg.body}
+    elif msg.body is None:
+        # No body provided — skip schema validation (body is optional for
+        # the base "message" type and extension types)
+        return {}
+    else:
+        body = {}
     return validate_body(msg.body_type, body)
 
 

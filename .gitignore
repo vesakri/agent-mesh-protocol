@@ -5,8 +5,13 @@ build/
 *.egg-info/
 .pytest_cache/
 
-# Private docs — specs, amendments, roadmaps, implementation plans
+# Private docs — specs, amendments, roadmaps, implementation plans, audits
 docs/SPEC.md
 docs/FEATURES.md
 docs/ROADMAP.md
 docs/amendments/
+docs/EDGE-CASES.md
+docs/SECURITY-AUDIT.md
+docs/SECURITY-AUDIT-V2.md
+docs/PROTOCOL-ROADMAP.md
+docs/WIRE-BINDING-PLAN.md

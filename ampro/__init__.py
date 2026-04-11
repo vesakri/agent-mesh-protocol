@@ -208,6 +208,12 @@ from ampro.compliance.certifications import CertificationLink
 from ampro.transport.negotiation import NegotiationResult, CapabilityNegotiator
 from ampro.core.versioning import SUPPORTED_VERSIONS, CURRENT_VERSION, check_version, negotiate_version
 
+# --- Wire binding (HTTP transport contract) ---
+from ampro.wire.endpoints import ConformanceLevel, EndpointSpec, ALL_ENDPOINTS, endpoints_for_level
+from ampro.wire.errors import ProblemDetail, ErrorType
+from ampro.wire.config import WireConfig, DEFAULTS as WIRE_DEFAULTS
+from ampro.wire.body_type_map import ResponseMode, BodyTypeBinding, BODY_TYPE_BINDINGS, binding_for
+
 __version__ = "0.2.1"
 
 __all__ = [
@@ -335,4 +341,9 @@ __all__ = [
     # Negotiation & versioning
     "NegotiationResult", "CapabilityNegotiator",
     "SUPPORTED_VERSIONS", "CURRENT_VERSION", "check_version", "negotiate_version",
+    # Wire binding (HTTP transport contract)
+    "ConformanceLevel", "EndpointSpec", "ALL_ENDPOINTS", "endpoints_for_level",
+    "ProblemDetail", "ErrorType",
+    "WireConfig", "WIRE_DEFAULTS",
+    "ResponseMode", "BodyTypeBinding", "BODY_TYPE_BINDINGS", "binding_for",
 ]
