@@ -214,7 +214,7 @@ from ampro.wire.errors import ProblemDetail, ErrorType
 from ampro.wire.config import WireConfig, DEFAULTS as WIRE_DEFAULTS
 from ampro.wire.body_type_map import ResponseMode, BodyTypeBinding, BODY_TYPE_BINDINGS, binding_for
 
-__version__ = "0.2.1"
+__version__ = "0.2.2"
 
 __all__ = [
     # Core

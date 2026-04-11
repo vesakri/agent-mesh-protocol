@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.2.2] - 2026-04-10
+
+### Added
+- Reference server (`ampro/server/`) — minimal AMP agent in 10 lines
+  - `AgentServer` class with `@server.on()` decorator pattern
+  - Framework-agnostic `route()` method + FastAPI/Flask adapters
+  - Auto-generated agent.json, health, SSE placeholder
+  - RFC 7807 error responses on validation failure
+- Client SDK (`ampro/client/`) — talk to any AMP agent
+  - `send()` — one-shot message like httpx.post()
+  - `discover()` — fetch agent capabilities
+  - `stream()` — SSE streaming with reconnection
+  - `connect()` — 3-phase handshake session with auto-binding
+  - `AmpProtocolError` wrapping RFC 7807 responses
+- 10 implementation guidance examples (31-40)
+  - Server: simple, tools, auth, sessions, streaming
+  - Client: send, handshake, streaming
+  - Integration: two agents talking, delegation chain with costs
+
 ## [0.2.1] - 2026-04-10
 
 ### Security Fixes
