@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import pytest
 
-
 # ---------------------------------------------------------------------------
 # Endpoint tests
 # ---------------------------------------------------------------------------
@@ -34,7 +33,7 @@ class TestEndpoints:
         assert HttpMethod.DELETE == "DELETE"
 
     def test_endpoint_spec_model(self) -> None:
-        from ampro.wire.endpoints import EndpointSpec, HttpMethod, ConformanceLevel
+        from ampro.wire.endpoints import ConformanceLevel, EndpointSpec, HttpMethod
 
         ep = EndpointSpec(
             path="/test",
@@ -259,7 +258,7 @@ class TestErrors:
         assert ErrorType.HEADER_INJECTION == "urn:amp:error:header-injection"
 
     def test_rate_limited_factory(self) -> None:
-        from ampro.wire.errors import rate_limited, ErrorType
+        from ampro.wire.errors import ErrorType, rate_limited
 
         err = rate_limited("Too fast", retry_after=30)
         assert err.status == 429
@@ -268,7 +267,7 @@ class TestErrors:
         assert "Too fast" in (err.detail or "")
 
     def test_invalid_message_factory(self) -> None:
-        from ampro.wire.errors import invalid_message, ErrorType
+        from ampro.wire.errors import ErrorType, invalid_message
 
         err = invalid_message("Missing body_type")
         assert err.status == 400
@@ -377,7 +376,7 @@ class TestErrors:
         assert err.status == 403
 
     def test_timeout_factory(self) -> None:
-        from ampro.wire.errors import timeout, ErrorType
+        from ampro.wire.errors import ErrorType, timeout
 
         err = timeout("Operation timed out", retry_after=10)
         assert err.status == 408
@@ -392,28 +391,28 @@ class TestErrors:
         assert err.retry_after_seconds is None
 
     def test_loop_detected_factory(self) -> None:
-        from ampro.wire.errors import loop_detected, ErrorType
+        from ampro.wire.errors import ErrorType, loop_detected
 
         err = loop_detected("Message already seen in delegation chain")
         assert err.status == 409
         assert err.type == ErrorType.LOOP_DETECTED
 
     def test_invalid_callback_url_factory(self) -> None:
-        from ampro.wire.errors import invalid_callback_url, ErrorType
+        from ampro.wire.errors import ErrorType, invalid_callback_url
 
         err = invalid_callback_url("Callback URL is not HTTPS")
         assert err.status == 400
         assert err.type == ErrorType.INVALID_CALLBACK_URL
 
     def test_delegation_validation_failed_factory(self) -> None:
-        from ampro.wire.errors import delegation_validation_failed, ErrorType
+        from ampro.wire.errors import ErrorType, delegation_validation_failed
 
         err = delegation_validation_failed("Signature on hop 3 invalid")
         assert err.status == 403
         assert err.type == ErrorType.DELEGATION_VALIDATION_FAILED
 
     def test_stream_limit_exceeded_factory(self) -> None:
-        from ampro.wire.errors import stream_limit_exceeded, ErrorType
+        from ampro.wire.errors import ErrorType, stream_limit_exceeded
 
         err = stream_limit_exceeded("Max 10 concurrent streams", retry_after=30)
         assert err.status == 429
@@ -421,14 +420,14 @@ class TestErrors:
         assert err.retry_after_seconds == 30
 
     def test_content_type_mismatch_factory(self) -> None:
-        from ampro.wire.errors import content_type_mismatch, ErrorType
+        from ampro.wire.errors import ErrorType, content_type_mismatch
 
         err = content_type_mismatch("Expected application/json, got text/plain")
         assert err.status == 415
         assert err.type == ErrorType.CONTENT_TYPE_MISMATCH
 
     def test_header_injection_factory(self) -> None:
-        from ampro.wire.errors import header_injection, ErrorType
+        from ampro.wire.errors import ErrorType, header_injection
 
         err = header_injection("Newline character in header value")
         assert err.status == 400
@@ -614,7 +613,7 @@ class TestBodyTypeMap:
             assert bt in BODY_TYPE_BINDINGS, f"Missing binding for {bt}"
 
     def test_binding_for_known_type(self) -> None:
-        from ampro.wire.body_type_map import binding_for, ResponseMode
+        from ampro.wire.body_type_map import ResponseMode, binding_for
 
         b = binding_for("task.create")
         assert b is not None
@@ -784,12 +783,11 @@ class TestWirePackageImport:
 
     def test_import_from_wire(self) -> None:
         from ampro.wire import (
-            ConformanceLevel, EndpointSpec, HttpMethod,
-            ALL_ENDPOINTS, endpoints_for_level, endpoints_at_level,
-            ProblemDetail, ErrorType,
-            WireConfig, WIRE_DEFAULTS,
-            ResponseMode, BodyTypeBinding, BODY_TYPE_BINDINGS, binding_for,
-            is_canonical, streaming_body_types, idempotent_body_types,
+            ALL_ENDPOINTS,
+            BODY_TYPE_BINDINGS,
+            WIRE_DEFAULTS,
+            ConformanceLevel,
+            WireConfig,
         )
         # Smoke test — ensure they are all real objects
         assert ConformanceLevel.DISCOVERY.value == 0
@@ -799,22 +797,18 @@ class TestWirePackageImport:
 
     def test_import_from_ampro_top_level(self) -> None:
         from ampro import (
-            ConformanceLevel, EndpointSpec, ALL_ENDPOINTS, endpoints_for_level,
-            ProblemDetail, ErrorType,
-            WireConfig, WIRE_DEFAULTS,
-            ResponseMode, BodyTypeBinding, BODY_TYPE_BINDINGS, binding_for,
+            ALL_ENDPOINTS,
+            ConformanceLevel,
         )
         assert ConformanceLevel.DISCOVERY.value == 0
         assert isinstance(ALL_ENDPOINTS, list)
 
     def test_endpoint_constants_importable(self) -> None:
         from ampro.wire import (
-            AGENT_JSON, HEALTH, JWKS, MESSAGE,
-            TOOLS_LIST, TOOL_INVOKE,
-            TASK_STATUS, STREAM, TASK_UPDATE,
-            SESSION_START, SESSION_GET, SESSION_UPDATE, SESSION_CLOSE,
-            IDENTITY_VERIFY, CONSENT_REQUEST, CONSENT_REVOKE,
-            PRESENCE, AUDIT_LOG, REGISTRY_RESOLVE, REGISTRY_REGISTER,
+            AGENT_JSON,
+            HEALTH,
+            JWKS,
+            MESSAGE,
             REGISTRY_SEARCH,
         )
         assert AGENT_JSON.path == "/.well-known/agent.json"
@@ -825,15 +819,9 @@ class TestWirePackageImport:
 
     def test_error_factories_importable(self) -> None:
         from ampro.wire import (
-            rate_limited, invalid_message, unauthorized, forbidden,
-            not_found, version_mismatch, nonce_replay, session_expired,
-            payload_too_large, internal_error, not_implemented, unavailable,
-            capability_not_negotiated, contact_policy_violation,
-            delegation_denied, jurisdiction_conflict,
-            residency_violation, consent_denied,
-            timeout, loop_detected, invalid_callback_url,
-            delegation_validation_failed, stream_limit_exceeded,
-            content_type_mismatch, header_injection,
+            rate_limited,
+            timeout,
+            unauthorized,
         )
         # Smoke test a couple
         err = rate_limited("test")

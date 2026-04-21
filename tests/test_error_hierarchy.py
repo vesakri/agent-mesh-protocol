@@ -14,6 +14,8 @@ from ampro.errors import (
     SessionError,
     TransportError,
     TrustError,
+)
+from ampro.errors import (
     ValidationError as AmpValidationError,
 )
 
@@ -58,8 +60,8 @@ class TestBaseHierarchy:
 
     def test_errors_exported_from_top_level(self):
         from ampro import AmpError as ExportedAmpError
-        from ampro import RedirectLoopError as ExportedRedirectLoopError
         from ampro import MigrationChainTooLongError as ExportedMigration
+        from ampro import RedirectLoopError as ExportedRedirectLoopError
 
         assert ExportedAmpError is AmpError
         assert ExportedRedirectLoopError is RedirectLoopError

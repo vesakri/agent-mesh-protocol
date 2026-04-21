@@ -2,17 +2,17 @@
 cache-invalidation push body."""
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
 from ampro.agent.schema import (
+    MAX_MIGRATION_HOPS,
     AgentJson,
     AgentMetadataInvalidateBody,
-    MAX_MIGRATION_HOPS,
     follow_migration_chain,
 )
-from ampro.errors import MigrationChainTooLongError, TransportError, AmpError
+from ampro.errors import AmpError, MigrationChainTooLongError, TransportError
 
 
 def _agent(identifier: str, moved_to: str | None = None) -> AgentJson:
@@ -85,7 +85,7 @@ class TestAgentMetadataInvalidateBody:
     def test_all_fields(self):
         body = AgentMetadataInvalidateBody(
             agent_id="agent://x.example.com",
-            changed_at=datetime(2026, 4, 9, 12, 0, 0, tzinfo=timezone.utc),
+            changed_at=datetime(2026, 4, 9, 12, 0, 0, tzinfo=UTC),
             reason="migration",
         )
         assert body.agent_id == "agent://x.example.com"
@@ -98,7 +98,7 @@ class TestAgentMetadataInvalidateBody:
     def test_allowed_reasons(self, reason):
         body = AgentMetadataInvalidateBody(
             agent_id="agent://y.example.com",
-            changed_at=datetime.now(tz=timezone.utc),
+            changed_at=datetime.now(tz=UTC),
             reason=reason,
         )
         assert body.reason == reason
@@ -109,7 +109,7 @@ class TestAgentMetadataInvalidateBody:
         with pytest.raises(ValidationError):
             AgentMetadataInvalidateBody(
                 agent_id="agent://y.example.com",
-                changed_at=datetime.now(tz=timezone.utc),
+                changed_at=datetime.now(tz=UTC),
                 reason="pineapple",
             )
 

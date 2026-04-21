@@ -59,11 +59,11 @@ def main(argv: list[str] | None = None) -> None:
     agent_id = getattr(app, "agent_id", "unknown")
     print(f"\n  AMP agent running on http://{args.host}:{args.port}")
     print(f"  Agent ID:  {agent_id}")
-    print(f"  Endpoints:")
-    print(f"    GET  /.well-known/agent.json")
-    print(f"    GET  /agent/health")
-    print(f"    POST /agent/message")
-    print(f"    GET  /agent/stream")
+    print("  Endpoints:")
+    print("    GET  /.well-known/agent.json")
+    print("    GET  /agent/health")
+    print("    POST /agent/message")
+    print("    GET  /agent/stream")
     print()
 
     from ampro.server.core import AgentServer

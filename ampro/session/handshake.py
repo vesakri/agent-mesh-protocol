@@ -36,13 +36,12 @@ import json
 import secrets
 import threading
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
 
 from pydantic import BaseModel, Field
 
 from ampro.errors import SessionError
-
 
 # ---------------------------------------------------------------------------
 # Exceptions
@@ -309,7 +308,7 @@ def create_resume_token(
         "session_id": session_id,
         "binding_token": binding_token,
         "context": session_context,
-        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_at": datetime.now(UTC).isoformat(),
     }
     payload_bytes = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
     payload_b64 = base64.urlsafe_b64encode(payload_bytes).decode("ascii")

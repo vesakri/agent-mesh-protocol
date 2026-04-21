@@ -8,22 +8,22 @@ adapter provides real implementations.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
-from ampro.trust.tiers import TrustTier
-from ampro.session.types import SessionContext, SessionState
-from ampro.core.capabilities import CapabilitySet
 from ampro.compliance.types import ContentClassification
+from ampro.core.capabilities import CapabilitySet
 from ampro.identity.auth_methods import AuthMethod
+from ampro.session.types import SessionContext, SessionState
+from ampro.trust.tiers import TrustTier
 
 if TYPE_CHECKING:
-    from ampro.core.envelope import AgentMessage
-    from ampro.streaming.events import StreamingEvent
-    from ampro.delegation.chain import DelegationChain
-    from ampro.identity.types import IdentityProof, ConsentGrant
     from ampro.agent.schema import AgentJson
     from ampro.agent.tool_consent import ToolDefinition
+    from ampro.core.envelope import AgentMessage
+    from ampro.delegation.chain import DelegationChain
+    from ampro.identity.types import ConsentGrant, IdentityProof
     from ampro.registry.search import RegistrySearchMatch
+    from ampro.streaming.events import StreamingEvent
 
 
 @dataclass

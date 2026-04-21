@@ -14,7 +14,6 @@ import base64
 import pytest
 from pydantic import ValidationError
 
-
 # A valid base64 string of 88 chars (decodes to 64 bytes — Ed25519 sig size)
 _VALID_B64_PROOF = base64.b64encode(b"A" * 64).decode()  # 88 chars, valid base64
 

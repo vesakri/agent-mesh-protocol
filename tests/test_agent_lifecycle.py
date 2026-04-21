@@ -69,7 +69,7 @@ class TestAgentDeactivationNoticeBody:
             AgentDeactivationNoticeBody()
 
     def test_validate_body_deactivation_notice(self):
-        from ampro import validate_body, AgentDeactivationNoticeBody
+        from ampro import AgentDeactivationNoticeBody, validate_body
         body = validate_body("agent.deactivation_notice", {
             "agent_id": "agent://retiring.example.com",
             "reason": "End of life",

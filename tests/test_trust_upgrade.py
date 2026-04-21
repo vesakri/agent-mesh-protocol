@@ -85,7 +85,7 @@ class TestTrustUpgradeResponseBody:
 
 class TestTrustUpgradeRegistry:
     def test_validate_body_upgrade_request(self):
-        from ampro import validate_body, TrustUpgradeRequestBody
+        from ampro import TrustUpgradeRequestBody, validate_body
         body = validate_body("trust.upgrade_request", {
             "session_id": "sess-1",
             "current_tier": "external",
@@ -97,7 +97,7 @@ class TestTrustUpgradeRegistry:
         assert body.required_tier == "verified"
 
     def test_validate_body_upgrade_response(self):
-        from ampro import validate_body, TrustUpgradeResponseBody
+        from ampro import TrustUpgradeResponseBody, validate_body
         body = validate_body("trust.upgrade_response", {
             "session_id": "sess-1",
             "method": "jwt",

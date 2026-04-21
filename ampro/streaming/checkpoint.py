@@ -12,7 +12,6 @@ from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
-
 # Maximum serialized size of a checkpoint state_snapshot. Larger snapshots
 # are rejected to prevent memory exhaustion and protect proxies/infra that
 # buffer SSE events.

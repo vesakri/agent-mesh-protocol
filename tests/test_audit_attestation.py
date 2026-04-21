@@ -8,7 +8,6 @@ Validates:
 from __future__ import annotations
 
 import base64
-import json
 
 import pytest
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
@@ -19,7 +18,6 @@ from ampro.compliance.audit_attestation import (
     canonical_attestation_payload,
     verify_attestation,
 )
-
 
 # ── Helpers ──────────────────────────────────────────────────────────────
 
@@ -197,7 +195,8 @@ class TestAttestationModelValidator:
 
 class TestBodyRegistry:
     def test_validate_body(self):
-        from ampro import validate_body, AuditAttestationBody as AB
+        from ampro import AuditAttestationBody as AB
+        from ampro import validate_body
 
         body = validate_body("audit.attestation", {
             "audit_id": "att-100",

@@ -28,7 +28,6 @@ from pydantic import BaseModel, Field
 
 from ampro.errors import CryptoError
 
-
 # ---------------------------------------------------------------------------
 # Exceptions
 # ---------------------------------------------------------------------------
@@ -167,11 +166,12 @@ class CostReceiptChain(BaseModel):
                 f"no public key for agent_id {receipt.agent_id}"
             )
 
+        import base64
+
+        from cryptography.exceptions import InvalidSignature
         from cryptography.hazmat.primitives.asymmetric.ed25519 import (
             Ed25519PublicKey,
         )
-        from cryptography.exceptions import InvalidSignature
-        import base64
 
         try:
             pub_key = Ed25519PublicKey.from_public_bytes(pub_bytes)

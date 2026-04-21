@@ -5,9 +5,7 @@ subject extraction from body and headers, and fixture cleanup.
 """
 from __future__ import annotations
 
-import pytest
-
-from ampro.compliance.middleware import check_minor_protection, ComplianceCheckResult
+from ampro.compliance.middleware import check_minor_protection
 from ampro.compliance.registry import (
     NoOpMinorRegistry,
     get_minor_registry,
@@ -15,7 +13,6 @@ from ampro.compliance.registry import (
 )
 from ampro.core.envelope import AgentMessage
 from tests.compliance.conftest import MockMinorRegistry
-
 
 # ---------------------------------------------------------------------------
 # Helpers

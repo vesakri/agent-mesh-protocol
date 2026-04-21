@@ -1,13 +1,16 @@
 """Agent registry, search, and federation."""
 
-from ampro.registry.types import RegistryResolution, RegistryRegistration
-from ampro.registry.search import (
-    RegistrySearchRequest, RegistrySearchMatch, RegistrySearchResult,
-)
 from ampro.registry.federation import (
-    RegistryFederationRequest, RegistryFederationResponse,
+    RegistryFederationRequest,
+    RegistryFederationResponse,
     verify_federation_trust_proof,
 )
+from ampro.registry.search import (
+    RegistrySearchMatch,
+    RegistrySearchRequest,
+    RegistrySearchResult,
+)
+from ampro.registry.types import RegistryRegistration, RegistryResolution
 
 __all__ = [
     # Types

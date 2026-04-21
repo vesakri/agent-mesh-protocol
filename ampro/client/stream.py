@@ -17,15 +17,15 @@ Usage::
 
 from __future__ import annotations
 
-import json
 import asyncio
+import json
 import logging
 from collections.abc import AsyncIterator
 
 import httpx
 
+from ampro.client.core import _USER_AGENT, _raise_for_problem, _resolve_endpoint
 from ampro.streaming.events import StreamingEvent, StreamingEventType
-from ampro.client.core import _resolve_endpoint, _raise_for_problem, _USER_AGENT
 
 logger = logging.getLogger("ampro.client.stream")
 

@@ -9,7 +9,7 @@ from __future__ import annotations
 import base64
 import json
 import time
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
@@ -22,7 +22,6 @@ from ampro.trust.resolver import (
     _PUBLIC_KEY_CACHE,
     _reset_public_key_cache_for_tests,
 )
-
 
 OLD_ID = "agent://alice.old.example.com"
 NEW_ID = "agent://alice.new.example.com"
@@ -54,7 +53,7 @@ def _build_proof(
     tamper_new_sig: bool = False,
 ) -> str:
     if timestamp is None:
-        timestamp = datetime.now(timezone.utc).isoformat()
+        timestamp = datetime.now(UTC).isoformat()
     header = _b64url_nopad(json.dumps({"alg": "EdDSA"}).encode())
     payload = _b64url_nopad(
         json.dumps(
@@ -103,7 +102,7 @@ def test_validate_migration_proof_rejects_stale_timestamp():
     """Timestamp outside CLOCK_SKEW_SECONDS window is rejected."""
     old_priv = _seed_key(OLD_ID)
     new_priv = _seed_key(NEW_ID)
-    stale = (datetime.now(timezone.utc) - timedelta(minutes=5)).isoformat()
+    stale = (datetime.now(UTC) - timedelta(minutes=5)).isoformat()
     proof = _build_proof(old_priv, new_priv, timestamp=stale)
     body = IdentityMigrationBody(
         old_id=OLD_ID,

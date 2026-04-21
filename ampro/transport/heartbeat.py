@@ -10,7 +10,7 @@ Spec ref: Section 5.1 — heartbeat every 15 seconds.
 from __future__ import annotations
 
 import asyncio
-from typing import AsyncIterator
+from collections.abc import AsyncIterator
 
 from ampro.streaming.events import StreamingEvent, StreamingEventType
 

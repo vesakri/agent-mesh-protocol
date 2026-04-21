@@ -14,9 +14,14 @@ import traceback
 def test_1_handshake_session_binding_message():
     """Handshake -> Session Binding -> Message"""
     from ampro import (
-        SessionInitBody, SessionEstablishedBody, SessionConfirmBody,
-        derive_binding_token, create_message_binding, verify_message_binding,
-        AgentMessage, HandshakeStateMachine, HandshakeState,
+        AgentMessage,
+        HandshakeState,
+        HandshakeStateMachine,
+        SessionEstablishedBody,
+        SessionInitBody,
+        create_message_binding,
+        derive_binding_token,
+        verify_message_binding,
     )
 
     # Full handshake flow
@@ -68,8 +73,12 @@ def test_1_handshake_session_binding_message():
 def test_2_trust_score_policy_visibility():
     """Trust Score -> Trust Policy -> Visibility"""
     from ampro import (
-        calculate_trust_score, score_to_policy, check_contact_allowed,
-        filter_agent_json, ContactPolicy, VisibilityLevel,
+        ContactPolicy,
+        VisibilityLevel,
+        calculate_trust_score,
+        check_contact_allowed,
+        filter_agent_json,
+        score_to_policy,
     )
 
     ts = calculate_trust_score(
@@ -115,9 +124,14 @@ def test_2_trust_score_policy_visibility():
 
 def test_3_delegation_cost_receipt_task_complete():
     """Delegation Chain -> Cost Receipt -> Task Complete"""
-    import base64, json, secrets, time
+    import base64
+    import json
+    import secrets
+    import time
+
     from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
-    from ampro import DelegationLink, validate_body, TaskCompleteBody, AgentMessage
+
+    from ampro import DelegationLink, TaskCompleteBody, validate_body
     from ampro.delegation.cost_receipt import CostReceipt, CostReceiptChain
     from ampro.trust.resolver import _PUBLIC_KEY_CACHE, _reset_public_key_cache_for_tests
 
@@ -180,9 +194,12 @@ def test_3_delegation_cost_receipt_task_complete():
 def test_4_challenge_trust_upgrade_session_resumption():
     """Challenge -> Trust Upgrade -> Session Resumption"""
     from ampro import (
-        TaskChallengeBody, TaskChallengeResponseBody,
-        TrustUpgradeRequestBody, TrustUpgradeResponseBody,
-        SessionInitBody, validate_body,
+        SessionInitBody,
+        TaskChallengeBody,
+        TaskChallengeResponseBody,
+        TrustUpgradeRequestBody,
+        TrustUpgradeResponseBody,
+        validate_body,
     )
 
     # Challenge flow
@@ -234,9 +251,15 @@ def test_4_challenge_trust_upgrade_session_resumption():
 def test_5_streaming_backpressure_channels_checkpoints():
     """Streaming Events -> Backpressure -> Channels -> Checkpoints"""
     from ampro import (
-        StreamingEvent, StreamingEventType, StreamAckEvent, StreamPauseEvent,
-        StreamResumeEvent, StreamChannel, StreamChannelOpenEvent,
-        StreamChannelCloseEvent, StreamCheckpointEvent, StreamAuthRefreshEvent,
+        StreamAckEvent,
+        StreamAuthRefreshEvent,
+        StreamChannelCloseEvent,
+        StreamChannelOpenEvent,
+        StreamCheckpointEvent,
+        StreamingEvent,
+        StreamingEventType,
+        StreamPauseEvent,
+        StreamResumeEvent,
     )
 
     # Create events of every streaming type
@@ -284,9 +307,15 @@ def test_5_streaming_backpressure_channels_checkpoints():
 def test_6_compliance_jurisdiction_erasure_consent():
     """Compliance -> Jurisdiction -> Erasure Propagation -> Consent Revoke"""
     from ampro import (
-        validate_jurisdiction_code, check_jurisdiction_conflict, JurisdictionInfo,
-        validate_body, DataConsentRevokeBody, ErasurePropagationStatusBody,
-        validate_residency_region, check_residency_violation, DataResidency,
+        DataConsentRevokeBody,
+        DataResidency,
+        ErasurePropagationStatusBody,
+        JurisdictionInfo,
+        check_jurisdiction_conflict,
+        check_residency_violation,
+        validate_body,
+        validate_jurisdiction_code,
+        validate_residency_region,
     )
 
     # Jurisdiction check
@@ -344,9 +373,13 @@ def test_6_compliance_jurisdiction_erasure_consent():
 def test_7_identity_federation_migration_attestation():
     """Identity -> Federation -> Migration -> Attestation"""
     from ampro import (
-        validate_body, IdentityLinkProofBody, RegistryFederationRequest,
-        RegistryFederationResponse, IdentityMigrationBody, AuditAttestationBody,
         AgentJson,
+        AuditAttestationBody,
+        IdentityLinkProofBody,
+        IdentityMigrationBody,
+        RegistryFederationRequest,
+        RegistryFederationResponse,
+        validate_body,
     )
 
     link = validate_body("identity.link_proof", {
@@ -412,8 +445,12 @@ def test_7_identity_federation_migration_attestation():
 def test_8_encryption_trust_proof_certifications():
     """Encryption -> Trust Proof -> Certifications"""
     from ampro import (
-        EncryptedBody, CONTENT_ENCRYPTION_HEADER, validate_body,
-        TrustProofBody, CertificationLink, AgentJson, AgentMessage,
+        CONTENT_ENCRYPTION_HEADER,
+        AgentJson,
+        AgentMessage,
+        CertificationLink,
+        TrustProofBody,
+        validate_body,
     )
 
     # Encrypted message

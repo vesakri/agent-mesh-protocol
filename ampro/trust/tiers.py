@@ -12,7 +12,6 @@ from enum import Enum
 
 from pydantic import BaseModel
 
-
 _TIER_ORDER: dict[str, int] = {
     "external": 0,
     "verified": 1,

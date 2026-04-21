@@ -10,7 +10,6 @@ import pytest
 from ampro.compliance.erasure_auth import is_authorized_to_erase
 from ampro.compliance.types import ErasureRequest
 
-
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------

@@ -41,11 +41,11 @@ def seed_trust_cache_for_compliance():
     """Pre-populate the public key cache so cost-receipt and bus tests
     can verify signatures without going through a live trust resolver.
     """
-    from ampro.trust.resolver import _PUBLIC_KEY_CACHE, _reset_public_key_cache_for_tests
-
     import base64
     import json
     from pathlib import Path
+
+    from ampro.trust.resolver import _PUBLIC_KEY_CACHE, _reset_public_key_cache_for_tests
 
     # Self-contained fixture — no dependency on the host platform's tree.
     fixture_path = (

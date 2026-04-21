@@ -11,274 +11,361 @@ Install: pip install agent-protocol
 """
 
 # --- Unified error hierarchy ---
-from ampro.errors import (
-    AmpError,
-    ValidationError as AmpValidationError,
-    TrustError,
-    CryptoError,
-    SessionError,
-    CompliancePolicyError,
-    RateLimitError,
-    TransportError,
-    NotImplementedInProtocol,
-    RedirectLoopError,
-    MigrationChainTooLongError,
-)
-
-# --- Core envelope ---
-from ampro.core.envelope import AgentMessage, STANDARD_HEADERS
-from ampro.core.status import AgentStatus
-from ampro.core.capabilities import CapabilityGroup, CapabilityLevel, CapabilitySet
-from ampro.streaming.events import StreamingEvent, StreamingEventType
-from ampro.trust.tiers import TrustTier, TrustConfig, CLOCK_SKEW_SECONDS
-
-# --- Addressing ---
-from ampro.core.addressing import AgentAddress, AddressType, parse_agent_uri, normalize_shorthand
-
-# --- Identity & auth ---
-from ampro.identity.types import IdentityProof, ConsentScope, ConsentRequest, ConsentGrant
-from ampro.identity.auth_methods import AuthMethod, ParsedAuth, parse_authorization
-
-# --- Body type schemas ---
-from ampro.core.body_schemas import (
-    MessageBody, TaskCreateBody, TaskAssignBody, TaskDelegateBody,
-    TaskSpawnBody, TaskQuoteBody, NotificationBody,
-    TaskProgressBody, TaskInputRequiredBody, TaskEscalateBody,
-    TaskRerouteBody, TaskTransferBody, TaskAcknowledgeBody,
-    TaskRejectBody, TaskCompleteBody, TaskErrorBody,
-    TaskResponseBody, validate_body,
-    DataConsentRequestBody, DataConsentResponseBody,
-)
-
-# --- Delegation ---
-from ampro.delegation.chain import (
-    DelegationLink, DelegationChain,
-    validate_chain, validate_scope_narrowing, sign_delegation,
-    parse_chain_budget, parse_visited_agents, normalize_agent_uri,
-    check_visited_agents_loop, check_visited_agents_limit,
-)
-
-# --- Events & sessions ---
-from ampro.transport.events import EventType, EventSubscription, EventNotification
-from ampro.session.types import SessionState, SessionConfig, SessionContext
-from ampro.session.presence import PresenceState, PresenceUpdate
-
-# --- Attachments ---
-from ampro.transport.attachment import Attachment, validate_attachment_url
-
-# --- Compliance ---
-from ampro.compliance.types import (
-    ContentClassification, RetentionPolicy,
-    ErasureRequest, ErasureResponse, ExportRequest, ExportResponse,
-)
-from ampro.compliance.middleware import (
-    check_content_classification, check_minor_protection,
-    requires_audit, ComplianceCheckResult,
-)
-from ampro.compliance.audit_logger import AuditLogger, AuditEntry, AuditStorage, InMemoryAuditStorage
-from ampro.compliance.erasure import ErasureProcessor
-
-# --- Security modules ---
-from ampro.security.dedup import InMemoryDedupStore, DedupStore
-from ampro.security.nonce_tracker import NonceTracker
-from ampro.security.rate_limiter import RateLimiter
-from ampro.security.rate_limit import RateLimitInfo, format_rate_limit_headers
-from ampro.security.concurrency_limiter import ConcurrencyLimiter
-from ampro.security.sender_tracker import SenderTracker, SenderState
-from ampro.transport.jwks_cache import JWKSCache
-from ampro.transport.api_key_store import ApiKeyStore
+# --- Context schemas ---
+from ampro.agent.context_schema import ContextSchemaInfo, check_schema_supported, parse_schema_urn
 
 # --- Operational types ---
 from ampro.agent.health import HealthResponse
-from ampro.security.circuit_breaker import CircuitState, CircuitBreakerInfo
-from ampro.transport.heartbeat import HeartbeatEmitter
-from ampro.transport.callback import validate_callback_url, deliver_callback
-from ampro.core.message_middleware import (
-    validate_message_body, build_negotiation_headers,
-    check_message_size, MessageSizeError,
-    enforce_encryption_requirement,
-)
 
-# --- Registry & discovery ---
-from ampro.registry.types import RegistryResolution, RegistryRegistration
-from ampro.registry.search import RegistrySearchRequest, RegistrySearchMatch, RegistrySearchResult
-from ampro.agent.schema import AgentJson
+# --- Agent lifecycle ---
+from ampro.agent.lifecycle import AgentDeactivationNoticeBody, AgentLifecycleStatus
 
-# --- Cross-verification ---
-from ampro.identity.cross_verification import (
-    cross_verify_identifiers, check_all_verified,
-    get_failed_identifiers, VerificationResult,
-    CrossVerificationRequiredError, register_cross_verification_policy,
-)
-
-# --- Trust scoring ---
-from ampro.trust.score import (
-    TrustFactor, TrustScore, TrustPolicy,
-    calculate_trust_score, score_to_policy,
-)
-
-# --- Trust resolution ---
-from ampro.trust.resolver import resolve_trust_tier
-
-# --- Trust upgrade ---
-from ampro.trust.upgrade import TrustUpgradeRequestBody, TrustUpgradeResponseBody
-
-# --- Handshake ---
-from ampro.session.handshake import (
-    HandshakeState, HandshakeStateMachine,
-    HandshakeTimeoutError, SessionReplayError,
-    SessionInitBody, SessionEstablishedBody, SessionConfirmBody,
-    SessionPingBody, SessionPongBody,
-    SessionPauseBody, SessionResumeBody, SessionCloseBody,
-    create_resume_token, parse_resume_token,
-)
-
-# --- Visibility & contact policies ---
-from ampro.agent.visibility import (
-    VisibilityLevel, ContactPolicy, VisibilityConfig,
-    check_contact_allowed, filter_agent_json,
-)
-
-# --- Session binding ---
-from ampro.session.binding import (
-    SessionBinding, derive_binding_token,
-    create_message_binding, verify_message_binding,
-)
-
-# --- Context schemas ---
-from ampro.agent.context_schema import ContextSchemaInfo, parse_schema_urn, check_schema_supported
-
-# --- Challenge (anti-abuse) ---
-from ampro.security.challenge import (
-    ChallengeReason, ChallengeType,
-    TaskChallengeBody, TaskChallengeResponseBody,
-    validate_challenge_solution, register_challenge_validator,
-)
-
-# --- Key revocation ---
-from ampro.security.key_revocation import (
-    RevocationReason, KeyRevocationBody, is_revocation_authentic,
-    KeyRevocationBroadcastBody, RevocationStore,
-    register_revocation_store, should_reject_cached_key,
-    revocation_verify_cached_key,
+# --- Agent metadata cache invalidation ---
+from ampro.agent.schema import (
+    MAX_MIGRATION_HOPS,
+    AgentJson,
+    AgentMetadataInvalidateBody,
+    follow_migration_chain,
 )
 
 # --- Tool consent ---
-from ampro.agent.tool_consent import ToolConsentRequestBody, ToolConsentGrantBody, ToolDefinition
+from ampro.agent.tool_consent import ToolConsentGrantBody, ToolConsentRequestBody, ToolDefinition
 
-# --- Backpressure ---
-from ampro.streaming.backpressure import StreamAckEvent, StreamPauseEvent, StreamResumeEvent
-
-# --- Agent lifecycle ---
-from ampro.agent.lifecycle import AgentLifecycleStatus, AgentDeactivationNoticeBody
-
-# --- Cost receipts ---
-from ampro.delegation.cost_receipt import CostReceipt, CostReceiptChain, CostReceiptVerificationError
-
-# --- Task redirect ---
-from ampro.transport.task_redirect import TaskRedirectBody
-
-# --- Tracing ---
-from ampro.delegation.tracing import (
-    TraceContext, generate_trace_id, generate_span_id,
-    inject_trace_headers, extract_trace_context,
+# --- Visibility & contact policies ---
+from ampro.agent.visibility import (
+    ContactPolicy,
+    VisibilityConfig,
+    VisibilityLevel,
+    check_contact_allowed,
+    filter_agent_json,
 )
 
-# --- Task revoke ---
-from ampro.transport.task_revoke import TaskRevokeBody
+# --- AMPI (Agent Message Processing Interface) ---
+from ampro.ampi.app import AgentApp
+from ampro.ampi.context import AMPContext
+from ampro.ampi.errors import AMPError, BackpressureError, StreamLimitExceeded
+from ampro.ampi.types import AMPIApp, AMPIServer, HandlerFunc, MiddlewareFunc
 
-# --- Priority ---
-from ampro.core.priority import Priority
+# --- Audit attestation ---
+from ampro.compliance.audit_attestation import AuditAttestationBody, verify_attestation
+from ampro.compliance.audit_logger import (
+    AuditEntry,
+    AuditLogger,
+    AuditStorage,
+    InMemoryAuditStorage,
+)
 
-# --- Jurisdiction ---
-from ampro.compliance.jurisdiction import JurisdictionInfo, validate_jurisdiction_code, check_jurisdiction_conflict
-
-# --- Erasure propagation ---
-from ampro.compliance.erasure_propagation import ErasurePropagationStatus, ErasurePropagationStatusBody
+# --- Certifications ---
+from ampro.compliance.certifications import CertificationLink
 
 # --- Consent revocation ---
 from ampro.compliance.consent_revoke import DataConsentRevokeBody
 
 # --- Data residency ---
-from ampro.compliance.data_residency import DataResidency, validate_residency_region, check_residency_violation
+from ampro.compliance.data_residency import (
+    DataResidency,
+    check_residency_violation,
+    validate_residency_region,
+)
+from ampro.compliance.erasure import ErasureProcessor
 
-# --- Stream channels ---
-from ampro.streaming.channel import (
-    StreamChannel, StreamChannelOpenEvent, StreamChannelCloseEvent,
-    ChannelRegistry, ChannelQuotaExceededError, MAX_CHANNELS_PER_SESSION,
+# --- Erasure propagation ---
+from ampro.compliance.erasure_propagation import (
+    ErasurePropagationStatus,
+    ErasurePropagationStatusBody,
 )
 
-# --- Stream checkpoints ---
-from ampro.streaming.checkpoint import StreamCheckpointEvent
+# --- Jurisdiction ---
+from ampro.compliance.jurisdiction import (
+    JurisdictionInfo,
+    check_jurisdiction_conflict,
+    validate_jurisdiction_code,
+)
+from ampro.compliance.middleware import (
+    ComplianceCheckResult,
+    check_content_classification,
+    check_minor_protection,
+    requires_audit,
+)
 
-# --- Stream auth ---
-from ampro.streaming.auth import StreamAuthRefreshEvent
+# --- Compliance ---
+from ampro.compliance.types import (
+    ContentClassification,
+    ErasureRequest,
+    ErasureResponse,
+    ExportRequest,
+    ExportResponse,
+    RetentionPolicy,
+)
+
+# --- Addressing ---
+from ampro.core.addressing import AddressType, AgentAddress, normalize_shorthand, parse_agent_uri
+
+# --- Body type schemas ---
+from ampro.core.body_schemas import (
+    DataConsentRequestBody,
+    DataConsentResponseBody,
+    MessageBody,
+    NotificationBody,
+    TaskAcknowledgeBody,
+    TaskAssignBody,
+    TaskCompleteBody,
+    TaskCreateBody,
+    TaskDelegateBody,
+    TaskErrorBody,
+    TaskEscalateBody,
+    TaskInputRequiredBody,
+    TaskProgressBody,
+    TaskQuoteBody,
+    TaskRejectBody,
+    TaskRerouteBody,
+    TaskResponseBody,
+    TaskSpawnBody,
+    TaskTransferBody,
+    validate_body,
+)
+from ampro.core.capabilities import CapabilityGroup, CapabilityLevel, CapabilitySet
+
+# --- Core envelope ---
+from ampro.core.envelope import STANDARD_HEADERS, AgentMessage
+from ampro.core.message_middleware import (
+    MessageSizeError,
+    build_negotiation_headers,
+    check_message_size,
+    enforce_encryption_requirement,
+    validate_message_body,
+)
+
+# --- Priority ---
+from ampro.core.priority import Priority
+from ampro.core.status import AgentStatus
+from ampro.core.versioning import (
+    CURRENT_VERSION,
+    SUPPORTED_VERSIONS,
+    check_version,
+    negotiate_version,
+)
+
+# --- Delegation ---
+from ampro.delegation.chain import (
+    DelegationChain,
+    DelegationLink,
+    check_visited_agents_limit,
+    check_visited_agents_loop,
+    normalize_agent_uri,
+    parse_chain_budget,
+    parse_visited_agents,
+    sign_delegation,
+    validate_chain,
+    validate_scope_narrowing,
+)
+
+# --- Cost receipts ---
+from ampro.delegation.cost_receipt import (
+    CostReceipt,
+    CostReceiptChain,
+    CostReceiptVerificationError,
+)
+
+# --- Tracing ---
+from ampro.delegation.tracing import (
+    TraceContext,
+    extract_trace_context,
+    generate_span_id,
+    generate_trace_id,
+    inject_trace_headers,
+)
+from ampro.errors import (
+    AmpError,
+    CompliancePolicyError,
+    CryptoError,
+    MigrationChainTooLongError,
+    NotImplementedInProtocol,
+    RateLimitError,
+    RedirectLoopError,
+    SessionError,
+    TransportError,
+    TrustError,
+)
+from ampro.errors import (
+    ValidationError as AmpValidationError,
+)
+from ampro.identity.auth_methods import AuthMethod, ParsedAuth, parse_authorization
+
+# --- Cross-verification ---
+from ampro.identity.cross_verification import (
+    CrossVerificationRequiredError,
+    VerificationResult,
+    check_all_verified,
+    cross_verify_identifiers,
+    get_failed_identifiers,
+    register_cross_verification_policy,
+)
 
 # --- Identity linking ---
-from ampro.identity.link import IdentityLinkProofBody
-
-# --- Registry federation ---
-from ampro.registry.federation import (
-    RegistryFederationRequest, RegistryFederationResponse,
-    RegistryFederationRevokeBody,
-    RegistryFederationSyncBody, RegistryFederationSyncResponseBody,
-    verify_federation_trust_proof, resolve_federation_conflict,
-)
-
-# --- Agent metadata cache invalidation ---
-from ampro.agent.schema import (
-    AgentMetadataInvalidateBody,
-    MAX_MIGRATION_HOPS,
-    follow_migration_chain,
-)
-
-# --- Task redirect loop detection ---
-from ampro.transport.task_redirect import check_redirect_chain
-
 # --- Identity link expiry ---
 from ampro.identity.link import (
-    is_link_proof_valid,
     DEFAULT_LINK_PROOF_LIFETIME,
+    IdentityLinkProofBody,
+    is_link_proof_valid,
 )
 
 # --- Identity migration ---
 from ampro.identity.migration import IdentityMigrationBody
 
-# --- Audit attestation ---
-from ampro.compliance.audit_attestation import AuditAttestationBody, verify_attestation
+# --- Identity & auth ---
+from ampro.identity.types import ConsentGrant, ConsentRequest, ConsentScope, IdentityProof
+
+# --- Registry federation ---
+from ampro.registry.federation import (
+    RegistryFederationRequest,
+    RegistryFederationResponse,
+    RegistryFederationRevokeBody,
+    RegistryFederationSyncBody,
+    RegistryFederationSyncResponseBody,
+    resolve_federation_conflict,
+    verify_federation_trust_proof,
+)
+from ampro.registry.search import RegistrySearchMatch, RegistrySearchRequest, RegistrySearchResult
+
+# --- Registry & discovery ---
+from ampro.registry.types import RegistryRegistration, RegistryResolution
+
+# --- Challenge (anti-abuse) ---
+from ampro.security.challenge import (
+    ChallengeReason,
+    ChallengeType,
+    TaskChallengeBody,
+    TaskChallengeResponseBody,
+    register_challenge_validator,
+    validate_challenge_solution,
+)
+from ampro.security.circuit_breaker import CircuitBreakerInfo, CircuitState
+from ampro.security.concurrency_limiter import ConcurrencyLimiter
+
+# --- Security modules ---
+from ampro.security.dedup import DedupStore, InMemoryDedupStore
 
 # --- Encryption ---
 from ampro.security.encryption import (
-    EncryptedBody,
-    EncryptionKeyOfferBody,
-    EncryptionKeyAcceptBody,
-    EncryptionDowngradeError,
     CONTENT_ENCRYPTION_HEADER,
+    EncryptedBody,
+    EncryptionDowngradeError,
+    EncryptionKeyAcceptBody,
+    EncryptionKeyOfferBody,
 )
+
+# --- Key revocation ---
+from ampro.security.key_revocation import (
+    KeyRevocationBody,
+    KeyRevocationBroadcastBody,
+    RevocationReason,
+    RevocationStore,
+    is_revocation_authentic,
+    register_revocation_store,
+    revocation_verify_cached_key,
+    should_reject_cached_key,
+)
+from ampro.security.nonce_tracker import NonceTracker
+from ampro.security.rate_limit import RateLimitInfo, format_rate_limit_headers
+from ampro.security.rate_limiter import RateLimiter
+from ampro.security.sender_tracker import SenderState, SenderTracker
+from ampro.server.core import AgentServer
+from ampro.server.test import TestServer
+
+# --- Session binding ---
+from ampro.session.binding import (
+    SessionBinding,
+    create_message_binding,
+    derive_binding_token,
+    verify_message_binding,
+)
+
+# --- Handshake ---
+from ampro.session.handshake import (
+    HandshakeState,
+    HandshakeStateMachine,
+    HandshakeTimeoutError,
+    SessionCloseBody,
+    SessionConfirmBody,
+    SessionEstablishedBody,
+    SessionInitBody,
+    SessionPauseBody,
+    SessionPingBody,
+    SessionPongBody,
+    SessionReplayError,
+    SessionResumeBody,
+    create_resume_token,
+    parse_resume_token,
+)
+from ampro.session.presence import PresenceState, PresenceUpdate
+from ampro.session.types import SessionConfig, SessionContext, SessionState
+
+# --- Stream auth ---
+from ampro.streaming.auth import StreamAuthRefreshEvent
+
+# --- Backpressure ---
+from ampro.streaming.backpressure import StreamAckEvent, StreamPauseEvent, StreamResumeEvent
+
+# --- Stream channels ---
+from ampro.streaming.channel import (
+    MAX_CHANNELS_PER_SESSION,
+    ChannelQuotaExceededError,
+    ChannelRegistry,
+    StreamChannel,
+    StreamChannelCloseEvent,
+    StreamChannelOpenEvent,
+)
+
+# --- Stream checkpoints ---
+from ampro.streaming.checkpoint import StreamCheckpointEvent
+from ampro.streaming.events import StreamingEvent, StreamingEventType
+from ampro.transport.api_key_store import ApiKeyStore
+
+# --- Attachments ---
+from ampro.transport.attachment import Attachment, validate_attachment_url
+from ampro.transport.callback import deliver_callback, validate_callback_url
+
+# --- Events & sessions ---
+from ampro.transport.events import EventNotification, EventSubscription, EventType
+from ampro.transport.heartbeat import HeartbeatEmitter
+from ampro.transport.jwks_cache import JWKSCache
+
+# --- Negotiation & versioning ---
+from ampro.transport.negotiation import CapabilityNegotiator, NegotiationResult
+
+# --- Task redirect ---
+# --- Task redirect loop detection ---
+from ampro.transport.task_redirect import TaskRedirectBody, check_redirect_chain
+
+# --- Task revoke ---
+from ampro.transport.task_revoke import TaskRevokeBody
 
 # --- Trust proof ---
 from ampro.trust.proof import TrustProofBody
 
-# --- Certifications ---
-from ampro.compliance.certifications import CertificationLink
+# --- Trust resolution ---
+from ampro.trust.resolver import resolve_trust_tier
 
-# --- Negotiation & versioning ---
-from ampro.transport.negotiation import NegotiationResult, CapabilityNegotiator
-from ampro.core.versioning import SUPPORTED_VERSIONS, CURRENT_VERSION, check_version, negotiate_version
+# --- Trust scoring ---
+from ampro.trust.score import (
+    TrustFactor,
+    TrustPolicy,
+    TrustScore,
+    calculate_trust_score,
+    score_to_policy,
+)
+from ampro.trust.tiers import CLOCK_SKEW_SECONDS, TrustConfig, TrustTier
+
+# --- Trust upgrade ---
+from ampro.trust.upgrade import TrustUpgradeRequestBody, TrustUpgradeResponseBody
+from ampro.wire.body_type_map import BODY_TYPE_BINDINGS, BodyTypeBinding, ResponseMode, binding_for
+from ampro.wire.config import DEFAULTS as WIRE_DEFAULTS
+from ampro.wire.config import WireConfig
 
 # --- Wire binding (HTTP transport contract) ---
-from ampro.wire.endpoints import ConformanceLevel, EndpointSpec, ALL_ENDPOINTS, endpoints_for_level
-from ampro.wire.errors import ProblemDetail, ErrorType
-from ampro.wire.config import WireConfig, DEFAULTS as WIRE_DEFAULTS
-from ampro.wire.body_type_map import ResponseMode, BodyTypeBinding, BODY_TYPE_BINDINGS, binding_for
-
-# --- AMPI (Agent Message Processing Interface) ---
-from ampro.ampi.app import AgentApp
-from ampro.ampi.context import AMPContext
-from ampro.ampi.errors import AMPError, StreamLimitExceeded, BackpressureError
-from ampro.ampi.types import AMPIServer, AMPIApp, HandlerFunc, MiddlewareFunc
-from ampro.server.core import AgentServer
-from ampro.server.test import TestServer
+from ampro.wire.endpoints import ALL_ENDPOINTS, ConformanceLevel, EndpointSpec, endpoints_for_level
+from ampro.wire.errors import ErrorType, ProblemDetail
 
 __version__ = "0.3.1"
 

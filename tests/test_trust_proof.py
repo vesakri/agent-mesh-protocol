@@ -1,8 +1,6 @@
 """Tests for v0.1.9 trust proof module."""
 
-import json
 
-import pytest
 
 
 class TestTrustProofBody:
@@ -25,7 +23,7 @@ class TestTrustProofBody:
         assert body.verifier_key_id == "key-verifier-1"
 
     def test_body_registry(self):
-        from ampro import validate_body, TrustProofBody
+        from ampro import TrustProofBody, validate_body
 
         result = validate_body("trust.proof", {
             "agent_id": "agent://a.example.com",

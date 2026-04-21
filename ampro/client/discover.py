@@ -18,8 +18,8 @@ Usage::
 from __future__ import annotations
 
 from ampro.agent.schema import AgentJson
-from ampro.core.addressing import AddressType, parse_agent_uri
 from ampro.client.core import _get_json
+from ampro.core.addressing import AddressType, parse_agent_uri
 
 
 async def discover(uri: str, timeout: float = 30.0) -> AgentJson:

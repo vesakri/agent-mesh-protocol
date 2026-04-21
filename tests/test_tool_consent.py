@@ -118,7 +118,7 @@ class TestToolDefinition:
 
 class TestToolConsentRegistry:
     def test_validate_body_consent_request(self):
-        from ampro import validate_body, ToolConsentRequestBody
+        from ampro import ToolConsentRequestBody, validate_body
         body = validate_body("tool.consent_request", {
             "tool_name": "web_search",
             "scopes": ["read:web"],
@@ -129,7 +129,7 @@ class TestToolConsentRegistry:
         assert body.tool_name == "web_search"
 
     def test_validate_body_consent_grant(self):
-        from ampro import validate_body, ToolConsentGrantBody
+        from ampro import ToolConsentGrantBody, validate_body
         body = validate_body("tool.consent_grant", {
             "tool_name": "web_search",
             "scopes": ["read:web"],
@@ -141,7 +141,7 @@ class TestToolConsentRegistry:
         assert body.grant_id == "g-1"
 
     def test_validate_body_consent_grant_with_restrictions(self):
-        from ampro import validate_body, ToolConsentGrantBody
+        from ampro import ToolConsentGrantBody, validate_body
         body = validate_body("tool.consent_grant", {
             "tool_name": "web_search",
             "scopes": ["read:web"],

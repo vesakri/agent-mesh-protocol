@@ -1,5 +1,4 @@
 """Tests for session binding -- HMAC-SHA256 token derivation and verification."""
-import pytest
 
 
 class TestSessionBinding:
@@ -58,7 +57,7 @@ class TestSessionBinding:
 
     def test_full_flow(self):
         """End-to-end: derive token, create binding, verify."""
-        from ampro import derive_binding_token, create_message_binding, verify_message_binding
+        from ampro import create_message_binding, derive_binding_token, verify_message_binding
         token = derive_binding_token("cn", "sn", "sess-1", "shared-secret")
         hmac_val = create_message_binding("sess-1", "msg-42", token)
         assert verify_message_binding("sess-1", "msg-42", token, hmac_val) is True

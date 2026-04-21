@@ -1,7 +1,7 @@
 """Tests for issues #39 (revoke), #40 (sync), #41 (conflict resolution)."""
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime
 
 import pytest
 from pydantic import ValidationError
@@ -22,7 +22,7 @@ class TestRegistryFederationRevokeBody:
             revoking_registry="agent://reg-a.example.com",
             revoked_registry="agent://reg-b.example.com",
             reason="policy_violation",
-            effective_at=datetime(2026, 4, 9, 12, 0, 0, tzinfo=timezone.utc),
+            effective_at=datetime(2026, 4, 9, 12, 0, 0, tzinfo=UTC),
             signature="ed25519-signature-base64",
         )
         assert body.revoking_registry == "agent://reg-a.example.com"
@@ -40,7 +40,7 @@ class TestRegistryFederationRevokeBody:
                 revoking_registry="agent://reg-a.example.com",
                 revoked_registry="agent://reg-b.example.com",
                 reason="x" * 1025,
-                effective_at=datetime.now(tz=timezone.utc),
+                effective_at=datetime.now(tz=UTC),
                 signature="sig",
             )
 
@@ -65,14 +65,14 @@ class TestRegistryFederationSyncBodies:
 
     def test_sync_body_required_fields(self):
         body = RegistryFederationSyncBody(
-            since=datetime(2026, 4, 9, 12, 0, 0, tzinfo=timezone.utc),
+            since=datetime(2026, 4, 9, 12, 0, 0, tzinfo=UTC),
             registry_id="agent://reg.example.com",
         )
         assert body.cursor is None
 
     def test_sync_body_with_cursor(self):
         body = RegistryFederationSyncBody(
-            since=datetime(2026, 4, 9, 12, 0, 0, tzinfo=timezone.utc),
+            since=datetime(2026, 4, 9, 12, 0, 0, tzinfo=UTC),
             registry_id="agent://reg.example.com",
             cursor="opaque-cursor-token",
         )
@@ -176,6 +176,6 @@ class TestFederationConflictResolution:
                 self.last_seen = last_seen
                 self.agent_uri = agent_uri
 
-        local = Rec("verified", datetime(2026, 4, 10, tzinfo=timezone.utc), "agent://a.example.com")
-        remote = Rec("external", datetime(2026, 4, 11, tzinfo=timezone.utc), "agent://a.example.com")
+        local = Rec("verified", datetime(2026, 4, 10, tzinfo=UTC), "agent://a.example.com")
+        remote = Rec("external", datetime(2026, 4, 11, tzinfo=UTC), "agent://a.example.com")
         assert resolve_federation_conflict(local, remote) == "local"

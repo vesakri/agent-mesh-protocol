@@ -5,10 +5,11 @@ A registry for handlers, middleware, tools, and lifecycle hooks.
 """
 from __future__ import annotations
 
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
-from ampro.core.versioning import CURRENT_VERSION
 from ampro.agent.schema import AgentJson
+from ampro.core.versioning import CURRENT_VERSION
 
 
 class AgentApp:

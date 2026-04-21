@@ -183,7 +183,7 @@ class WireConfig(BaseModel):
     model_config = {"extra": "allow", "frozen": True}
 
     @model_validator(mode="after")
-    def validate_cross_fields(self) -> "WireConfig":
+    def validate_cross_fields(self) -> WireConfig:
         if self.max_timeout_seconds < self.default_timeout_seconds:
             raise ValueError(
                 "max_timeout_seconds must be >= default_timeout_seconds"

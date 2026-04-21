@@ -7,8 +7,6 @@ import uuid
 import pytest
 
 from ampro.trust.tiers import TrustTier
-from ampro.core.capabilities import CapabilitySet
-from ampro.compliance.types import ContentClassification
 
 
 def _make_ctx(**overrides):

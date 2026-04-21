@@ -7,7 +7,7 @@ budgets.
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
@@ -19,7 +19,6 @@ from ampro.delegation.chain import (
     sign_delegation,
     validate_chain,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -47,7 +46,7 @@ def _make_signed_link(
     parent_delegate: str | None = None,
 ) -> DelegationLink:
     """Create a DelegationLink with a real Ed25519 signature."""
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     created = created_at or now
     expires = expires_at or (now + timedelta(hours=1))
 
@@ -116,7 +115,7 @@ class TestBudgetFailClosed:
         seed_a, pub_a = _make_keypair()
         seed_b, pub_b = _make_keypair()
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         expires = now + timedelta(hours=1)
 
         link_a = _make_signed_link(
@@ -204,7 +203,7 @@ class TestBudgetFailClosed:
         seed_a, pub_a = _make_keypair()
         seed_b, pub_b = _make_keypair()
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         expires = now + timedelta(hours=1)
 
         link_a = _make_signed_link(

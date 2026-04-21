@@ -42,7 +42,7 @@ class TestMigrationBody:
 
 class TestBodyRegistry:
     def test_validate_body(self):
-        from ampro import validate_body, IdentityMigrationBody
+        from ampro import IdentityMigrationBody, validate_body
 
         body = validate_body("identity.migration", {
             "old_id": "agent://old.example.com",

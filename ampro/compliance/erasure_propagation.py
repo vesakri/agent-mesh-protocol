@@ -21,7 +21,7 @@ It is designed for extraction as part of `pip install agent-protocol`.
 from __future__ import annotations
 
 import random
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from enum import Enum
 
 from pydantic import BaseModel, Field
@@ -119,7 +119,7 @@ def compute_next_retry(
         jitter: Optional fixed jitter in seconds; if ``None`` a random
             value in ``[0, base_delay_sec)`` is used.
     """
-    current = now if now is not None else datetime.now(timezone.utc)
+    current = now if now is not None else datetime.now(UTC)
     # Clamp exponent to avoid huge shifts on near-exhausted retries.
     exponent = min(retry_count, 20)
     delay = min(base_delay_sec * (2**exponent), MAX_RETRY_DELAY_SEC)

@@ -10,7 +10,7 @@ It is designed for extraction as part of pip install agent-protocol.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
 
@@ -79,11 +79,11 @@ class SessionContext(BaseModel):
         description="Current session lifecycle state",
     )
     created_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc),
+        default_factory=lambda: datetime.now(UTC),
         description="When the session was created",
     )
     last_activity: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc),
+        default_factory=lambda: datetime.now(UTC),
         description="Last message activity timestamp",
     )
     message_count: int = Field(

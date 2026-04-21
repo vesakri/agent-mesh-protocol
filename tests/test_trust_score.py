@@ -1,5 +1,4 @@
 """Tests for trust score calculation and policy mapping."""
-import pytest
 
 
 class TestTrustScore:

@@ -25,7 +25,6 @@ import time
 import pytest
 from pydantic import ValidationError
 
-
 # ---------------------------------------------------------------------------
 # #10 — validate_message_body rejects non-dict / non-str / non-None body
 # ---------------------------------------------------------------------------
@@ -142,7 +141,7 @@ class TestCheckpointSizeLimit:
 
 class TestEncryptionKeyExchange:
     def test_encryption_key_offer_roundtrip(self):
-        from ampro import EncryptionKeyOfferBody, EncryptionKeyAcceptBody
+        from ampro import EncryptionKeyAcceptBody, EncryptionKeyOfferBody
 
         offer = EncryptionKeyOfferBody(
             agent_id="agent://alice.example.com",
@@ -177,8 +176,9 @@ class TestEncryptionKeyExchange:
 class TestEncryptionDowngradeRejected:
     def test_downgrade_to_plaintext_rejected_when_required(self):
         from ampro import (
-            AgentMessage, enforce_encryption_requirement,
+            AgentMessage,
             EncryptionDowngradeError,
+            enforce_encryption_requirement,
         )
 
         # Plaintext message arriving on a session that pinned required_encryption.
@@ -257,8 +257,9 @@ class TestRevocationStore:
 
     def test_revocation_store_pluggable(self):
         from ampro import (
-            register_revocation_store, should_reject_cached_key,
+            register_revocation_store,
             revocation_verify_cached_key,
+            should_reject_cached_key,
         )
         from ampro.security.key_revocation import _NoOpRevocationStore
 
@@ -287,8 +288,10 @@ class TestRevocationStore:
 class TestChallengeSolution:
     def test_validate_challenge_solution_dispatches_correctly(self):
         from ampro import (
-            TaskChallengeBody, TaskChallengeResponseBody,
-            validate_challenge_solution, ChallengeType,
+            ChallengeType,
+            TaskChallengeBody,
+            TaskChallengeResponseBody,
+            validate_challenge_solution,
         )
 
         # Shared secret — matches
@@ -400,7 +403,7 @@ class TestHandshakeTimeout:
 
 class TestChannelRegistry:
     def test_channel_registry_enforces_per_session_limit(self):
-        from ampro import ChannelRegistry, ChannelQuotaExceededError
+        from ampro import ChannelQuotaExceededError, ChannelRegistry
         from ampro.streaming.channel import MAX_CHANNELS_PER_SESSION
 
         reg = ChannelRegistry()
@@ -554,9 +557,9 @@ class TestCrossVerificationPolicy:
         import asyncio
 
         from ampro import (
-            register_cross_verification_policy,
-            cross_verify_identifiers,
             CrossVerificationRequiredError,
+            cross_verify_identifiers,
+            register_cross_verification_policy,
         )
 
         try:

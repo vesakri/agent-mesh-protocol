@@ -19,7 +19,6 @@ from urllib.parse import unquote
 
 from pydantic import BaseModel, Field
 
-
 SCHEME = "agent"
 
 # Control characters and percent-encoded control characters that MUST NOT

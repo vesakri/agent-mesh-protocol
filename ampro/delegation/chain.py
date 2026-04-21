@@ -15,7 +15,7 @@ from __future__ import annotations
 import base64
 import json
 import re
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from cryptography.hazmat.primitives.asymmetric.ed25519 import (
     Ed25519PrivateKey,
@@ -270,7 +270,7 @@ def validate_chain(
     if not chain.links:
         return False, "empty chain"
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
 
     for i, link in enumerate(chain.links):
         # --- 0. Self-delegation check ---

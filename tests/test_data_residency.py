@@ -4,8 +4,8 @@ import pytest
 
 from ampro.compliance.data_residency import (
     DataResidency,
-    validate_residency_region,
     check_residency_violation,
+    validate_residency_region,
 )
 from ampro.core.envelope import STANDARD_HEADERS
 

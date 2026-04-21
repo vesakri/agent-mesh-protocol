@@ -21,8 +21,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from ampro.client.core import _post_message, _resolve_endpoint
 from ampro.core.envelope import AgentMessage
-from ampro.client.core import _resolve_endpoint, _post_message
 
 
 async def send(

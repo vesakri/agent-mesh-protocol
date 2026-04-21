@@ -1,6 +1,4 @@
 """Tests for stream channel multiplexing types."""
-import pytest
-from pydantic import ValidationError
 
 
 class TestStreamChannel:

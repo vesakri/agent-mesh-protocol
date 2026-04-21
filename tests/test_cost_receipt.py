@@ -16,7 +16,6 @@ from pydantic import ValidationError
 
 from ampro.trust.resolver import _PUBLIC_KEY_CACHE, _reset_public_key_cache_for_tests
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -149,7 +148,7 @@ class TestCostReceiptChain:
         assert chain.total_cost_usd_float == 0.0
 
     def test_add_receipt_appends_and_updates_total(self):
-        from ampro import CostReceiptChain, CostReceipt
+        from ampro import CostReceipt, CostReceiptChain
         chain = CostReceiptChain()
         nonce = secrets.token_urlsafe(16)
         pk = _seed_key("agent://a.example.com")
@@ -170,7 +169,7 @@ class TestCostReceiptChain:
         assert chain.total_cost_usd_float == pytest.approx(0.10)
 
     def test_multiple_receipts_maintain_order(self):
-        from ampro import CostReceiptChain, CostReceipt
+        from ampro import CostReceipt, CostReceiptChain
         chain = CostReceiptChain()
 
         agents = [
@@ -203,7 +202,7 @@ class TestCostReceiptChain:
 class TestCostReceiptChainMixedCurrency:
     def test_chain_rejects_mixed_currency(self):
         """Chain locks on first receipt's currency and rejects mismatches."""
-        from ampro import CostReceiptChain, CostReceipt
+        from ampro import CostReceipt, CostReceiptChain
         from ampro.delegation.cost_receipt import CostReceiptVerificationError
 
         chain = CostReceiptChain()
@@ -249,7 +248,8 @@ class TestCostReceiptChainMixedCurrency:
     def test_chain_uses_decimal_arithmetic(self):
         """Summing 0.1 three times should equal exactly 0.3 (not 0.30000...4)."""
         from decimal import Decimal
-        from ampro import CostReceiptChain, CostReceipt
+
+        from ampro import CostReceipt, CostReceiptChain
 
         chain = CostReceiptChain()
         for i in range(3):

@@ -5,8 +5,8 @@ import asyncio
 
 import pytest
 
-from ampro.core.envelope import AgentMessage
 from ampro.ampi.app import AgentApp
+from ampro.core.envelope import AgentMessage
 from ampro.trust.tiers import TrustTier
 
 
@@ -56,8 +56,8 @@ def test_dispatch_with_trust_tier():
 
 
 def test_dispatch_unknown_body_type():
-    from ampro.server.test import TestServer
     from ampro.ampi.errors import AMPError
+    from ampro.server.test import TestServer
 
     agent = AgentApp("agent://test.example.com", "https://test.example.com")
     server = TestServer(agent)

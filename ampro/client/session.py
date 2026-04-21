@@ -22,9 +22,9 @@ import secrets
 from types import TracebackType
 from typing import Any
 
+from ampro.client.core import _post_message, _resolve_endpoint
 from ampro.core.envelope import AgentMessage
 from ampro.session.binding import create_message_binding
-from ampro.client.core import _resolve_endpoint, _post_message
 
 
 class Session:

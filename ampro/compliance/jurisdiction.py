@@ -21,7 +21,7 @@ to these functions.
 from __future__ import annotations
 
 import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any, Protocol, runtime_checkable
 
@@ -199,11 +199,11 @@ def check_cross_border_transfer(
         )
 
     if decision.expires_at is not None:
-        current = now if now is not None else datetime.now(timezone.utc)
+        current = now if now is not None else datetime.now(UTC)
         # Normalise naive expiries to UTC for comparison.
         expires = decision.expires_at
         if expires.tzinfo is None:
-            expires = expires.replace(tzinfo=timezone.utc)
+            expires = expires.replace(tzinfo=UTC)
         if expires <= current:
             return TransferDecision.WARNING, (
                 f"Transfer mechanism '{decision.mechanism.value}' expired at "

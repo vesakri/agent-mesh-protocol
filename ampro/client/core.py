@@ -17,10 +17,10 @@ from typing import Any
 
 import httpx
 
+from ampro.client.errors import AmpProtocolError
 from ampro.core.addressing import AddressType, parse_agent_uri
 from ampro.core.envelope import AgentMessage
 from ampro.wire.errors import ProblemDetail
-from ampro.client.errors import AmpProtocolError
 
 logger = logging.getLogger("ampro.client")
 

@@ -14,7 +14,6 @@ import time
 import pytest
 from cryptography.hazmat.primitives.asymmetric.ed25519 import (
     Ed25519PrivateKey,
-    Ed25519PublicKey,
 )
 
 from ampro.delegation.cost_receipt import (
@@ -23,7 +22,6 @@ from ampro.delegation.cost_receipt import (
     CostReceiptVerificationError,
 )
 from ampro.trust.resolver import _PUBLIC_KEY_CACHE, _reset_public_key_cache_for_tests
-
 
 # ---------------------------------------------------------------------------
 # Fixtures

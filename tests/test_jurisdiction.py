@@ -4,8 +4,8 @@ import pytest
 
 from ampro.compliance.jurisdiction import (
     JurisdictionInfo,
-    validate_jurisdiction_code,
     check_jurisdiction_conflict,
+    validate_jurisdiction_code,
 )
 from ampro.core.envelope import STANDARD_HEADERS
 

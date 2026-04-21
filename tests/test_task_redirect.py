@@ -3,9 +3,9 @@
 import pytest
 from pydantic import ValidationError
 
-from ampro.transport.task_redirect import TaskRedirectBody
 from ampro.core.body_schemas import validate_body
 from ampro.core.envelope import STANDARD_HEADERS
+from ampro.transport.task_redirect import TaskRedirectBody
 
 
 class TestTaskRedirectBodyRequired:
@@ -241,7 +241,7 @@ class TestRedirectLoopDetection:
         check_redirect_chain(body, "agent://b.example.com")  # no raise
 
     def test_redirect_loop_error_is_transport_error(self):
-        from ampro.errors import RedirectLoopError, TransportError, AmpError
+        from ampro.errors import AmpError, RedirectLoopError, TransportError
 
         assert issubclass(RedirectLoopError, TransportError)
         assert issubclass(RedirectLoopError, AmpError)

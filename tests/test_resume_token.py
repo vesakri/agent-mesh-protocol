@@ -13,7 +13,6 @@ import pytest
 
 from ampro.session.handshake import create_resume_token, parse_resume_token
 
-
 # ---------------------------------------------------------------------------
 # Round-trip
 # ---------------------------------------------------------------------------
@@ -164,13 +163,15 @@ class TestResumeTokenExports:
     """Functions should be accessible from the top-level ampro package."""
 
     def test_importable_from_ampro(self) -> None:
-        from ampro import create_resume_token as crt, parse_resume_token as prt
+        from ampro import create_resume_token as crt
+        from ampro import parse_resume_token as prt
 
         assert callable(crt)
         assert callable(prt)
 
     def test_importable_from_session(self) -> None:
-        from ampro.session import create_resume_token as crt, parse_resume_token as prt
+        from ampro.session import create_resume_token as crt
+        from ampro.session import parse_resume_token as prt
 
         assert callable(crt)
         assert callable(prt)

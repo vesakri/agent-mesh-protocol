@@ -11,7 +11,6 @@ import pytest
 from ampro.streaming.bus import StreamBus
 from ampro.streaming.events import StreamingEvent, StreamingEventType
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

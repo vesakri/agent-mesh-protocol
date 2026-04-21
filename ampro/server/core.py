@@ -40,26 +40,27 @@ import inspect
 import json
 import logging
 import time
-from typing import Any, Callable, TYPE_CHECKING
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from ampro.ampi.app import AgentApp
 
 from pydantic import BaseModel, ValidationError
 
-from ampro.core.envelope import AgentMessage
-from ampro.core.body_schemas import validate_body
-from ampro.core.versioning import CURRENT_VERSION
-from ampro.agent.schema import AgentJson
 from ampro.agent.health import HealthResponse
+from ampro.agent.schema import AgentJson
+from ampro.core.body_schemas import validate_body
+from ampro.core.envelope import AgentMessage
+from ampro.core.versioning import CURRENT_VERSION
+from ampro.wire.config import DEFAULTS, WireConfig
 from ampro.wire.errors import (
     ProblemDetail,
-    invalid_message,
     internal_error,
-    not_implemented,
+    invalid_message,
     not_found,
+    not_implemented,
 )
-from ampro.wire.config import WireConfig, DEFAULTS
 
 logger = logging.getLogger(__name__)
 
@@ -111,7 +112,6 @@ class AgentServer:
         registered with ``@app.on("body_type")`` are wrapped to
         accept the old ``(msg)`` signature if needed.
         """
-        from ampro.ampi.app import AgentApp as _AgentApp  # avoid circular at module level
 
         server = cls(
             agent_id=app.agent_id,
@@ -317,7 +317,7 @@ class AgentServer:
             result = handler(msg)
             if inspect.isawaitable(result):
                 result = await result
-        except Exception as exc:
+        except Exception:
             logger.exception("Handler raised for body_type '%s'", msg.body_type)
             err = internal_error(
                 "An unexpected error occurred while processing the request."
@@ -383,9 +383,9 @@ class AgentServer:
     def _run_fastapi(self, port: int) -> None:
         """Start with FastAPI + uvicorn."""
         try:
+            import uvicorn
             from fastapi import FastAPI, Request
             from fastapi.responses import JSONResponse, PlainTextResponse
-            import uvicorn
         except ImportError as exc:
             raise RuntimeError(
                 "FastAPI adapter requires 'fastapi' and 'uvicorn'. "
@@ -428,7 +428,8 @@ class AgentServer:
     def _run_flask(self, port: int) -> None:
         """Start with Flask."""
         try:
-            from flask import Flask, request as flask_request, jsonify, Response
+            from flask import Flask, Response, jsonify
+            from flask import request as flask_request
         except ImportError as exc:
             raise RuntimeError(
                 "Flask adapter requires 'flask'. "

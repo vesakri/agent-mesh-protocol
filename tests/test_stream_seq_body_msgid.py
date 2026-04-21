@@ -16,7 +16,6 @@ from ampro.core.envelope import AgentMessage
 from ampro.streaming.bus import StreamBus
 from ampro.streaming.events import StreamingEvent, StreamingEventType
 
-
 # ---------------------------------------------------------------------------
 # Task 5.5 — Stream Seq Server-Assigned
 # ---------------------------------------------------------------------------

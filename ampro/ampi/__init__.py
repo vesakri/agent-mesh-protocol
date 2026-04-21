@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from ampro.ampi.app import AgentApp
 from ampro.ampi.context import AMPContext
-from ampro.ampi.errors import AMPError, StreamLimitExceeded, BackpressureError
+from ampro.ampi.errors import AMPError, BackpressureError, StreamLimitExceeded
 from ampro.ampi.types import (
     AMPIApp,
     AMPIServer,

@@ -8,10 +8,7 @@ such as ``admin:*``.
 
 from __future__ import annotations
 
-import pytest
-
 from ampro.delegation.chain import validate_scope_narrowing
-
 
 # ---------------------------------------------------------------------------
 # Basic wildcard prefix — allowed cases

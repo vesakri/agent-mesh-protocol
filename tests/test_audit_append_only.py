@@ -7,8 +7,6 @@ Validates:
 """
 from __future__ import annotations
 
-import pytest
-
 from ampro.compliance.audit_logger import (
     AuditEntry,
     AuditLogger,

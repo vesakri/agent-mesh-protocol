@@ -11,10 +11,9 @@ It is designed for extraction as part of `pip install agent-protocol`.
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from pydantic import BaseModel, Field, model_validator
-
 
 DEFAULT_LINK_PROOF_LIFETIME = timedelta(days=365)
 """Default lifetime for newly minted identity link proofs (1 year)."""
@@ -29,7 +28,7 @@ def _parse_any_ts(value: str | datetime) -> datetime:
         raw = value.replace("Z", "+00:00") if value.endswith("Z") else value
         dt = datetime.fromisoformat(raw)
     if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=timezone.utc)
+        dt = dt.replace(tzinfo=UTC)
     return dt
 
 
@@ -52,7 +51,7 @@ class IdentityLinkProofBody(BaseModel):
     model_config = {"extra": "ignore"}
 
     @model_validator(mode="after")
-    def _expires_after_timestamp(self) -> "IdentityLinkProofBody":
+    def _expires_after_timestamp(self) -> IdentityLinkProofBody:
         """A freshly minted proof MUST NOT already be expired.
 
         ``expires_at`` is required to be strictly after ``timestamp``; if the
@@ -61,13 +60,13 @@ class IdentityLinkProofBody(BaseModel):
         """
         expires_at = self.expires_at
         if expires_at.tzinfo is None:
-            expires_at = expires_at.replace(tzinfo=timezone.utc)
+            expires_at = expires_at.replace(tzinfo=UTC)
             object.__setattr__(self, "expires_at", expires_at)
 
         try:
             issued_at = _parse_any_ts(self.timestamp)
         except (ValueError, TypeError):
-            issued_at = datetime.now(tz=timezone.utc)
+            issued_at = datetime.now(tz=UTC)
 
         if expires_at <= issued_at:
             raise ValueError(
@@ -91,10 +90,10 @@ def is_link_proof_valid(
     Returns:
         ``False`` once the proof has expired, ``True`` otherwise.
     """
-    current = now if now is not None else datetime.now(tz=timezone.utc)
+    current = now if now is not None else datetime.now(tz=UTC)
     if current.tzinfo is None:
-        current = current.replace(tzinfo=timezone.utc)
+        current = current.replace(tzinfo=UTC)
     expires = body.expires_at
     if expires.tzinfo is None:
-        expires = expires.replace(tzinfo=timezone.utc)
+        expires = expires.replace(tzinfo=UTC)
     return current <= expires

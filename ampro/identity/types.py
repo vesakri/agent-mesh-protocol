@@ -9,7 +9,7 @@ NOTE: This file must NOT import any app.* modules — it is protocol-pure.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
 
 from pydantic import BaseModel, Field
@@ -38,7 +38,7 @@ class IdentityProof(BaseModel):
     signature: str = Field(description="Base64-encoded Ed25519 signature of the nonce")
     nonce: str = Field(description="The challenge nonce that was signed")
     timestamp: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc),
+        default_factory=lambda: datetime.now(UTC),
         description="When the proof was created",
     )
     algorithm: str = Field(default="Ed25519", description="Signature algorithm")

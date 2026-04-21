@@ -5,8 +5,6 @@ from __future__ import annotations
 import base64
 import json
 
-import pytest
-
 from ampro.trust.resolver import ALLOWED_JWT_ALGS, validate_jwt_algorithm
 
 

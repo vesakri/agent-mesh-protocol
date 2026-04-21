@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import asyncio
 import threading
-from concurrent.futures import ThreadPoolExecutor
 
 import pytest
 
@@ -19,7 +18,6 @@ from ampro.security.dedup import InMemoryDedupStore
 from ampro.security.nonce_tracker import NonceTracker
 from ampro.security.rate_limiter import RateLimiter
 from ampro.security.sender_tracker import SenderTracker
-
 
 # ---------------------------------------------------------------------------
 # Test 1: Lock attribute exists on every security module

@@ -8,7 +8,9 @@ This module is PURE — no platform-specific imports.
 """
 
 from __future__ import annotations
+
 import re
+
 from pydantic import BaseModel, Field, field_validator
 
 

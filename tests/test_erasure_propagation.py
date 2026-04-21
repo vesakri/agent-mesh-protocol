@@ -1,6 +1,5 @@
 """Tests for ampro.erasure_propagation — v0.1.6 GDPR erasure tracking."""
 
-import pytest
 
 from ampro.compliance.erasure_propagation import (
     ErasurePropagationStatus,

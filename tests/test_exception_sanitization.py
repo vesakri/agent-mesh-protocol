@@ -10,10 +10,7 @@ from __future__ import annotations
 import asyncio
 import json
 
-import pytest
-
 from ampro.server import AgentServer
-
 
 # ---------------------------------------------------------------------------
 # Helpers

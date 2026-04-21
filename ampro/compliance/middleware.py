@@ -11,8 +11,8 @@ from __future__ import annotations
 
 import logging
 
-from ampro.core.envelope import AgentMessage
 from ampro.compliance.types import ContentClassification
+from ampro.core.envelope import AgentMessage
 
 logger = logging.getLogger(__name__)
 

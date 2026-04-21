@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 from pydantic import ValidationError
@@ -17,7 +17,7 @@ def test_retained_record_typed_schema():
         category="audit_log",
         reason="regulatory_retention",
         legal_basis="SOX section 802 - 7 year retention",
-        review_after=datetime(2033, 1, 1, tzinfo=timezone.utc),
+        review_after=datetime(2033, 1, 1, tzinfo=UTC),
     )
     response = ErasureResponse(
         subject_id="user_42",

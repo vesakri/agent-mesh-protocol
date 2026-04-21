@@ -20,10 +20,9 @@ from __future__ import annotations
 
 import asyncio
 from collections import deque
-from typing import AsyncIterator
+from collections.abc import AsyncIterator
 
 from ampro.streaming.events import StreamingEvent, StreamingEventType
-
 
 # ---------------------------------------------------------------------------
 # Ring buffer capacity — keeps the latest N events for replay

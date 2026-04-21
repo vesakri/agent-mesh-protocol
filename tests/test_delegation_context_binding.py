@@ -7,13 +7,10 @@ into another.
 
 from __future__ import annotations
 
-import base64
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
-import pytest
 from cryptography.hazmat.primitives.asymmetric.ed25519 import (
     Ed25519PrivateKey,
-    Ed25519PublicKey,
 )
 
 from ampro.delegation.chain import (
@@ -23,7 +20,6 @@ from ampro.delegation.chain import (
     sign_delegation,
     validate_chain,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -50,7 +46,7 @@ def _make_signed_link(
     parent_delegate: str | None = None,
 ) -> DelegationLink:
     """Create a DelegationLink with a real Ed25519 signature."""
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     created = created_at or now
     expires = expires_at or (now + timedelta(hours=1))
 
@@ -87,7 +83,7 @@ class TestContextBinding:
         seed_a, pub_a = _make_keypair()
         seed_b, pub_b = _make_keypair()
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         expires = now + timedelta(hours=1)
 
         # Root link: no parent_delegate
@@ -125,7 +121,7 @@ class TestContextBinding:
         seed_a, pub_a = _make_keypair()
         seed_b, pub_b = _make_keypair()
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         expires = now + timedelta(hours=1)
 
         # Root link
@@ -188,7 +184,7 @@ class TestContextBinding:
         seed_b, pub_b = _make_keypair()
         seed_x, pub_x = _make_keypair()
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         expires = now + timedelta(hours=1)
 
         # --- Chain A ---
@@ -279,7 +275,7 @@ class TestContextBinding:
 
     def test_canonical_bytes_differ_with_parent(self):
         """_canonical_link_bytes produces different output with different parent_delegate."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         link = DelegationLink(
             delegator="agent://a.example.com",
             delegate="agent://b.example.com",
@@ -302,7 +298,7 @@ class TestContextBinding:
         """_canonical_link_bytes JSON includes 'parent_delegate' in keys."""
         import json
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         link = DelegationLink(
             delegator="agent://a.example.com",
             delegate="agent://b.example.com",

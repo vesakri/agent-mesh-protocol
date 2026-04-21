@@ -18,8 +18,8 @@ import json
 import logging
 
 from ampro.identity.auth_methods import AuthMethod, parse_authorization
-from ampro.trust.tiers import TrustTier
 from ampro.transport.api_key_store import ApiKeyStore
+from ampro.trust.tiers import TrustTier
 
 logger = logging.getLogger(__name__)
 
@@ -120,7 +120,9 @@ async def _resolve_jwt(token: str, caller_org_id: str | None, target_org_id: str
         return TrustTier.EXTERNAL
 
     try:
-        from ampro.jwt_trust_resolver import resolve_trust_tier_from_jwt  # type: ignore[import-not-found]
+        from ampro.jwt_trust_resolver import (
+            resolve_trust_tier_from_jwt,  # type: ignore[import-not-found]
+        )
         return await resolve_trust_tier_from_jwt(
             authorization=f"Bearer {token}",
             caller_org_id=caller_org_id,
@@ -167,8 +169,8 @@ async def _resolve_did(token: str) -> TrustTier:
     elif "." in token:
         # JWT-like DID proof: base64(header).base64(payload).signature
         try:
-            import json
             import base64
+            import json
 
             parts = token.split(".")
             if len(parts) != 3:
@@ -249,10 +251,11 @@ async def _resolve_did(token: str) -> TrustTier:
     if is_jwt_proof:
         try:
             import base64
+
+            from cryptography.exceptions import InvalidSignature
             from cryptography.hazmat.primitives.asymmetric.ed25519 import (
                 Ed25519PublicKey,
             )
-            from cryptography.exceptions import InvalidSignature
 
             sig_padded = signature_b64
             remainder = len(sig_padded) % 4
@@ -334,13 +337,13 @@ def _resolve_api_key(key: str, client_ip: str | None = None) -> TrustTier:
 
 import time as _time
 from threading import Lock as _Lock
-from typing import Optional, Protocol
+from typing import Protocol
 
 _PUBLIC_KEY_CACHE: dict[str, tuple[float, bytes | None]] = {}
 _PUBLIC_KEY_CACHE_LOCK = _Lock()
 _PUBLIC_KEY_CACHE_TTL_SEC = 60.0
 
-_RESOLVER: Optional["PublicKeyResolver"] = None
+_RESOLVER: PublicKeyResolver | None = None
 _RESOLVER_LOCK = _Lock()
 
 
@@ -361,7 +364,7 @@ class PublicKeyResolver(Protocol):
       cached as ``None`` for the current TTL window.
     """
 
-    def __call__(self, sig_kid: str) -> Optional[bytes]: ...
+    def __call__(self, sig_kid: str) -> bytes | None: ...
 
 
 def register_public_key_resolver(resolver: PublicKeyResolver) -> None:

@@ -2,14 +2,12 @@
 
 import re
 
-import pytest
-
 from ampro.delegation.tracing import (
     TraceContext,
-    generate_trace_id,
-    generate_span_id,
-    inject_trace_headers,
     extract_trace_context,
+    generate_span_id,
+    generate_trace_id,
+    inject_trace_headers,
 )
 
 

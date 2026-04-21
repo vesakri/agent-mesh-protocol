@@ -12,7 +12,6 @@ import threading
 
 from pydantic import BaseModel, Field
 
-
 # Per-session cap on simultaneously open stream channels. Keeps a single
 # client from exhausting server memory / file-descriptor budgets by
 # opening unbounded multiplexed streams.

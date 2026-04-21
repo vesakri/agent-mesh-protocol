@@ -94,7 +94,7 @@ class TestFederationResponseRejected:
 
 class TestBodyRegistryRequest:
     def test_validate_body(self):
-        from ampro import validate_body, RegistryFederationRequest
+        from ampro import RegistryFederationRequest, validate_body
 
         body = validate_body("registry.federation_request", {
             "registry_id": "agent://reg-a.example.com",
@@ -113,7 +113,7 @@ class TestBodyRegistryRequest:
 
 class TestBodyRegistryResponse:
     def test_validate_body(self):
-        from ampro import validate_body, RegistryFederationResponse
+        from ampro import RegistryFederationResponse, validate_body
 
         body = validate_body("registry.federation_response", {
             "accepted": True,
@@ -125,7 +125,7 @@ class TestBodyRegistryResponse:
         assert body.federation_id == "fed-100"
 
     def test_validate_body_rejected(self):
-        from ampro import validate_body, RegistryFederationResponse
+        from ampro import RegistryFederationResponse, validate_body
 
         body = validate_body("registry.federation_response", {
             "accepted": False,

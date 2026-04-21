@@ -9,13 +9,13 @@ This module is PURE — no platform-specific imports.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import datetime
-from typing import Any, Callable, Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
 from ampro.errors import MigrationChainTooLongError
-
 
 MAX_MIGRATION_HOPS = 5
 """Maximum depth of ``moved_to`` references that callers SHOULD follow.

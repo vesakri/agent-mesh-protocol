@@ -3,8 +3,8 @@
 import pytest
 from pydantic import ValidationError
 
-from ampro.transport.task_revoke import TaskRevokeBody
 from ampro.core.body_schemas import validate_body
+from ampro.transport.task_revoke import TaskRevokeBody
 
 
 class TestTaskRevokeMinimal:

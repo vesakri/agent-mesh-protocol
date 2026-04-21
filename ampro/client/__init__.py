@@ -24,10 +24,10 @@ Usage::
 
 from __future__ import annotations
 
-from ampro.client.send import send
 from ampro.client.discover import discover
-from ampro.client.stream import stream
-from ampro.client.session import connect, Session
 from ampro.client.errors import AmpProtocolError
+from ampro.client.send import send
+from ampro.client.session import Session, connect
+from ampro.client.stream import stream
 
 __all__ = ["send", "discover", "stream", "connect", "Session", "AmpProtocolError"]

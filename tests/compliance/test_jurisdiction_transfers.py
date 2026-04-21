@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
@@ -49,7 +49,7 @@ def test_adequacy_decision_respected():
         from_jurisdiction="DE",
         to_jurisdiction="US",
         mechanism=TransferMechanism.ADEQUACY,
-        expires_at=datetime.now(timezone.utc) + timedelta(days=365),
+        expires_at=datetime.now(UTC) + timedelta(days=365),
     )
     registry = StaticRegistry({("DE", "US"): decision})
 
@@ -65,7 +65,7 @@ def test_expired_adequacy_blocks_transfer():
         from_jurisdiction="DE",
         to_jurisdiction="US",
         mechanism=TransferMechanism.ADEQUACY,
-        expires_at=datetime.now(timezone.utc) - timedelta(days=1),
+        expires_at=datetime.now(UTC) - timedelta(days=1),
     )
     registry = StaticRegistry({("DE", "US"): expired})
 

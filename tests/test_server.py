@@ -3,12 +3,9 @@
 import asyncio
 import json
 
-import pytest
-
-from ampro.server import AgentServer
 from ampro.core.envelope import AgentMessage
 from ampro.core.versioning import CURRENT_VERSION
-
+from ampro.server import AgentServer
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -334,8 +331,8 @@ class TestFromApp:
     """Test AgentServer.from_app() classmethod."""
 
     def test_agent_server_from_app(self):
-        from ampro.server.core import AgentServer
         from ampro.ampi.app import AgentApp
+        from ampro.server.core import AgentServer
 
         app = AgentApp("agent://test.com", "https://test.com")
 

@@ -78,13 +78,13 @@ class TestHandshakeBodyTypes:
 
 class TestHandshakeStateMachine:
     def test_initial_state(self):
-        from ampro import HandshakeStateMachine, HandshakeState
+        from ampro import HandshakeState, HandshakeStateMachine
         sm = HandshakeStateMachine()
         assert sm.state == HandshakeState.IDLE
 
     def test_client_flow(self):
         """Client: IDLE -> INIT_SENT -> ESTABLISHED -> CONFIRMED -> ACTIVE"""
-        from ampro import HandshakeStateMachine, HandshakeState
+        from ampro import HandshakeState, HandshakeStateMachine
         sm = HandshakeStateMachine()
         assert sm.transition("send_init") == HandshakeState.INIT_SENT
         assert sm.transition("receive_established") == HandshakeState.ESTABLISHED
@@ -93,7 +93,7 @@ class TestHandshakeStateMachine:
 
     def test_server_flow(self):
         """Server: IDLE -> INIT_RECEIVED -> ESTABLISHED -> CONFIRMED -> ACTIVE"""
-        from ampro import HandshakeStateMachine, HandshakeState
+        from ampro import HandshakeState, HandshakeStateMachine
         sm = HandshakeStateMachine()
         assert sm.transition("receive_init") == HandshakeState.INIT_RECEIVED
         assert sm.transition("send_established") == HandshakeState.ESTABLISHED
@@ -101,7 +101,7 @@ class TestHandshakeStateMachine:
         assert sm.transition("activate") == HandshakeState.ACTIVE
 
     def test_pause_resume(self):
-        from ampro import HandshakeStateMachine, HandshakeState
+        from ampro import HandshakeState, HandshakeStateMachine
         sm = HandshakeStateMachine()
         sm.transition("send_init")
         sm.transition("receive_established")
@@ -111,7 +111,7 @@ class TestHandshakeStateMachine:
         assert sm.transition("resume") == HandshakeState.ACTIVE
 
     def test_close_from_active(self):
-        from ampro import HandshakeStateMachine, HandshakeState
+        from ampro import HandshakeState, HandshakeStateMachine
         sm = HandshakeStateMachine()
         sm.transition("send_init")
         sm.transition("receive_established")
@@ -120,7 +120,7 @@ class TestHandshakeStateMachine:
         assert sm.transition("close") == HandshakeState.CLOSED
 
     def test_close_from_paused(self):
-        from ampro import HandshakeStateMachine, HandshakeState
+        from ampro import HandshakeState, HandshakeStateMachine
         sm = HandshakeStateMachine()
         sm.transition("send_init")
         sm.transition("receive_established")
@@ -131,7 +131,7 @@ class TestHandshakeStateMachine:
 
     def test_close_from_established(self):
         """Abort during handshake"""
-        from ampro import HandshakeStateMachine, HandshakeState
+        from ampro import HandshakeState, HandshakeStateMachine
         sm = HandshakeStateMachine()
         sm.transition("send_init")
         sm.transition("receive_established")

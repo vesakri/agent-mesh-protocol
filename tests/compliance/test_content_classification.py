@@ -8,18 +8,15 @@
 
 from __future__ import annotations
 
+from ampro.compliance.middleware import (
+    check_content_classification,
+)
 from ampro.compliance.pii_patterns import (
-    Detection,
     _luhn_valid,
     detect_pii,
     tier_rank,
 )
-from ampro.compliance.middleware import (
-    ComplianceCheckResult,
-    check_content_classification,
-)
 from ampro.core.envelope import AgentMessage
-
 
 # ---------------------------------------------------------------------------
 # Helpers

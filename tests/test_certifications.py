@@ -1,8 +1,6 @@
 """Tests for v0.1.9 certifications module."""
 
-import json
 
-import pytest
 
 
 class TestCertificationLink:

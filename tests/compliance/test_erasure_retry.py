@@ -2,20 +2,20 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from ampro.compliance.erasure_propagation import (
     DEFAULT_RETRY_BASE_DELAY_SEC,
-    ErasurePropagationStatusBody,
     MAX_ERASURE_RETRIES,
     MAX_RETRY_DELAY_SEC,
+    ErasurePropagationStatusBody,
     compute_next_retry,
 )
 
 
 def test_erasure_retry_schedule_exponential_backoff():
     """compute_next_retry doubles the base delay per attempt."""
-    now = datetime(2026, 4, 21, tzinfo=timezone.utc)
+    now = datetime(2026, 4, 21, tzinfo=UTC)
     base = DEFAULT_RETRY_BASE_DELAY_SEC
 
     # Attempt 0: base * 2^0 = base.
@@ -33,7 +33,7 @@ def test_erasure_retry_schedule_exponential_backoff():
 
 def test_retry_schedule_is_capped():
     """High retry counts are capped at MAX_RETRY_DELAY_SEC."""
-    now = datetime(2026, 4, 21, tzinfo=timezone.utc)
+    now = datetime(2026, 4, 21, tzinfo=UTC)
     r_high = compute_next_retry(25, DEFAULT_RETRY_BASE_DELAY_SEC, now=now, jitter=0)
     assert r_high <= now + timedelta(seconds=MAX_RETRY_DELAY_SEC)
 
@@ -47,7 +47,7 @@ def test_erasure_body_tracks_retry_metadata():
         records_affected=0,
         timestamp="2026-04-21T00:00:00Z",
         retry_count=3,
-        next_retry_at=datetime(2026, 4, 21, 1, 0, tzinfo=timezone.utc),
+        next_retry_at=datetime(2026, 4, 21, 1, 0, tzinfo=UTC),
         last_error="connection refused",
         final=False,
     )

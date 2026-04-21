@@ -1,10 +1,8 @@
 """Tests for identity linking proof body type."""
-import json
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from pydantic import ValidationError
-
 
 _FUTURE_EXPIRES = "2027-04-09T12:00:00Z"
 
@@ -53,7 +51,7 @@ class TestLinkProofCreation:
 
 class TestLinkProofBodyRegistry:
     def test_validate_body(self):
-        from ampro import validate_body, IdentityLinkProofBody
+        from ampro import IdentityLinkProofBody, validate_body
 
         body = validate_body("identity.link_proof", {
             "source_id": "agent://a.example.com",
@@ -116,7 +114,7 @@ class TestLinkProofExpiry:
     def test_link_proof_rejected_after_expires_at(self):
         from ampro.identity.link import IdentityLinkProofBody, is_link_proof_valid
 
-        past_issue = datetime.now(tz=timezone.utc) - timedelta(days=30)
+        past_issue = datetime.now(tz=UTC) - timedelta(days=30)
         past_expires = past_issue + timedelta(days=1)
         body = IdentityLinkProofBody(
             source_id="agent://a.example.com",

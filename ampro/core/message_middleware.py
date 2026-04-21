@@ -14,9 +14,9 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from ampro.core.envelope import AgentMessage
 from ampro.core.body_schemas import validate_body
 from ampro.core.capabilities import CapabilityGroup, CapabilitySet
+from ampro.core.envelope import AgentMessage
 from ampro.security.encryption import EncryptionDowngradeError
 from ampro.transport.negotiation import CapabilityNegotiator
 

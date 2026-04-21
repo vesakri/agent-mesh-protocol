@@ -23,7 +23,6 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field, field_validator
 
-
 # ---------------------------------------------------------------------------
 # POST types — Creating work
 # ---------------------------------------------------------------------------
@@ -547,7 +546,10 @@ def _register_compliance_body_types() -> None:
     """Register erasure + export body types from compliance_types module."""
     try:
         from ampro.compliance.types import (
-            ErasureRequest, ErasureResponse, ExportRequest, ExportResponse,
+            ErasureRequest,
+            ErasureResponse,
+            ExportRequest,
+            ExportResponse,
         )
         _BODY_TYPE_REGISTRY["data.erasure_request"] = ErasureRequest
         _BODY_TYPE_REGISTRY["data.erasure_response"] = ErasureResponse
@@ -563,9 +565,14 @@ def _register_handshake_body_types() -> None:
     """Register session handshake body types from handshake module."""
     try:
         from ampro.session.handshake import (
-            SessionInitBody, SessionEstablishedBody, SessionConfirmBody,
-            SessionPingBody, SessionPongBody,
-            SessionPauseBody, SessionResumeBody, SessionCloseBody,
+            SessionCloseBody,
+            SessionConfirmBody,
+            SessionEstablishedBody,
+            SessionInitBody,
+            SessionPauseBody,
+            SessionPingBody,
+            SessionPongBody,
+            SessionResumeBody,
         )
         _BODY_TYPE_REGISTRY["session.init"] = SessionInitBody
         _BODY_TYPE_REGISTRY["session.established"] = SessionEstablishedBody
@@ -601,7 +608,7 @@ def _register_v012_body_types() -> None:
     except ImportError:
         pass
     try:
-        from ampro.agent.tool_consent import ToolConsentRequestBody, ToolConsentGrantBody
+        from ampro.agent.tool_consent import ToolConsentGrantBody, ToolConsentRequestBody
         _BODY_TYPE_REGISTRY["tool.consent_request"] = ToolConsentRequestBody
         _BODY_TYPE_REGISTRY["tool.consent_grant"] = ToolConsentGrantBody
     except ImportError:

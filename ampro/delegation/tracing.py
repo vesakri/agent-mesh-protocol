@@ -58,7 +58,7 @@ def _canonical_trace_bytes(ctx: TraceContext) -> bytes:
     Format: ``{trace_id}|{span_id}|{parent_span_id_or_empty}``
     """
     parent = ctx.parent_span_id or ""
-    return f"{ctx.trace_id}|{ctx.span_id}|{parent}".encode("utf-8")
+    return f"{ctx.trace_id}|{ctx.span_id}|{parent}".encode()
 
 
 # ---------------------------------------------------------------------------

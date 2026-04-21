@@ -13,7 +13,7 @@ It is designed for extraction as part of `pip install agent-protocol`.
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
 
 from pydantic import BaseModel, Field
@@ -55,7 +55,7 @@ class EventSubscription(BaseModel):
         description="Optional key-value filters to narrow matching events",
     )
     created_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc),
+        default_factory=lambda: datetime.now(UTC),
         description="When the subscription was created",
     )
 
@@ -85,7 +85,7 @@ class EventNotification(BaseModel):
         description="Event payload",
     )
     timestamp: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc),
+        default_factory=lambda: datetime.now(UTC),
         description="When the event was created",
     )
     correlation_id: str | None = Field(

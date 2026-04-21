@@ -13,7 +13,6 @@ import pytest
 from ampro.trust.resolver import _multibase_decode_ed25519, _resolve_did
 from ampro.trust.tiers import TrustTier
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -134,8 +133,8 @@ async def test_jwt_wrapped_did_key_returns_verified():
 
     The signature must verify under the did:key's embedded public key.
     """
-    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
     from cryptography.hazmat.primitives import serialization
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
     priv = Ed25519PrivateKey.generate()
     raw_pub = priv.public_key().public_bytes(
@@ -158,8 +157,8 @@ async def test_did_proof_forged_signature_rejected():
 @pytest.mark.asyncio
 async def test_round_trip_key_extraction():
     """W2.B.10 — Round-trip: generate did:key from raw bytes, then decode back and compare."""
-    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
     from cryptography.hazmat.primitives import serialization
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
     priv = Ed25519PrivateKey.generate()
     pub = priv.public_key()

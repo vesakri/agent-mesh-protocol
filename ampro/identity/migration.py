@@ -13,7 +13,7 @@ from __future__ import annotations
 import base64
 import json
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from pydantic import BaseModel, Field
 
@@ -98,11 +98,11 @@ def validate_migration_proof(body: IdentityMigrationBody) -> bool:
     try:
         proof_ts = datetime.fromisoformat(ts_raw.replace("Z", "+00:00"))
         if proof_ts.tzinfo is None:
-            proof_ts = proof_ts.replace(tzinfo=timezone.utc)
+            proof_ts = proof_ts.replace(tzinfo=UTC)
     except ValueError as exc:
         logger.warning("migration_proof timestamp unparseable: %s", exc)
         return False
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     if abs((now - proof_ts).total_seconds()) > CLOCK_SKEW_SECONDS:
         logger.warning(
             "migration_proof timestamp outside clock-skew window: %s", ts_raw,

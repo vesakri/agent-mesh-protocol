@@ -13,7 +13,6 @@ from typing import Any
 
 from pydantic import BaseModel, Field, model_validator
 
-
 # Standard headers that the protocol defines.
 # Receivers should understand these but MUST ignore unknown headers.
 STANDARD_HEADERS = frozenset({
@@ -142,7 +141,7 @@ class AgentMessage(BaseModel):
         return data
 
     @model_validator(mode="after")
-    def _validate_body_against_body_type(self) -> "AgentMessage":
+    def _validate_body_against_body_type(self) -> AgentMessage:
         """Envelope-level body/body_type consistency hook.
 
         When ``body`` is a dict and ``body_type`` is a registered schema, we

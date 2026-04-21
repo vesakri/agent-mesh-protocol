@@ -78,7 +78,7 @@ class TestTaskChallengeResponseBody:
 
 class TestChallengeRegistry:
     def test_validate_body_task_challenge(self):
-        from ampro import validate_body, TaskChallengeBody
+        from ampro import TaskChallengeBody, validate_body
         body = validate_body("task.challenge", {
             "challenge_id": "ch-100",
             "challenge_type": "proof_of_work",
@@ -91,7 +91,7 @@ class TestChallengeRegistry:
         assert body.parameters["difficulty"] == 18
 
     def test_validate_body_task_challenge_response(self):
-        from ampro import validate_body, TaskChallengeResponseBody
+        from ampro import TaskChallengeResponseBody, validate_body
         body = validate_body("task.challenge_response", {
             "challenge_id": "ch-100",
             "solution": "answer-xyz",

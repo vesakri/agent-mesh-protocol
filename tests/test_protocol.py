@@ -1,5 +1,7 @@
 """Comprehensive tests for agent-protocol package."""
 
+from datetime import UTC
+
 import pytest
 from pydantic import ValidationError
 
@@ -16,20 +18,20 @@ class TestImports:
 
 class TestAddressing:
     def test_parse_host(self):
-        from ampro import parse_agent_uri, AddressType
+        from ampro import AddressType, parse_agent_uri
         addr = parse_agent_uri("agent://bakery.example.com")
         assert addr.address_type == AddressType.HOST
         assert addr.host == "bakery.example.com"
 
     def test_parse_slug(self):
-        from ampro import parse_agent_uri, AddressType
+        from ampro import AddressType, parse_agent_uri
         addr = parse_agent_uri("agent://sales@acme.example.com")
         assert addr.address_type == AddressType.SLUG
         assert addr.slug == "sales"
         assert addr.registry == "acme.example.com"
 
     def test_parse_did(self):
-        from ampro import parse_agent_uri, AddressType
+        from ampro import AddressType, parse_agent_uri
         addr = parse_agent_uri("agent://did:web:example.com")
         assert addr.address_type == AddressType.DID
 
@@ -134,14 +136,15 @@ class TestStreaming:
 
 class TestDelegation:
     def test_delegation_link_fields(self):
+        from datetime import datetime
+
         from ampro import DelegationLink
-        from datetime import datetime, timezone
         link = DelegationLink(
             delegator="agent://a.example.com", delegate="agent://b.example.com",
             scopes=["tool:read"], max_fan_out=5, trust_tier="verified",
             chain_budget="remaining=3.50USD;max=5.00USD",
-            created_at=datetime.now(timezone.utc),
-            expires_at=datetime.now(timezone.utc),
+            created_at=datetime.now(UTC),
+            expires_at=datetime.now(UTC),
         )
         assert link.max_fan_out == 5
         assert link.trust_tier == "verified"
@@ -160,22 +163,22 @@ class TestDelegation:
 
 class TestAuth:
     def test_parse_bearer(self):
-        from ampro import parse_authorization, AuthMethod
+        from ampro import AuthMethod, parse_authorization
         auth = parse_authorization("Bearer token123")
         assert auth.method == AuthMethod.JWT
 
     def test_parse_did(self):
-        from ampro import parse_authorization, AuthMethod
+        from ampro import AuthMethod, parse_authorization
         auth = parse_authorization("DID proof123")
         assert auth.method == AuthMethod.DID
 
     def test_parse_apikey(self):
-        from ampro import parse_authorization, AuthMethod
+        from ampro import AuthMethod, parse_authorization
         auth = parse_authorization("ApiKey sk_123")
         assert auth.method == AuthMethod.API_KEY
 
     def test_parse_none(self):
-        from ampro import parse_authorization, AuthMethod
+        from ampro import AuthMethod, parse_authorization
         auth = parse_authorization(None)
         assert auth.method == AuthMethod.NONE
 
@@ -195,7 +198,7 @@ class TestCompliance:
         assert req.scope == "all"
 
     def test_audit_logger(self):
-        from ampro import AuditLogger, AuditEntry
+        from ampro import AuditEntry, AuditLogger
         logger = AuditLogger()
         entry = logger.log(AuditEntry(
             message_id="m-1", sender="a", recipient="b", body_type="message",
@@ -207,6 +210,7 @@ class TestCompliance:
 class TestSecurity:
     def test_dedup(self):
         import asyncio
+
         from ampro import InMemoryDedupStore
         store = InMemoryDedupStore(window_seconds=300)
         assert asyncio.run(store.is_duplicate("msg-1")) is False
@@ -235,12 +239,12 @@ class TestNegotiation:
         assert negotiate_version("2.0.0, 0.1.0") == "0.1.0"
 
     def test_negotiate_version_none(self):
-        from ampro import negotiate_version, CURRENT_VERSION
+        from ampro import CURRENT_VERSION, negotiate_version
         assert negotiate_version(None) == CURRENT_VERSION
 
     def test_negotiate_version_uses_fallback_on_no_match(self):
         """When no requested version is supported, fallback is returned."""
-        from ampro import negotiate_version, CURRENT_VERSION
+        from ampro import CURRENT_VERSION, negotiate_version
         assert (
             negotiate_version("9.9.9, 8.8.8", fallback_version=CURRENT_VERSION)
             == CURRENT_VERSION
@@ -249,6 +253,7 @@ class TestNegotiation:
     def test_negotiate_version_raises_without_fallback(self):
         """No fallback provided AND no match → ValueError (existing behaviour)."""
         import pytest
+
         from ampro import negotiate_version
         with pytest.raises(ValueError):
             negotiate_version("9.9.9")
@@ -269,6 +274,7 @@ class TestCrossVerification:
     def test_did_key_not_verified_without_implementation(self):
         """C9: did:key cross-verification is fail-closed until key extraction is implemented."""
         import asyncio
+
         from ampro import cross_verify_identifiers
         results = asyncio.run(cross_verify_identifiers(
             identifiers=["agent://did:key:z6MkTest"],
@@ -287,33 +293,30 @@ class TestV011Imports:
 
     def test_handshake_imports(self):
         from ampro import (
-            HandshakeState, HandshakeStateMachine,
-            SessionInitBody, SessionEstablishedBody, SessionConfirmBody,
-            SessionPingBody, SessionPongBody,
-            SessionPauseBody, SessionResumeBody, SessionCloseBody,
+            HandshakeState,
         )
         assert HandshakeState.IDLE.value == "idle"
 
     def test_session_binding_imports(self):
         from ampro import (
-            SessionBinding, derive_binding_token,
-            create_message_binding, verify_message_binding,
+            derive_binding_token,
         )
         assert callable(derive_binding_token)
 
     def test_trust_score_imports(self):
-        from ampro import TrustFactor, TrustScore, TrustPolicy, calculate_trust_score, score_to_policy
+        from ampro import (
+            TrustFactor,
+        )
         assert TrustFactor.AGE.value == "age"
 
     def test_visibility_imports(self):
         from ampro import (
-            VisibilityLevel, ContactPolicy, VisibilityConfig,
-            check_contact_allowed, filter_agent_json,
+            VisibilityLevel,
         )
         assert VisibilityLevel.PUBLIC.value == "public"
 
     def test_context_schema_imports(self):
-        from ampro import ContextSchemaInfo, parse_schema_urn, check_schema_supported
+        from ampro import parse_schema_urn
         assert callable(parse_schema_urn)
 
     def test_expanded_session_state(self):
@@ -348,25 +351,25 @@ class TestV012Imports:
         assert ampro.__version__ == "0.3.1"
 
     def test_key_revocation_imports(self):
-        from ampro import RevocationReason, KeyRevocationBody
+        from ampro import RevocationReason
         assert RevocationReason.KEY_COMPROMISE.value == "key_compromise"
 
     def test_challenge_imports(self):
-        from ampro import ChallengeReason, TaskChallengeBody, TaskChallengeResponseBody
+        from ampro import ChallengeReason
         assert ChallengeReason.FIRST_CONTACT.value == "first_contact"
 
     def test_tool_consent_imports(self):
-        from ampro import ToolConsentRequestBody, ToolConsentGrantBody, ToolDefinition
+        from ampro import ToolDefinition
         td = ToolDefinition(name="test", description="test tool")
         assert td.consent_required is False
 
     def test_backpressure_imports(self):
-        from ampro import StreamAckEvent, StreamPauseEvent, StreamResumeEvent
+        from ampro import StreamAckEvent
         ack = StreamAckEvent(last_seq=1, timestamp="2026-01-01T00:00:00Z")
         assert ack.last_seq == 1
 
     def test_trust_upgrade_imports(self):
-        from ampro import TrustUpgradeRequestBody, TrustUpgradeResponseBody
+        from ampro import TrustUpgradeRequestBody
         assert TrustUpgradeRequestBody.model_fields["timeout_seconds"].default == 300
 
     def test_streaming_event_type_backpressure_members(self):
@@ -456,6 +459,7 @@ class TestV013Imports:
 
     def test_cost_receipt_import(self):
         import secrets
+
         from ampro import CostReceipt
         nonce = secrets.token_urlsafe(16)
         receipt = CostReceipt(
@@ -541,7 +545,7 @@ class TestV015Imports:
         assert len(sid) == 16
 
     def test_inject_trace_headers_import(self):
-        from ampro import inject_trace_headers, TraceContext
+        from ampro import TraceContext, inject_trace_headers
         ctx = TraceContext(trace_id="a" * 32, span_id="b" * 16)
         headers = inject_trace_headers(ctx)
         assert "Trace-Id" in headers
@@ -823,6 +827,7 @@ class TestServerLevelStubs:
     def test_level2_tools_returns_501(self):
         """Level 2 endpoint /agent/tools returns 501 with protocol_level=2."""
         import json
+
         from ampro.server import AgentServer
         server = AgentServer(agent_id="@test", endpoint="https://test.example.com")
         status, headers, body_str = self._route(server, "GET", "/agent/tools")
@@ -834,6 +839,7 @@ class TestServerLevelStubs:
     def test_level3_tasks_returns_501(self):
         """Level 3 endpoint /agent/tasks returns 501 with protocol_level=3."""
         import json
+
         from ampro.server import AgentServer
         server = AgentServer(agent_id="@test", endpoint="https://test.example.com")
         status, headers, body_str = self._route(server, "GET", "/agent/tasks")
@@ -845,6 +851,7 @@ class TestServerLevelStubs:
     def test_level4_delegate_returns_501(self):
         """Level 4 endpoint /agent/delegate returns 501 with protocol_level=4."""
         import json
+
         from ampro.server import AgentServer
         server = AgentServer(agent_id="@test", endpoint="https://test.example.com")
         status, headers, body_str = self._route(server, "POST", "/agent/delegate")
@@ -856,6 +863,7 @@ class TestServerLevelStubs:
     def test_level5_admin_returns_501(self):
         """Level 5 endpoint /agent/admin returns 501 with protocol_level=5."""
         import json
+
         from ampro.server import AgentServer
         server = AgentServer(agent_id="@test", endpoint="https://test.example.com")
         status, headers, body_str = self._route(server, "GET", "/agent/admin")
@@ -867,6 +875,7 @@ class TestServerLevelStubs:
     def test_unknown_path_still_404(self):
         """Paths outside the spec still return 404."""
         import json
+
         from ampro.server import AgentServer
         server = AgentServer(agent_id="@test", endpoint="https://test.example.com")
         status, _, body_str = self._route(server, "GET", "/totally/unknown")
@@ -895,10 +904,11 @@ class TestDelegationSignatures:
                           max_depth=3, created_at=None, expires_at=None,
                           parent_delegate=None):
         """Create a DelegationLink with a real Ed25519 signature."""
-        from datetime import datetime, timedelta, timezone
+        from datetime import datetime, timedelta
+
         from ampro.delegation.chain import DelegationLink, sign_delegation
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         created = created_at or now
         expires = expires_at or (now + timedelta(hours=1))
 
@@ -941,7 +951,8 @@ class TestDelegationSignatures:
     def test_scope_widening_rejected(self):
         """Child claiming more scopes than parent granted must be rejected."""
         from ampro.delegation.chain import (
-            DelegationChain, validate_chain, validate_scope_narrowing,
+            DelegationChain,
+            validate_chain,
         )
 
         seed_a, pub_a = self._make_keypair()
@@ -975,13 +986,14 @@ class TestDelegationSignatures:
 
     def test_scope_narrowing_accepted(self):
         """Child claiming fewer scopes than parent is valid narrowing."""
+        from datetime import datetime, timedelta
+
         from ampro.delegation.chain import DelegationChain, validate_chain
-        from datetime import datetime, timedelta, timezone
 
         seed_a, pub_a = self._make_keypair()
         seed_b, pub_b = self._make_keypair()
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         expires = now + timedelta(hours=1)
 
         # Parent grants tool:read and tool:execute
@@ -1015,14 +1027,15 @@ class TestDelegationSignatures:
 
     def test_three_level_chain_all_signatures_verify(self):
         """A 3-level delegation chain with real signatures should verify end-to-end."""
+        from datetime import datetime, timedelta
+
         from ampro.delegation.chain import DelegationChain, validate_chain
-        from datetime import datetime, timedelta, timezone
 
         seed_a, pub_a = self._make_keypair()
         seed_b, pub_b = self._make_keypair()
         seed_c, pub_c = self._make_keypair()
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         expires = now + timedelta(hours=1)
 
         link_a = self._make_signed_link(
@@ -1066,14 +1079,17 @@ class TestDelegationSignatures:
 
     def test_missing_signature_rejected(self):
         """A delegation link with an empty signature must be rejected."""
+        from datetime import datetime, timedelta
+
         from ampro.delegation.chain import (
-            DelegationLink, DelegationChain, validate_chain,
+            DelegationChain,
+            DelegationLink,
+            validate_chain,
         )
-        from datetime import datetime, timedelta, timezone
 
         _, pub_a = self._make_keypair()
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         link = DelegationLink(
             delegator="agent://a.example.com",
             delegate="agent://b.example.com",

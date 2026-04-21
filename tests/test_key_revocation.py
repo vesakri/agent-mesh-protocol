@@ -108,7 +108,7 @@ class TestKeyRevocationBody:
 
 class TestKeyRevocationRegistry:
     def test_validate_body_key_revocation(self):
-        from ampro import validate_body, KeyRevocationBody
+        from ampro import KeyRevocationBody, validate_body
         body = validate_body("key.revocation", {
             "agent_id": "agent://a.example.com",
             "revoked_key_id": "k1",
@@ -120,7 +120,7 @@ class TestKeyRevocationRegistry:
         assert body.agent_id == "agent://a.example.com"
 
     def test_validate_body_key_revocation_with_optionals(self):
-        from ampro import validate_body, KeyRevocationBody
+        from ampro import KeyRevocationBody, validate_body
         body = validate_body("key.revocation", {
             "agent_id": "agent://a.example.com",
             "revoked_key_id": "k1",

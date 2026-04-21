@@ -5,17 +5,15 @@ Uses httpx mock transport to test all client functions without network access.
 
 from __future__ import annotations
 
-import json
 from typing import Any
-from unittest.mock import AsyncMock, patch, MagicMock
+from unittest.mock import AsyncMock, patch
 
 import httpx
 import pytest
 
-from ampro.core.envelope import AgentMessage
-from ampro.wire.errors import ProblemDetail, ErrorType
 from ampro.client.errors import AmpProtocolError
-
+from ampro.core.envelope import AgentMessage
+from ampro.wire.errors import ErrorType, ProblemDetail
 
 # ---------------------------------------------------------------------------
 # Helpers — mock HTTP transport
