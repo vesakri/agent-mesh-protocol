@@ -67,6 +67,14 @@ pytest tests/ -v
 - **No mocks in tests** — test real behavior
 - **Module docstrings** on every file explaining what it implements
 
+### Commit messages
+
+Use imperative mood (`add`, `fix`, `remove`), prefix with `feat:` / `fix:` / `docs:` / `refactor:` / `test:` / `chore:` where applicable. Keep first line ≤ 72 chars.
+
+### Formatting
+
+Code is formatted with `ruff format` and linted with `ruff check`. Type-hinted public APIs verified with `mypy`.
+
 ## Adding a New Body Type
 
 This is the most common type of protocol change. Here's the process:
@@ -124,37 +132,53 @@ tests until they all pass.
 
 ## Module Structure
 
-| Module | Purpose |
-|--------|---------|
-| `envelope.py` | Message envelope + standard headers |
-| `body_schemas.py` | Body type models + validation registry |
-| `handshake.py` | Session handshake body types + state machine |
-| `session_binding.py` | HMAC-SHA256 session binding |
-| `trust.py` | Trust tier system |
-| `trust_score.py` | 5-factor trust scoring (0-1000) |
-| `visibility.py` | Visibility levels + contact policies |
-| `context_schema.py` | Context schema URN parsing |
-| `capabilities.py` | Agent capability groups and levels |
-| `streaming.py` | SSE streaming event types |
-| `addressing.py` | `agent://` URI parsing |
-| `delegation_chain.py` | Delegation chains with scope narrowing |
-| `agent_json_schema.py` | agent.json schema |
+The package is organized into 13 subpackages under `ampro/`:
+
+| Subpackage | Purpose |
+|------------|---------|
+| `ampro.agent` | Agent identity, agent cards, visibility filters |
+| `ampro.ampi` | Handler framework (AgentApp, decorators, AMPContext, TestServer) |
+| `ampro.client` | Client SDK for outbound AMP calls |
+| `ampro.compliance` | Jurisdiction, data residency, erasure, PII, audit attestation |
+| `ampro.core` | Core types, addressing, body schemas, priority |
+| `ampro.delegation` | Delegation chains, cost receipts, tracing |
+| `ampro.identity` | Auth methods, cross-verification |
+| `ampro.registry` | Registry search, federation |
+| `ampro.security` | RFC 9421 signing, rate limiting, dedup, nonce, SSRF, revocation, circuit breakers |
+| `ampro.server` | Reference server, CLI, middleware stack |
+| `ampro.session` | Session handshake, binding, state machine |
+| `ampro.streaming` | SSE streaming, backpressure, bus |
+| `ampro.transport` | HTTP transport, attachments, JWKS cache, API key store |
+| `ampro.trust` | Trust resolver, tiers, upgrade, score |
+| `ampro.wire` | Wire binding spec helpers |
 
 ## Versioning
 
-The protocol follows semantic versioning:
+See [RELEASING.md](RELEASING.md) for the release + versioning policy.
 
-```
-0.1.x — Patches. New features, no breaking changes. Old agents keep working.
-0.2.0 — Only if something fundamental needs to break.
-1.0.0 — Stable. Wire format locked. Multiple platforms shipping.
-```
+## Extending AMPI
 
-- Adding a new body type is a **patch** (0.1.x) — old agents ignore unknown types
-- Adding a new header is a **patch** — receivers MUST ignore unknown headers
-- Adding a new streaming event is a **patch** — clients skip unknown events
-- Changing the meaning of an existing type/header is a **breaking change** (0.2.0)
-- Removing a type/header is a **breaking change**
+AMPI (`ampro.ampi`) is the handler framework — the in-process application surface that sits
+on top of the wire protocol. Extension points:
+
+- **Handlers** — write `async def handler(ctx: AMPContext, body) -> dict` and register via
+  `@app.on("body.type")`. The handler receives a validated body model and a context with
+  caller identity, trust tier, and session state.
+- **Middleware** — write `async def mw(ctx, body, call_next)` and register via
+  `@app.middleware`. Middleware runs in registration order around every handler call; use
+  it for auth, logging, rate limiting, or cross-cutting policy.
+- **Tools** — decorate a callable with `@app.tool("name")` to expose it as an invocable
+  tool to agents. Tool schemas are inferred from type hints.
+
+Every new handler, middleware, or tool MUST ship with a `TestServer`-based unit test that
+exercises the registered behavior end-to-end against a real ASGI transport (no mocks).
+
+See `ampro/ampi/app.py` for the AMPI framework source and `tests/test_ampi_*.py` for
+reference tests.
+
+## Security
+
+See [SECURITY.md](SECURITY.md) for responsible disclosure of protocol vulnerabilities.
 
 ## Code Review Process
 

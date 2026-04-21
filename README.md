@@ -2,13 +2,15 @@
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://python.org)
-[![Version](https://img.shields.io/badge/version-0.3.0-green.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.3.1-green.svg)](CHANGELOG.md)
 
 The universal agent-to-agent communication protocol. Any agent, any runtime, any platform.
 
 ```
-pip install ampro
+pip install git+https://github.com/vesakri/agent-mesh-protocol.git
 ```
+
+> **Note:** PyPI release pending. Install from source until 1.0.
 
 ## What Is This?
 
@@ -87,6 +89,10 @@ server = TestServer(agent)
 result = await server.send(message)
 ```
 
+### Upgrading from 0.2.x
+
+AMPI is purely additive. All existing low-level usage (`parse_agent_uri`, `validate_body`, `TrustConfig`, `DelegationLink`, etc.) continues to work unchanged. Adopt `AgentApp` at your own pace — direct envelope handling remains fully supported.
+
 ## Addressing -- `agent://`
 
 Three forms, one scheme:
@@ -132,7 +138,7 @@ caps = CapabilitySet(groups={
 print(f"Level: {caps.level}")  # Level: 3
 ```
 
-## Body Types -- 23 Typed Schemas
+## Body Types -- 49+ Typed Body Schemas
 
 ```python
 from ampro import validate_body
@@ -163,6 +169,8 @@ print(f"${remaining} of ${max_budget} remaining")
 - Poison message tracking
 - Chain-Budget enforcement
 - JWKS caching with revocation
+
+Version 0.2.3 closed all 66 CRITICAL+HIGH security findings from the Phase 0 audit sprint — see CHANGELOG.
 
 ## Compliance -- GDPR Ready
 
@@ -196,6 +204,7 @@ req = ErasureRequest(
 ## Documentation
 
 - [Architecture Guide](docs/ARCHITECTURE.md) — detailed protocol architecture
+- [Wire Binding Spec](docs/WIRE-BINDING.md) — normative HTTP binding
 - [Contributing Guide](CONTRIBUTING.md)
 - [Changelog](CHANGELOG.md)
 - [Examples](examples/)

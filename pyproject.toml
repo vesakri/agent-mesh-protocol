@@ -12,6 +12,7 @@ requires-python = ">=3.11"
 authors = [
     { name = "AMP Contributors", email = "contributors@amp-protocol.dev" },
 ]
+keywords = ["agent", "protocol", "a2a", "mesh", "ampro", "ampi", "rfc9421", "agent-mesh"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -43,6 +44,7 @@ ampro-server = "ampro.server.cli:main"
 Homepage = "https://github.com/vesakri/agent-mesh-protocol"
 Repository = "https://github.com/vesakri/agent-mesh-protocol"
 Issues = "https://github.com/vesakri/agent-mesh-protocol/issues"
+Documentation = "https://github.com/vesakri/agent-mesh-protocol/blob/main/docs/WIRE-BINDING.md"
 
 [tool.hatch.build.targets.wheel]
 packages = ["ampro"]
@@ -52,3 +54,17 @@ testpaths = ["tests"]
 python_files = "test_*.py"
 python_functions = "test_*"
 asyncio_mode = "auto"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP"]
+ignore = ["E501"]  # long lines ok in docstrings
+
+[tool.mypy]
+python_version = "3.11"
+strict = false
+warn_return_any = true
+warn_unused_configs = true

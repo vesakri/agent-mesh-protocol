@@ -7,7 +7,7 @@ to Agent C. Agent A follows the redirect and Agent C completes the task
 at low load (30%).
 
 Run:
-    pip install agent-protocol
+    pip install git+https://github.com/vesakri/agent-mesh-protocol.git
     python examples/20_load_redirect.py
 """
 

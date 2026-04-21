@@ -6,7 +6,7 @@ span under the same trace. The gateway generates the trace_id; the
 specialist and worker each link back via parent_span_id.
 
 Run:
-    pip install agent-protocol
+    pip install git+https://github.com/vesakri/agent-mesh-protocol.git
     python examples/21_tracing.py
 """
 

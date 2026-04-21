@@ -5,7 +5,7 @@ Demonstrates signed multi-hop delegation with scope narrowing,
 chain budget tracking, and visited-agents loop detection.
 
 Run:
-    pip install agent-protocol
+    pip install git+https://github.com/vesakri/agent-mesh-protocol.git
     python examples/06_delegation_chains.py
 """
 

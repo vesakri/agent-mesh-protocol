@@ -4,7 +4,7 @@
 Demonstrates typed validation for all protocol body types.
 
 Run:
-    pip install agent-protocol
+    pip install git+https://github.com/vesakri/agent-mesh-protocol.git
     python examples/05_body_schemas.py
 """
 

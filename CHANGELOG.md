@@ -1,5 +1,13 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+### Changed
+
+### Fixed
+
 ## [0.3.1] — 2026-04-20
 
 ### Changed
@@ -22,7 +30,9 @@
 
   No public API removed. No behaviour changed. No test removed.
 
-## [0.3.0] - 2026-04-13
+## [0.3.0] — 2026-04-13
+
+Introduces **AMPI — Agent Message Processing Interface**: an ASGI-for-agents framework for building AMP agents declaratively.
 
 ### Added
 - **AMPI (Agent Message Processing Interface)** — ASGI for agents
@@ -39,13 +49,14 @@
 - Version bumped to 0.3.0
 - `AgentServer` accepts AgentApp via `from_app()` classmethod
 
-## [0.2.3] - 2026-04-16
+## [0.2.3] — 2026-04-16
 
-### Security — Phase 0 Sprint
+### Security
 
-Closed all 66 security findings (20 CRITICAL + 46 HIGH) from the 11-agent deep audit.
+Closed all 66 security findings (20 CRITICAL + 46 HIGH) from the 11-agent deep audit — Phase 0 sprint.
 
-#### Critical Fixes (P0.C1 + P0.C2)
+**Critical fixes (P0.C1 + P0.C2)**
+
 - **C1**: Stream endpoint requires VERIFIED+ trust tier
 - **C2**: Event subscription validates caller_id == subscriber
 - **C3**: Stream validates caller owns job_id/session_id
@@ -67,7 +78,8 @@ Closed all 66 security findings (20 CRITICAL + 46 HIGH) from the 11-agent deep a
 - **C19**: SSRF protection: octal, hex, IPv6-mapped, zone ID, percent-encoded
 - **C20**: Delegation tests: real Ed25519 signatures, scope widening rejection
 
-#### High Fixes (P0.D)
+**High fixes (P0.D)**
+
 - **1.4**: Audit log append-only storage (AuditStorage protocol)
 - **1.5**: Attestation multi-party Ed25519 verification
 - **1.6**: Jurisdiction from signed agent.json (not untrusted headers)
@@ -90,12 +102,13 @@ Closed all 66 security findings (20 CRITICAL + 46 HIGH) from the 11-agent deep a
 - **5.7**: Field length limits on all body schemas
 - **5.9**: Handler exception sanitization
 
-#### Infrastructure
+**Infrastructure**
+
 - **P0.E**: All error responses migrated to RFC 7807 ProblemDetail
 - 976 protocol tests (was 457 at v0.2.1)
 - 1597 runtime bridge tests passing
 
-## [0.2.2] - 2026-04-10
+## [0.2.2] — 2026-04-10
 
 ### Added
 - Reference server (`ampro/server/`) — minimal AMP agent in 10 lines
@@ -114,7 +127,7 @@ Closed all 66 security findings (20 CRITICAL + 46 HIGH) from the 11-agent deep a
   - Client: send, handshake, streaming
   - Integration: two agents talking, delegation chain with costs
 
-## [0.2.1] - 2026-04-10
+## [0.2.1] — 2026-04-10
 
 ### Security Fixes
 - DID proof now fail-closed (returns EXTERNAL instead of VERIFIED without signature verification)
@@ -153,7 +166,7 @@ Closed all 66 security findings (20 CRITICAL + 46 HIGH) from the 11-agent deep a
 - All 11 subpackage __init__.py files now re-export their contents with __all__
 - Trust tier field descriptions updated across handshake and upgrade modules
 
-## [0.2.0] - 2026-04-10
+## [0.2.0] — 2026-04-10
 
 ### Changed (BREAKING)
 - **Package reorganized into subdirectories.** Modules moved from flat `ampro/*.py` into 11 subpackages: `core/`, `trust/`, `session/`, `identity/`, `delegation/`, `streaming/`, `security/`, `compliance/`, `registry/`, `agent/`, `transport/`
@@ -171,7 +184,7 @@ Closed all 66 security findings (20 CRITICAL + 46 HIGH) from the 11-agent deep a
 
 See the full mapping in CONTRIBUTING.md.
 
-## [0.1.9] - 2026-04-10
+## [0.1.9] — 2026-04-10
 
 ### Added
 - `EncryptedBody` model + `CONTENT_ENCRYPTION_HEADER` — end-to-end JWE encryption
@@ -184,7 +197,7 @@ See the full mapping in CONTRIBUTING.md.
 - Body type registry grew from 48 to 49
 - Exports grew from 184 to 188
 
-## [0.1.8] - 2026-04-10
+## [0.1.8] — 2026-04-10
 
 ### Added
 - `identity.link_proof` body type — cryptographic proof two addresses are the same entity
@@ -197,7 +210,7 @@ See the full mapping in CONTRIBUTING.md.
 - Body type registry grew from 43 to 48
 - Exports grew from 179 to 184
 
-## [0.1.7] - 2026-04-09
+## [0.1.7] — 2026-04-09
 
 ### Added
 - `StreamChannel` / `StreamChannelOpenEvent` / `StreamChannelCloseEvent` — stream multiplexing
@@ -211,7 +224,7 @@ See the full mapping in CONTRIBUTING.md.
 - Streaming event types grew from 13 to 17
 - Exports grew from 174 to 179+
 
-## [0.1.6] - 2026-04-09
+## [0.1.6] — 2026-04-09
 
 ### Added
 - `JurisdictionInfo` model + `validate_jurisdiction_code` + `check_jurisdiction_conflict` — cross-border jurisdiction declaration
@@ -227,7 +240,7 @@ See the full mapping in CONTRIBUTING.md.
 - Body type registry grew from 41 to 43
 - Exports grew from 163 to 174
 
-## [0.1.5] - 2026-04-09
+## [0.1.5] — 2026-04-09
 
 ### Added
 - `TraceContext` model + `generate_trace_id` / `generate_span_id` / `inject_trace_headers` / `extract_trace_context` — W3C Trace Context for delegation chains
@@ -240,7 +253,7 @@ See the full mapping in CONTRIBUTING.md.
 - Body type registry grew from 40 to 41
 - Exports grew from 156 to 163
 
-## [0.1.4] - 2026-04-09
+## [0.1.4] — 2026-04-09
 
 ### Added
 - `RegistrySearchRequest` / `RegistrySearchMatch` / `RegistrySearchResult` — structured service discovery
@@ -252,7 +265,7 @@ See the full mapping in CONTRIBUTING.md.
 - Body type registry grew from 39 to 40
 - Exports grew from 152 to 156
 
-## [0.1.3] - 2026-04-09
+## [0.1.3] — 2026-04-09
 
 ### Added
 - `agent.deactivation_notice` body type — orderly shutdown notification
@@ -268,7 +281,7 @@ See the full mapping in CONTRIBUTING.md.
 - Body type registry grew from 38 to 39
 - Exports grew from 148 to 152+
 
-## [0.1.2] - 2026-04-09
+## [0.1.2] — 2026-04-09
 
 ### Added
 - `key.revocation` body type + `Key-Revoked-At` header — emergency key revocation broadcast
@@ -289,7 +302,7 @@ See the full mapping in CONTRIBUTING.md.
 - Body type registry grew from 31 to 38
 - Exports grew from 135 to 148+
 
-## [0.1.1] - 2026-04-09
+## [0.1.1] — 2026-04-09
 
 ### Added
 - 3-phase session handshake (session.init → session.established → session.confirm)
@@ -312,7 +325,7 @@ See the full mapping in CONTRIBUTING.md.
 - Standard headers grew from 35 to 41
 - Exports grew from ~108 to ~125+
 
-## [0.1.0] - 2026-04-08
+## [0.1.0] — 2026-04-08
 
 ### Added
 - `agent://` URI addressing with 3 forms (host, registry slug, DID)

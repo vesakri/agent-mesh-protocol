@@ -4,7 +4,7 @@
 Demonstrates the three addressing forms and resolution rules.
 
 Run:
-    pip install agent-protocol
+    pip install git+https://github.com/vesakri/agent-mesh-protocol.git
     python examples/04_addressing.py
 """
 

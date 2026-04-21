@@ -1,10 +1,17 @@
 """
+FastAPI agent — PRE-AMPI raw-framework pattern.
+
+For new code, prefer the declarative AMPI framework (see
+examples/41_ampi_quickstart.py). This file is retained as a reference
+for the underlying wire mechanics — how the envelope, capability set,
+and streaming events look when wired into FastAPI by hand.
+
 02 — FastAPI Agent (Level 3: Messaging + Tools + Streaming)
 
 A more complete agent with tools, streaming, and health endpoint.
 
 Run:
-    pip install agent-protocol fastapi uvicorn
+    pip install git+https://github.com/vesakri/agent-mesh-protocol.git fastapi uvicorn
     uvicorn examples.02_fastapi_agent:app --port 8000
 """
 

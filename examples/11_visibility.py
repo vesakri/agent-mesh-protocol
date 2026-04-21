@@ -5,7 +5,7 @@ Shows how agents control who can see them and who can contact them.
 Demonstrates all 4 visibility levels and agent.json filtering.
 
 Run:
-    pip install agent-protocol
+    pip install git+https://github.com/vesakri/agent-mesh-protocol.git
     python examples/11_visibility.py
 """
 

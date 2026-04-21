@@ -6,7 +6,7 @@ on a single SSE connection, sending events with different Stream-Channel
 headers, and closing each channel independently.
 
 Run:
-    pip install agent-protocol
+    pip install git+https://github.com/vesakri/agent-mesh-protocol.git
     python examples/25_stream_multiplexing.py
 """
 

@@ -5,7 +5,7 @@ Demonstrates how two agents with different capability levels
 negotiate what they can do together.
 
 Run:
-    pip install agent-protocol
+    pip install git+https://github.com/vesakri/agent-mesh-protocol.git
     python examples/09_capability_negotiation.py
 """
 

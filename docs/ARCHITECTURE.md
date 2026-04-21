@@ -126,7 +126,7 @@ Every message uses the same envelope:
 
 ### Standard Headers
 
-The protocol defines 41 standard headers. Receivers understand these but MUST
+The protocol defines 51+ standard headers. Receivers understand these but MUST
 ignore any header they don't recognize (forward-compatibility). Key headers:
 
 | Header | Purpose |
@@ -152,7 +152,7 @@ ignore any header they don't recognize (forward-compatibility). Key headers:
 ## 4. Body Types
 
 The `body_type` field determines the message's semantics and which Pydantic model
-validates the `body` payload. 17 canonical types organized by HTTP verb analogy:
+validates the `body` payload. 49+ typed body schemas organized by HTTP verb analogy:
 
 ### Creating Work (POST)
 
@@ -616,3 +616,54 @@ These are each platform's competitive advantage:
 - Billing and subscription management
 
 **The protocol defines how agents TALK. How they THINK is your business.**
+
+---
+
+## AMPI — Handler Contract
+
+AMPI (Agent Message Processing Interface) is the reference programming model for
+building AMP agents. It is to AMP what ASGI is to HTTP: a lightweight handler
+contract you can implement once and run on many servers.
+
+### AgentApp
+
+`AgentApp` is the application object — the AMPI analog of ASGI's `application`
+callable. It owns the route table, middleware stack, lifecycle hooks, and tool
+registry for a single agent.
+
+### The seven decorators
+
+| Decorator | Purpose |
+|-----------|---------|
+| `@on(body_type)` | Register a handler for a specific `body_type` (e.g. `task.create`) |
+| `@middleware` | Wrap every inbound message (auth, logging, tracing, rate limits) |
+| `@tool(name)` | Expose a callable tool; the handler is invoked for `tool.invoke` |
+| `@on_startup` | Run once when the app boots (open pools, warm caches) |
+| `@on_shutdown` | Run once on graceful shutdown (flush, close, persist) |
+| `@on_session_start` | Fire when a new session is established |
+| `@on_error` | Last-resort handler for uncaught exceptions |
+
+### AMPContext
+
+`AMPContext` is the per-request handle passed to every handler. It exposes
+the resolved `trust_tier`, the live `session`, the `delegation_chain`, and
+methods: `send()`, `discover()`, `delegate()`, `emit()`, `audit()`.
+
+### Testing — TestServer
+
+`TestServer` runs an `AgentApp` in-process with no transport for fast unit
+tests. Feed it envelopes, assert on the response.
+
+### Running — ampro-server
+
+The `ampro-server` CLI runs any `AgentApp` as a concrete HTTP agent:
+
+```bash
+ampro-server main:agent --port 8000
+```
+
+### See also
+
+- [`examples/41_ampi_quickstart.py`](../examples/41_ampi_quickstart.py) —
+  minimum viable AMPI agent in ~30 lines.
+

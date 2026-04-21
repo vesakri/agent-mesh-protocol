@@ -4,7 +4,7 @@
 Demonstrates the built-in security primitives.
 
 Run:
-    pip install agent-protocol
+    pip install git+https://github.com/vesakri/agent-mesh-protocol.git
     python examples/07_security.py
 """
 

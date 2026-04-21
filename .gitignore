@@ -15,3 +15,17 @@ docs/SECURITY-AUDIT.md
 docs/SECURITY-AUDIT-V2.md
 docs/PROTOCOL-ROADMAP.md
 docs/WIRE-BINDING-PLAN.md
+
+# Developer environment
+.venv/
+venv/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+.tox/
+
+# Editor + OS
+.DS_Store
+.idea/
+.vscode/

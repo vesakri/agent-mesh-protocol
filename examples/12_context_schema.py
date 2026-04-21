@@ -5,7 +5,7 @@ Shows how agents declare context schemas via URN and how
 callers check schema support before sending structured tasks.
 
 Run:
-    pip install agent-protocol
+    pip install git+https://github.com/vesakri/agent-mesh-protocol.git
     python examples/12_context_schema.py
 """
 

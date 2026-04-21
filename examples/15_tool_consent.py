@@ -6,7 +6,7 @@ requests consent to use a sensitive tool, the owner grants it with
 restrictions, and the caller checks consent before invoking.
 
 Run:
-    pip install agent-protocol
+    pip install git+https://github.com/vesakri/agent-mesh-protocol.git
     python examples/15_tool_consent.py
 """
 

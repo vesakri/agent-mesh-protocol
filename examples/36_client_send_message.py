@@ -34,7 +34,7 @@ async def main() -> None:
             body={"text": "What is the forecast for tomorrow?"},
             body_type="message",
             sender=SENDER,
-            headers={"Priority": "normal", "Protocol-Version": "0.1.3"},
+            headers={"Priority": "normal", "Protocol-Version": "1.0.0"},
             timeout=10.0,
         )
         # If a server were running, we'd see the reply:

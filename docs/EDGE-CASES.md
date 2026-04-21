@@ -1,9 +1,10 @@
-# Agent Mesh Protocol — Edge Case Analysis
+# Agent Mesh Protocol — Edge Case Analysis (Retrospective)
 
-> **Date**: 2026-04-10
-> **Version audited**: v0.2.0
+> **Audited version**: v0.2.0 (2026-04-10)
 > **Total issues**: 68
-> **Purpose**: Identify production-blocking issues before real-world deployment
+> **Status**: **All CRITICAL+HIGH edge cases addressed in v0.2.3.** See `CHANGELOG.md` §0.2.3.
+>
+> Retained as a historical record of edge-case analysis. Does NOT describe current (post-v0.2.3) protocol behaviour.
 
 ---
 

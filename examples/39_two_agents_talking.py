@@ -6,7 +6,7 @@ via httpx, and prints the full request/response cycle. No external
 dependencies beyond ampro + fastapi + uvicorn.
 
 Run:
-    pip install ampro fastapi uvicorn
+    pip install git+https://github.com/vesakri/agent-mesh-protocol.git fastapi uvicorn
     python examples/39_two_agents_talking.py
 """
 

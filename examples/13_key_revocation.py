@@ -6,7 +6,7 @@ is compromised, rotated, or the agent is decommissioned. Shows all
 three revocation reasons and how a receiver validates the broadcast.
 
 Run:
-    pip install agent-protocol
+    pip install git+https://github.com/vesakri/agent-mesh-protocol.git
     python examples/13_key_revocation.py
 """
 
