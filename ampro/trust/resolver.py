@@ -382,11 +382,26 @@ def register_public_key_resolver(resolver: PublicKeyResolver) -> None:
 def get_public_key(sig_kid: str) -> bytes | None:
     """Resolve a ``sig_kid`` to raw Ed25519 public key bytes (32 bytes).
 
-    Consults the 60s TTL cache first. On miss, delegates to the
-    host-registered :class:`PublicKeyResolver`. Returns ``None`` when
-    no resolver is registered, the key is unknown, or the resolver
-    raises — all of which cause envelope verification to reject.
+    Revocation is consulted first: a ``sig_kid`` flagged by the
+    registered :class:`~ampro.security.key_revocation.RevocationStore`
+    returns ``None`` regardless of cache state, so a compromised key
+    stops verifying the moment the host registers the revocation.
+
+    On a revocation-clear path the cache is checked (60s TTL), and on
+    cache miss the host-registered :class:`PublicKeyResolver` is called.
+    Returns ``None`` when no resolver is registered, the key is unknown,
+    or the resolver raises — all of which cause envelope verification
+    to reject.
     """
+    # Revocation check must precede the cache lookup. A cached key that
+    # was fine a second ago can be revoked in the middle of its TTL; we
+    # MUST surface that immediately rather than wait for the entry to
+    # expire.
+    from ampro.security.key_revocation import should_reject_cached_key
+
+    if should_reject_cached_key(sig_kid):
+        return None
+
     now = _time.monotonic()
     with _PUBLIC_KEY_CACHE_LOCK:
         cached = _PUBLIC_KEY_CACHE.get(sig_kid)
@@ -412,6 +427,13 @@ def get_public_key(sig_kid: str) -> bytes | None:
         # the miss, return None. Resolvers SHOULD return None rather
         # than raise — this branch is defence-in-depth.
         logger.warning("[trust] resolver raised for %s: %s", sig_kid, exc)
+        with _PUBLIC_KEY_CACHE_LOCK:
+            _PUBLIC_KEY_CACHE[sig_kid] = (now + _PUBLIC_KEY_CACHE_TTL_SEC, None)
+        return None
+
+    # Re-check revocation after the resolver call — the host may have
+    # revoked the key concurrently with the lookup.
+    if raw is not None and should_reject_cached_key(sig_kid):
         with _PUBLIC_KEY_CACHE_LOCK:
             _PUBLIC_KEY_CACHE[sig_kid] = (now + _PUBLIC_KEY_CACHE_TTL_SEC, None)
         return None

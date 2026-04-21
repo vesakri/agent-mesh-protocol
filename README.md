@@ -158,7 +158,9 @@ If something requires a specific framework, database, or business concept to imp
 
 Report vulnerabilities to **security@amp-protocol.dev** — see [SECURITY.md](SECURITY.md) for the disclosure process.
 
-Built-in protections: RFC 9421 message signing, dedup (5-min window), nonce replay protection, per-sender rate limiting, concurrency caps, poison-message tracking, delegation-budget enforcement, JWKS caching with revocation, SSRF guards on all outbound URLs.
+**Read before deploying:** [docs/SECURITY-MODEL.md](docs/SECURITY-MODEL.md) — what the protocol guarantees, what it deliberately doesn't, and the host-platform checklist (trust anchoring, key storage, TLS, rate limits).
+
+Built-in protections: RFC 9421 message signing with freshness windows + nonce binding, dedup (5-min window), per-sender rate limiting, concurrency caps, poison-message tracking, delegation-budget enforcement, pluggable JWKS resolver with revocation checked on every call, SSRF guards on all outbound URLs.
 
 Version 0.2.3 closed all 66 CRITICAL+HIGH findings from the Phase 0 audit sprint. See [docs/SECURITY-AUDIT-V2.md](docs/SECURITY-AUDIT-V2.md) for the retrospective.
 

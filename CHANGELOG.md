@@ -2,6 +2,23 @@
 
 ## [Unreleased]
 
+### Security
+- **Replay protection in `verify_request`.** `ampro.security.rfc9421.verify_request`
+  now enforces a `max_age_seconds` freshness window (default 300 s) against the
+  signature's `created` timestamp and rejects stale or far-future signatures
+  before performing any crypto work. Callers supplying a `NonceTracker` may
+  additionally bind a `nonce` parameter into the signature via the new
+  `nonce=` kwarg on `sign_request`; reused nonces fail closed. Previous
+  behaviour (indefinite replay window) is reachable with
+  `max_age_seconds=None` for fixture use only.
+- **Revocation wired into `get_public_key`.** `ampro.trust.resolver.get_public_key`
+  now calls `should_reject_cached_key()` on every invocation — cache hits
+  included — so a revocation notice takes effect immediately rather than
+  waiting for the 60 s TTL.
+- New `docs/SECURITY-MODEL.md` documenting what the protocol does and does
+  not guarantee, plus the host-platform checklist (trust anchoring, key
+  storage, TLS, rate limits).
+
 ### Added
 - Unified `ampro.errors` exception hierarchy (`AmpError` + `ValidationError` /
   `TrustError` / `CryptoError` / `SessionError` / `CompliancePolicyError` /

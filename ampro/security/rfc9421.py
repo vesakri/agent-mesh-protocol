@@ -31,12 +31,23 @@ import base64
 import hashlib
 import re
 import time
+from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
 from cryptography.hazmat.primitives.asymmetric.ed25519 import (
     Ed25519PrivateKey,
     Ed25519PublicKey,
 )
+
+if TYPE_CHECKING:
+    from ampro.security.nonce_tracker import NonceTracker
+
+# Default freshness window for ``created`` in signed requests. A verifier
+# rejects signatures whose ``created`` is older — or further in the future —
+# than this many seconds. Callers that need to relax or tighten the window
+# pass ``max_age_seconds`` to :func:`verify_request`; passing ``None``
+# disables the check (fixture-only usage).
+DEFAULT_MAX_SIGNATURE_AGE_SECONDS = 300
 
 # ---------------------------------------------------------------------------
 # Content-Digest helper
@@ -71,6 +82,7 @@ def create_signature_base(
     *,
     created: int | None = None,
     keyid: str = "",
+    nonce: str | None = None,
 ) -> str:
     """
     Build the signature base string per RFC 9421 Section 2.5.
@@ -128,6 +140,8 @@ def create_signature_base(
     # Build @signature-params
     comp_list = " ".join(f'"{c}"' for c in covered_components)
     sig_params = f"({comp_list});created={created};keyid=\"{keyid}\";alg=\"ed25519\""
+    if nonce is not None:
+        sig_params += f';nonce="{nonce}"'
     lines.append(f'"@signature-params": {sig_params}')
 
     return "\n".join(lines)
@@ -145,6 +159,8 @@ def sign_request(
     url: str,
     headers: dict[str, str],
     body: bytes | None = None,
+    *,
+    nonce: str | None = None,
 ) -> dict[str, str]:
     """
     Sign an HTTP request per RFC 9421.
@@ -160,6 +176,10 @@ def sign_request(
         headers: Mutable dict of HTTP headers (``content-digest`` is
             added when *body* is present).
         body: Optional request body bytes.
+        nonce: Optional per-request nonce. When supplied it is bound
+            into the signature base via the ``nonce`` signature-input
+            parameter (RFC 9421 §2.3) so verifiers that track nonces
+            can detect replays.
 
     Returns:
         Dict with ``Signature`` and ``Signature-Input`` header values
@@ -188,6 +208,7 @@ def sign_request(
         covered_components=covered,
         created=created,
         keyid=key_id,
+        nonce=nonce,
     )
 
     # Sign with Ed25519
@@ -198,6 +219,8 @@ def sign_request(
     # Build Signature-Input
     comp_list = " ".join(f'"{c}"' for c in covered)
     sig_input = f'sig1=({comp_list});created={created};keyid="{key_id}";alg="ed25519"'
+    if nonce is not None:
+        sig_input += f';nonce="{nonce}"'
 
     return {
         "Signature": f"sig1=:{sig_b64}:",
@@ -209,13 +232,17 @@ def sign_request(
 # Verification
 # ---------------------------------------------------------------------------
 
-# Pattern to parse Signature-Input value
+# Pattern to parse Signature-Input value.
+# ``nonce`` is optional (RFC 9421 §2.3 — MAY be present) and, when present,
+# may appear before or after alg; we grab it with a separate search below
+# rather than trying to order every parameter in one anchored pattern.
 _SIG_INPUT_RE = re.compile(
     r"sig1=\((?P<components>[^)]*)\)"
     r";created=(?P<created>\d+)"
     r';keyid="(?P<keyid>[^"]*)"'
     r';alg="(?P<alg>[^"]*)"'
 )
+_SIG_INPUT_NONCE_RE = re.compile(r';nonce="(?P<nonce>[^"]+)"')
 
 
 def verify_request(
@@ -224,6 +251,9 @@ def verify_request(
     url: str,
     headers: dict[str, str],
     body: bytes | None = None,
+    *,
+    max_age_seconds: int | None = DEFAULT_MAX_SIGNATURE_AGE_SECONDS,
+    nonce_tracker: NonceTracker | None = None,
 ) -> bool:
     """
     Verify an RFC 9421 signed HTTP request.
@@ -235,6 +265,15 @@ def verify_request(
     components, the digest is recomputed and compared before signature
     verification proceeds.
 
+    Freshness and replay:
+      * When ``max_age_seconds`` is not ``None`` the verifier rejects any
+        signature whose ``created`` timestamp is older than, or more than
+        ``max_age_seconds`` in the future of, the current wall clock.
+        Passing ``None`` disables the check (fixture-only usage).
+      * When a ``nonce_tracker`` is supplied the signature **must** carry
+        a ``nonce`` parameter, and reusing a previously-seen nonce causes
+        rejection.
+
     Args:
         public_key_bytes: Raw 32-byte Ed25519 public key.
         method: HTTP method.
@@ -242,6 +281,11 @@ def verify_request(
         headers: HTTP headers (must include ``Signature``,
             ``Signature-Input``, and any covered header fields).
         body: Optional request body bytes.
+        max_age_seconds: Freshness window for ``created``. Default 300s.
+            Pass ``None`` to skip the freshness check.
+        nonce_tracker: Optional replay cache. When supplied, the
+            signature must carry a ``nonce`` parameter and each nonce
+            may be seen only once.
 
     Returns:
         True if the signature is valid, False otherwise.
@@ -263,6 +307,24 @@ def verify_request(
     created = int(match.group("created"))
     keyid = match.group("keyid")
 
+    nonce_match = _SIG_INPUT_NONCE_RE.search(sig_input_raw)
+    nonce = nonce_match.group("nonce") if nonce_match else None
+
+    # Freshness window — reject stale or far-future signatures before
+    # doing any crypto work.
+    if max_age_seconds is not None:
+        skew = abs(int(time.time()) - created)
+        if skew > max_age_seconds:
+            return False
+
+    # Replay cache — if a tracker is supplied, require a nonce and reject
+    # on reuse. The tracker's own ``is_replay`` consumes-and-records.
+    if nonce_tracker is not None:
+        if nonce is None:
+            return False
+        if nonce_tracker.is_replay(nonce):
+            return False
+
     # Parse covered components: "comp1" "comp2" ...
     covered = re.findall(r'"([^"]+)"', components_str)
 
@@ -281,6 +343,7 @@ def verify_request(
         covered_components=covered,
         created=created,
         keyid=keyid,
+        nonce=nonce,
     )
 
     # Extract signature bytes: sig1=:<base64>:
