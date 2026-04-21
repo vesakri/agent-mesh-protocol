@@ -17,6 +17,7 @@ from pydantic import BaseModel
 from ampro.core.envelope import AgentMessage
 from ampro.core.body_schemas import validate_body
 from ampro.core.capabilities import CapabilityGroup, CapabilitySet
+from ampro.security.encryption import EncryptionDowngradeError
 from ampro.transport.negotiation import CapabilityNegotiator
 
 logger = logging.getLogger(__name__)
@@ -40,13 +41,44 @@ def validate_message_body(msg: AgentMessage) -> BaseModel | dict[str, Any]:
         # the base "message" type and extension types)
         return {}
     else:
-        body = {}
+        raise TypeError(
+            f"body must be dict, str, or None; got {type(msg.body).__name__}"
+        )
     return validate_body(msg.body_type, body)
 
 
 def check_message_size(raw_body: bytes, max_bytes: int = 10_485_760) -> None:
     if len(raw_body) > max_bytes:
         raise MessageSizeError(max_bytes=max_bytes, received_bytes=len(raw_body))
+
+
+def enforce_encryption_requirement(
+    msg: AgentMessage,
+    session_requires_encryption: bool,
+) -> None:
+    """Reject plaintext bodies on a session that pinned required_encryption.
+
+    Call this at the message ingress path. ``session_requires_encryption``
+    is the flag pinned on the session state in ``session/types.py`` when
+    the initial message carried ``EncryptedBody(required_encryption=True)``.
+
+    Raises:
+        EncryptionDowngradeError: If the session requires encryption and
+            the incoming message body is not an EncryptedBody.
+    """
+    if not session_requires_encryption:
+        return
+    # A body is considered encrypted when its body_type is the encrypted
+    # sentinel OR its payload matches the EncryptedBody shape (has
+    # ciphertext + recipient_key_id). Everything else is plaintext.
+    if msg.body_type == "encrypted":
+        return
+    body = msg.body
+    if isinstance(body, dict) and "ciphertext" in body and "recipient_key_id" in body:
+        return
+    raise EncryptionDowngradeError(
+        "Session requires encryption; plaintext body rejected (downgrade prevention)"
+    )
 
 
 def build_negotiation_headers(

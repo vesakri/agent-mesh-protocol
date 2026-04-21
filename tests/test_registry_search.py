@@ -291,3 +291,63 @@ class TestRegistrySearchJsonRoundTrip:
         loaded = json.loads(json_str)
         assert loaded["total_available"] == 1
         assert loaded["matches"][0]["agent_id"] == "agent://a.example.com"
+
+
+class TestRegistrySearchCursorPagination:
+    """Issue #42 — cursor-based pagination with back-compat max_results alias."""
+
+    def test_registry_search_cursor_pagination(self):
+        # Client page 1
+        req1 = RegistrySearchRequest(capability="tools", limit=2)
+        assert req1.limit == 2
+        assert req1.cursor is None
+
+        # Server replies with a cursor + has_more
+        resp1 = RegistrySearchResult(
+            matches=[
+                RegistrySearchMatch(
+                    agent_id=f"agent://{i}.example.com",
+                    endpoint=f"https://{i}.example.com/agent/message",
+                    capabilities=["tools"],
+                    trust_score=500,
+                    trust_tier="external",
+                )
+                for i in range(2)
+            ],
+            total_available=5,
+            next_cursor="opaque-page-2",
+            has_more=True,
+        )
+        assert resp1.has_more is True
+        assert resp1.next_cursor == "opaque-page-2"
+
+        # Client page 2 — passes the cursor back in
+        req2 = RegistrySearchRequest(
+            capability="tools",
+            limit=2,
+            cursor=resp1.next_cursor,
+        )
+        assert req2.cursor == "opaque-page-2"
+
+        # Final page: server ran out
+        resp2 = RegistrySearchResult(
+            matches=[], next_cursor=None, has_more=False,
+        )
+        assert resp2.has_more is False
+        assert resp2.next_cursor is None
+
+    def test_max_results_alias_copies_into_limit(self):
+        req = RegistrySearchRequest(capability="tools", max_results=42)
+        assert req.limit == 42
+        # ``max_results`` property reads from ``limit``
+        assert req.max_results == 42
+
+    def test_limit_takes_precedence_when_both_given(self):
+        req = RegistrySearchRequest(capability="tools", limit=7, max_results=99)
+        assert req.limit == 7
+
+    def test_limit_bounds(self):
+        with pytest.raises(ValidationError):
+            RegistrySearchRequest(capability="tools", limit=0)
+        with pytest.raises(ValidationError):
+            RegistrySearchRequest(capability="tools", limit=101)

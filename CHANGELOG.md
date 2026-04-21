@@ -3,10 +3,123 @@
 ## [Unreleased]
 
 ### Added
+- Unified `ampro.errors` exception hierarchy (`AmpError` + `ValidationError` /
+  `TrustError` / `CryptoError` / `SessionError` / `CompliancePolicyError` /
+  `RateLimitError` / `TransportError` / `NotImplementedInProtocol`). Existing
+  module-local exceptions re-parented to their category; public API unchanged.
+- `ampro.trust.resolver.PublicKeyResolver` — pluggable key-resolution Protocol
+  replacing the previous hardcoded HTTP path. Host platforms register a
+  concrete resolver via `register_public_key_resolver()`.
+- `AgentApp` + AMPI decorators — `@on` / `@tool` / `@middleware` /
+  `@on_startup` / `@on_shutdown` / `@on_session_start` / `@on_error`.
+  `AMPContext` with 26 fields + 12 methods; `TestServer` harness;
+  `ampro-server` CLI. (Shipped in 0.3.0; now with full example coverage.)
+- `ampro.security.encryption` — `EncryptionKeyOfferBody`,
+  `EncryptionKeyAcceptBody`, `EncryptedBody.required_encryption` flag.
+  Downgrade prevention via `SessionContext.session_requires_encryption` and
+  `enforce_encryption_requirement()`.
+- `ampro.security.key_revocation` — `KeyRevocationBroadcastBody`,
+  pluggable `RevocationStore` registry, `should_reject_cached_key()`.
+- `ampro.security.challenge` — `ChallengeType` enum + per-type validator
+  dispatch (`proof_of_work`, `shared_secret`, `echo`, `captcha`) via
+  `validate_challenge_solution()`; `register_challenge_validator()`.
+- `ampro.streaming`:
+  - `StreamingEvent.cross_channel_seq` for causal ordering across channels.
+  - `MAX_SSE_EVENT_BYTES = 262_144` enforced in `to_sse()`.
+  - `ChannelRegistry` + `MAX_CHANNELS_PER_SESSION = 16` with
+    `ChannelQuotaExceededError`.
+- `ampro.session.handshake` — `HandshakeTimeoutError` + `timeout_seconds`
+  parameter (default 30s).
+- `ampro.identity`:
+  - `IdentityLinkProofBody.expires_at` + `is_link_proof_valid()`. Default
+    lifetime 1 year.
+  - `validate_migration_proof()` — dual-signature Ed25519 verification.
+  - `register_cross_verification_policy(required: bool)` +
+    `CrossVerificationRequiredError`.
+- `ampro.transport.task_redirect`:
+  - `TaskRedirectBody.visited_agents` (capped at 10) +
+    `TaskRedirectBody.max_hops` (default 5, max 10).
+  - `check_redirect_chain()` helper raising `RedirectLoopError`.
+- `ampro.agent.schema`:
+  - `MAX_MIGRATION_HOPS = 5` + `follow_migration_chain()` helper raising
+    `MigrationChainTooLongError` on excessive hops or cycles.
+  - `AgentMetadataInvalidateBody` (body type `agent.metadata_invalidate`)
+    for push cache invalidation.
+- `ampro.registry`:
+  - `RegistryFederationRevokeBody` (body type `registry.federation_revoke`).
+  - `RegistryFederationSyncBody` + `RegistryFederationSyncResponseBody`
+    (body types `registry.federation_sync` / `…_response`) — pull-based
+    delta sync with cursor pagination.
+  - `resolve_federation_conflict(local, remote)` — trust-tier → recency →
+    lexicographic agent-URI precedence.
+  - `RegistrySearchRequest.cursor` + `limit` for cursor-based pagination;
+    `max_results` retained as a read-only alias.
+- `ampro.compliance`:
+  - `TransferMechanism` enum (ADEQUACY / BCR / SCC / DEROGATION / NONE)
+    + `AdequacyDecision` model + pluggable `AdequacyRegistry` +
+    `check_cross_border_transfer()`.
+  - `JurisdictionInfo.applicable_rules(data_region)` helper with
+    primary-then-additional precedence.
+  - `DataResidency.storage_regions` / `transit_regions` fields;
+    `check_residency_violation()` now validates both at-rest and in-flight.
+  - `ErasurePropagationStatusBody.retry_count` / `next_retry_at` /
+    `last_error` / `final` with `compute_next_retry()` exponential-backoff
+    helper.
+  - `RetainedRecord` typed model (required `record_id`, `category`,
+    `reason` Literal, `legal_basis`); `ErasureResponse.retained: list[RetainedRecord]`
+    with legacy-`list[dict]` coercion for backwards compat.
+- `ampro.core`:
+  - `AgentMessage.sender` / `recipient` gain `max_length=512`.
+  - `AgentMessage.headers` now `dict[str, str]` (RFC 7230 §3.2); non-string
+    values rejected at validation time.
+  - `AgentAddress.port: int | None` field.
+  - `CostReceiptChain` tracks `self.currency`, rejects mixed-currency
+    receipts, and uses `Decimal` arithmetic (`total_cost_usd: Decimal`;
+    `total_cost_usd_float` property retained).
+- `tests/vectors/README.md` indexing all 34 conformance vectors.
+- `docs/PROTOCOL-CONTRACTS.md` — unified normative contracts doc covering
+  error-handling strategy (tier model), schema-evolution policy, event
+  ordering across channels, federation sync semantics, multi-jurisdiction
+  precedence, and cache-invalidation push (closes the six documentation
+  gaps previously tracked).
 
 ### Changed
+- `parse_agent_uri` now supports IPv6 (`agent://[2001:db8::1]`), explicit
+  ports (`agent://host:8443`), percent-encoding decode, NFKC/IDNA hostname
+  normalization, and strict rejection of multiple `@` in the authority.
+- `registry_resolve_url` enforces SSRF validation via
+  `validate_attachment_url()` (previously advisory in docstring only).
+- `check_version` rejects malformed semver strings up front.
+- `negotiate_version` accepts an optional `fallback_version`; on no
+  common version with a fallback provided, logs a warning and returns the
+  fallback instead of raising.
+- `Agent.clean()`-style matrix invariants retained; `AgentSuggestion` doc
+  in `MASTER-CONTRACT.md` reconciled against the shipped schema.
+- `HandshakeStateMachine` — `state` property now holds the lock on read
+  (was already locked on transition); closes the re-audit follow-up.
+- `InMemoryDedupStore` / `NonceTracker` — TTL-based eviction runs before
+  LRU eviction so fresh entries are never discarded in favour of expired
+  ones. Closes the replay window the v0.2.1 fix originally left open.
+- `DataResidency.KNOWN_REGIONS` allowlist warns on unknown region codes
+  without rejecting (forward-compat).
 
 ### Fixed
+- Trust score clamps negative `age_days`, `interactions`, `endorsements`
+  inputs (previously only `CLEAN_HISTORY` was floor-clamped).
+- DID proof signature verification — the JWT-style DID proof path now
+  verifies the EdDSA signature against the did:key-embedded Ed25519
+  public key. Forged proofs fall back to `EXTERNAL`.
+- `validate_message_body` raises `TypeError` on list/int/bool bodies
+  (previously silently converted to `{}`) and now passes the sanitized
+  body to the downstream validator.
+- `ApiKeyStore` wraps `record_failure` / `is_blocked` / `reset_failures`
+  with `threading.Lock`.
+- `StreamAuthRefreshEvent.token` constrained to a URL-safe charset
+  (`[A-Za-z0-9._-]`), 16-4096 chars; `method` restricted to a Literal
+  whitelist.
+- `CheckpointBody.state_snapshot` rejects payloads > 1 MiB.
+
+
 
 ## [0.3.1] — 2026-04-20
 

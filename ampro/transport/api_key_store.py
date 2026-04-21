@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+import threading
 import time
 
 
@@ -39,6 +40,7 @@ class ApiKeyStore:
         self._blocked: dict[str, float] = {}
         self._max_failures = max_failures
         self._block_seconds = block_seconds
+        self._lock = threading.Lock()
 
     def add_key(self, key: str, agent_id: str) -> None:
         self._keys[key] = agent_id
@@ -61,23 +63,26 @@ class ApiKeyStore:
         return None
 
     def is_blocked(self, ip: str) -> bool:
-        blocked_until = self._blocked.get(ip)
-        if blocked_until is None:
-            return False
-        if time.monotonic() > blocked_until:
-            self._blocked.pop(ip, None)
-            self._failures.pop(ip, None)
-            return False
-        return True
+        with self._lock:
+            blocked_until = self._blocked.get(ip)
+            if blocked_until is None:
+                return False
+            if time.monotonic() > blocked_until:
+                self._blocked.pop(ip, None)
+                self._failures.pop(ip, None)
+                return False
+            return True
 
     def record_failure(self, ip: str) -> None:
-        now = time.monotonic()
-        failures = self._failures.setdefault(ip, [])
-        failures[:] = [t for t in failures if now - t < 60]
-        failures.append(now)
-        if len(failures) >= self._max_failures:
-            self._blocked[ip] = now + self._block_seconds
+        with self._lock:
+            now = time.monotonic()
+            failures = self._failures.setdefault(ip, [])
+            failures[:] = [t for t in failures if now - t < 60]
+            failures.append(now)
+            if len(failures) >= self._max_failures:
+                self._blocked[ip] = now + self._block_seconds
 
     def reset_failures(self, ip: str) -> None:
-        self._failures.pop(ip, None)
-        self._blocked.pop(ip, None)
+        with self._lock:
+            self._failures.pop(ip, None)
+            self._blocked.pop(ip, None)

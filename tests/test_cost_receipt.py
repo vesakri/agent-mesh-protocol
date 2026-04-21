@@ -145,7 +145,8 @@ class TestCostReceiptChain:
         from ampro import CostReceiptChain
         chain = CostReceiptChain()
         assert chain.receipts == []
-        assert chain.total_cost_usd == 0.0
+        assert chain.total_cost_usd == 0
+        assert chain.total_cost_usd_float == 0.0
 
     def test_add_receipt_appends_and_updates_total(self):
         from ampro import CostReceiptChain, CostReceipt
@@ -166,7 +167,7 @@ class TestCostReceiptChain:
         )
         chain.add_receipt(receipt)
         assert len(chain.receipts) == 1
-        assert chain.total_cost_usd == pytest.approx(0.10)
+        assert chain.total_cost_usd_float == pytest.approx(0.10)
 
     def test_multiple_receipts_maintain_order(self):
         from ampro import CostReceiptChain, CostReceipt
@@ -196,7 +197,84 @@ class TestCostReceiptChain:
         assert chain.receipts[0].agent_id == "agent://first.example.com"
         assert chain.receipts[1].agent_id == "agent://second.example.com"
         assert chain.receipts[2].agent_id == "agent://third.example.com"
-        assert chain.total_cost_usd == pytest.approx(0.50)
+        assert chain.total_cost_usd_float == pytest.approx(0.50)
+
+
+class TestCostReceiptChainMixedCurrency:
+    def test_chain_rejects_mixed_currency(self):
+        """Chain locks on first receipt's currency and rejects mismatches."""
+        from ampro import CostReceiptChain, CostReceipt
+        from ampro.delegation.cost_receipt import CostReceiptVerificationError
+
+        chain = CostReceiptChain()
+
+        # Receipt 1 — USD
+        nonce1 = secrets.token_urlsafe(16)
+        pk1 = _seed_key("agent://usd.example.com")
+        sig1 = _sign_receipt_fields(
+            pk1, "agent://usd.example.com", "t-1", 1.00, "USD",
+            "2026-04-09T00:00:00Z", nonce1,
+        )
+        r1 = CostReceipt(
+            agent_id="agent://usd.example.com",
+            task_id="t-1",
+            cost_usd=1.00,
+            currency="USD",
+            nonce=nonce1,
+            signature=sig1,
+            issued_at="2026-04-09T00:00:00Z",
+        )
+        chain.add_receipt(r1)
+        assert chain.currency == "USD"
+
+        # Receipt 2 — EUR (mismatch) — must reject
+        nonce2 = secrets.token_urlsafe(16)
+        pk2 = _seed_key("agent://eur.example.com")
+        sig2 = _sign_receipt_fields(
+            pk2, "agent://eur.example.com", "t-1", 1.00, "EUR",
+            "2026-04-09T00:01:00Z", nonce2,
+        )
+        r2 = CostReceipt(
+            agent_id="agent://eur.example.com",
+            task_id="t-1",
+            cost_usd=1.00,
+            currency="EUR",
+            nonce=nonce2,
+            signature=sig2,
+            issued_at="2026-04-09T00:01:00Z",
+        )
+        with pytest.raises(CostReceiptVerificationError, match="currency mismatch"):
+            chain.add_receipt(r2)
+
+    def test_chain_uses_decimal_arithmetic(self):
+        """Summing 0.1 three times should equal exactly 0.3 (not 0.30000...4)."""
+        from decimal import Decimal
+        from ampro import CostReceiptChain, CostReceipt
+
+        chain = CostReceiptChain()
+        for i in range(3):
+            nonce = secrets.token_urlsafe(16)
+            agent_id = f"agent://a{i}.example.com"
+            pk = _seed_key(agent_id)
+            sig = _sign_receipt_fields(
+                pk, agent_id, "t-1", 0.1, "USD",
+                f"2026-04-09T00:0{i}:00Z", nonce,
+            )
+            r = CostReceipt(
+                agent_id=agent_id,
+                task_id="t-1",
+                cost_usd=0.1,
+                currency="USD",
+                nonce=nonce,
+                signature=sig,
+                issued_at=f"2026-04-09T00:0{i}:00Z",
+            )
+            chain.add_receipt(r)
+
+        # Exact Decimal equality — this is the whole point of the fix.
+        assert chain.total_cost_usd == Decimal("0.3")
+        # Float view is available for callers that need it.
+        assert chain.total_cost_usd_float == pytest.approx(0.3)
 
 
 class TestTaskCompleteBodyCostReceipt:

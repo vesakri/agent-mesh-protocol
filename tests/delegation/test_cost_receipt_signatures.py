@@ -113,7 +113,7 @@ class TestCostReceiptSignatures:
         chain.add_receipt(receipt)
 
         assert len(chain.receipts) == 1
-        assert chain.total_cost_usd == pytest.approx(0.05)
+        assert chain.total_cost_usd_float == pytest.approx(0.05)
 
     def test_2_tampered_cost_rejected(self):
         """A receipt whose cost_usd was tampered after signing is rejected."""
@@ -189,7 +189,7 @@ class TestCostReceiptSignatures:
         chain.add_receipt(r2)
 
         assert len(chain.receipts) == 2
-        assert chain.total_cost_usd == pytest.approx(0.10)
+        assert chain.total_cost_usd_float == pytest.approx(0.10)
 
     def test_8_canonical_for_signing_deterministic(self):
         """canonical_for_signing() produces identical bytes for identical fields."""

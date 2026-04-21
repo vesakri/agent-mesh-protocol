@@ -683,9 +683,23 @@ def _register_v018_body_types() -> None:
     except ImportError:
         pass
     try:
-        from ampro.registry.federation import RegistryFederationRequest, RegistryFederationResponse
+        from ampro.registry.federation import (
+            RegistryFederationRequest,
+            RegistryFederationResponse,
+            RegistryFederationRevokeBody,
+            RegistryFederationSyncBody,
+            RegistryFederationSyncResponseBody,
+        )
         _BODY_TYPE_REGISTRY["registry.federation_request"] = RegistryFederationRequest
         _BODY_TYPE_REGISTRY["registry.federation_response"] = RegistryFederationResponse
+        _BODY_TYPE_REGISTRY["registry.federation_revoke"] = RegistryFederationRevokeBody
+        _BODY_TYPE_REGISTRY["registry.federation_sync"] = RegistryFederationSyncBody
+        _BODY_TYPE_REGISTRY["registry.federation_sync_response"] = RegistryFederationSyncResponseBody
+    except ImportError:
+        pass
+    try:
+        from ampro.agent.schema import AgentMetadataInvalidateBody
+        _BODY_TYPE_REGISTRY["agent.metadata_invalidate"] = AgentMetadataInvalidateBody
     except ImportError:
         pass
 

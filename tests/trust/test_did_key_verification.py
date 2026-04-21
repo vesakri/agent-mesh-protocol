@@ -28,10 +28,26 @@ def _make_did_key_from_raw_pub(raw_pub_bytes: bytes) -> str:
 
 
 def _make_jwt_proof(did: str) -> str:
-    """Wrap a DID URI in a JWT-like proof structure (header.payload.signature)."""
+    """Wrap a DID URI in a JWT-like proof structure (header.payload.signature).
+
+    This helper produces a structurally-valid proof with a placeholder
+    signature. It is suitable ONLY for tests that expect EXTERNAL (e.g.,
+    forged-signature rejection). Use ``_make_signed_jwt_proof`` for
+    tests that expect the proof to verify.
+    """
     header = base64.urlsafe_b64encode(json.dumps({"alg": "EdDSA"}).encode()).decode().rstrip("=")
     payload = base64.urlsafe_b64encode(json.dumps({"did": did}).encode()).decode().rstrip("=")
     sig = base64.urlsafe_b64encode(b"fake-signature-for-test").decode().rstrip("=")
+    return f"{header}.{payload}.{sig}"
+
+
+def _make_signed_jwt_proof(private_key, did: str) -> str:
+    """Build a JWT-style DID proof with a real Ed25519 signature over header.payload."""
+    header = base64.urlsafe_b64encode(json.dumps({"alg": "EdDSA"}).encode()).decode().rstrip("=")
+    payload = base64.urlsafe_b64encode(json.dumps({"did": did}).encode()).decode().rstrip("=")
+    signing_input = f"{header}.{payload}".encode("ascii")
+    sig_bytes = private_key.sign(signing_input)
+    sig = base64.urlsafe_b64encode(sig_bytes).decode().rstrip("=")
     return f"{header}.{payload}.{sig}"
 
 
@@ -114,10 +130,29 @@ async def test_wrong_multicodec_prefix_returns_external():
 
 @pytest.mark.asyncio
 async def test_jwt_wrapped_did_key_returns_verified():
-    """W2.B.9 — DID key wrapped in JWT proof format also returns VERIFIED."""
-    jwt_proof = _make_jwt_proof(W3C_DID_KEY)
+    """W2.B.9 — DID key wrapped in JWT proof with VALID signature returns VERIFIED.
+
+    The signature must verify under the did:key's embedded public key.
+    """
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+    from cryptography.hazmat.primitives import serialization
+
+    priv = Ed25519PrivateKey.generate()
+    raw_pub = priv.public_key().public_bytes(
+        serialization.Encoding.Raw, serialization.PublicFormat.Raw,
+    )
+    did = _make_did_key_from_raw_pub(raw_pub)
+    jwt_proof = _make_signed_jwt_proof(priv, did)
     result = await _resolve_did(jwt_proof)
     assert result == TrustTier.VERIFIED
+
+
+@pytest.mark.asyncio
+async def test_did_proof_forged_signature_rejected():
+    """Forged/garbage signature on a did:key JWT proof must NOT verify."""
+    jwt_proof = _make_jwt_proof(W3C_DID_KEY)  # uses a fake signature
+    result = await _resolve_did(jwt_proof)
+    assert result == TrustTier.EXTERNAL
 
 
 @pytest.mark.asyncio

@@ -120,10 +120,10 @@ def calculate_trust_score(
     """
 
     factors: dict[str, int] = {
-        TrustFactor.AGE.value: min(200, age_days * 200 // 365),
-        TrustFactor.TRACK_RECORD.value: min(200, interactions * 200 // 1000),
+        TrustFactor.AGE.value: max(0, min(200, age_days * 200 // 365)),
+        TrustFactor.TRACK_RECORD.value: max(0, min(200, interactions * 200 // 1000)),
         TrustFactor.CLEAN_HISTORY.value: max(0, 200 - incidents * 50),
-        TrustFactor.ENDORSEMENTS.value: min(200, endorsements * 40),
+        TrustFactor.ENDORSEMENTS.value: max(0, min(200, endorsements * 40)),
         TrustFactor.IDENTITY_STRENGTH.value: _IDENTITY_SCORES.get(
             identity_type, _DEFAULT_IDENTITY_SCORE,
         ),

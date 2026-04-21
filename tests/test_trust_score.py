@@ -60,6 +60,24 @@ class TestTrustScore:
         ts = calculate_trust_score(age_days=30, interactions=50, incidents=1, endorsements=2, identity_type="jwt")
         assert set(ts.factors.keys()) == {"age", "track_record", "clean_history", "endorsements", "identity_strength"}
 
+    def test_calculate_trust_score_clamps_negatives(self):
+        """Negative inputs must clamp to 0 (cannot be negative factor values)."""
+        from ampro import calculate_trust_score
+        ts = calculate_trust_score(
+            age_days=-100,
+            interactions=-50,
+            incidents=0,
+            endorsements=-1,
+            identity_type="did:key",
+        )
+        assert ts.factors["age"] >= 0
+        assert ts.factors["track_record"] >= 0
+        assert ts.factors["endorsements"] >= 0
+        assert ts.factors["clean_history"] >= 0
+        # All factor values satisfy the TrustScore validator (0-200)
+        for key, val in ts.factors.items():
+            assert val >= 0, f"{key} factor {val} is negative"
+
 
 class TestScoreToPolicy:
     def test_high_score(self):

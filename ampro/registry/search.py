@@ -18,22 +18,32 @@ from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class RegistrySearchRequest(BaseModel):
-    """Query parameters for GET /registry/search."""
+    """Query parameters for GET /registry/search.
+
+    Cursor-based pagination (issue #42): callers page by passing the
+    ``next_cursor`` returned by a previous :class:`RegistrySearchResult`
+    into ``cursor`` on the next request. ``max_results`` is retained as a
+    deprecated alias for ``limit``.
+    """
 
     capability: str = Field(description="Capability to search for")
     min_trust_score: int | None = Field(
         default=None,
         description="Minimum trust score (0-1000)",
     )
-    max_results: int = Field(
+    limit: int = Field(
         default=10,
         ge=1,
         le=100,
-        description="Maximum matches to return",
+        description="Maximum matches to return per page",
+    )
+    cursor: str | None = Field(
+        default=None,
+        description="Opaque cursor from previous response",
     )
     filters: dict[str, Any] | None = Field(
         default=None,
@@ -45,6 +55,21 @@ class RegistrySearchRequest(BaseModel):
     )
 
     model_config = {"extra": "ignore"}
+
+    @model_validator(mode="before")
+    @classmethod
+    def _coerce_deprecated_max_results(cls, values: Any) -> Any:
+        """Backwards-compat: copy ``max_results`` into ``limit`` if ``limit`` absent."""
+        if not isinstance(values, dict):
+            return values
+        if "max_results" in values and "limit" not in values:
+            values["limit"] = values["max_results"]
+        return values
+
+    @property
+    def max_results(self) -> int:
+        """Deprecated alias for :attr:`limit`."""
+        return self.limit
 
 
 class RegistrySearchMatch(BaseModel):
@@ -85,5 +110,17 @@ class RegistrySearchResult(BaseModel):
         default=0.0,
         description="Search execution time in milliseconds",
     )
+    next_cursor: str | None = Field(
+        default=None,
+        description="Opaque cursor to pass as ``cursor`` on the next request",
+    )
+    has_more: bool = Field(
+        default=False,
+        description="True when more results are available beyond this page",
+    )
 
     model_config = {"extra": "ignore"}
+
+
+# Back-compat export: some callers import ``RegistrySearchResponse``.
+RegistrySearchResponse = RegistrySearchResult

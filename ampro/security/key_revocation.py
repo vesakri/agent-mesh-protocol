@@ -18,6 +18,7 @@ from __future__ import annotations
 import json
 import logging
 from enum import Enum
+from typing import Protocol
 
 from pydantic import BaseModel, Field
 
@@ -128,3 +129,94 @@ def is_revocation_authentic(body: KeyRevocationBody, public_key_bytes: bytes) ->
     Callers MUST call this before revoking any keys.
     """
     return validate_revocation_signature(body, public_key_bytes)
+
+
+# ---------------------------------------------------------------------------
+# Revocation broadcast + pluggable store
+# ---------------------------------------------------------------------------
+
+
+class KeyRevocationBroadcastBody(BaseModel):
+    """body.type = 'key.revocation_broadcast' — Fan-out envelope for a revocation.
+
+    Used when a peer forwards a previously-received :class:`KeyRevocationBody`
+    to its own trust-graph neighbours so caches across the mesh converge
+    on the revoked key. The inner ``revocation`` MUST be carried verbatim
+    (including its signature) so downstream receivers can independently
+    verify authenticity via :func:`is_revocation_authentic`.
+    """
+
+    revocation: KeyRevocationBody = Field(
+        description="The original signed revocation being rebroadcast",
+    )
+    broadcast_by: str = Field(
+        description="agent:// URI of the peer rebroadcasting the revocation",
+    )
+    broadcast_at: str = Field(
+        description="ISO-8601 timestamp when this hop rebroadcast the notice",
+    )
+    hop_count: int = Field(
+        default=0,
+        ge=0,
+        description="Number of hops the broadcast has traversed",
+    )
+
+    model_config = {"extra": "ignore"}
+
+
+class RevocationStore(Protocol):
+    """Platform hook for persistent revocation state.
+
+    Implementations plug in via :func:`register_revocation_store`. Callers
+    should query :func:`should_reject_cached_key` before trusting any
+    cached public key material. The default store is a NoOp that returns
+    False for every key.
+    """
+
+    def is_revoked(self, key_id: str) -> bool:
+        ...
+
+
+class _NoOpRevocationStore:
+    """Default store — nothing is ever considered revoked."""
+
+    def is_revoked(self, key_id: str) -> bool:  # noqa: D401 — simple predicate
+        return False
+
+
+_revocation_store: RevocationStore = _NoOpRevocationStore()
+
+
+def register_revocation_store(store: RevocationStore) -> None:
+    """Register a platform-provided revocation store.
+
+    Host platforms plug in a store backed by their KV / DB layer so every
+    agent in the mesh shares a consistent view of revoked keys.
+    """
+    global _revocation_store
+    _revocation_store = store
+
+
+def should_reject_cached_key(key_id: str) -> bool:
+    """Return True when *key_id* is known-revoked.
+
+    Receivers holding a cached public key MUST consult this helper before
+    verifying signatures; revoked keys MUST NOT be trusted even if the
+    signature math checks out. Thin wrapper around the registered
+    :class:`RevocationStore` so the default (unconfigured) behaviour is
+    safe.
+    """
+    try:
+        return bool(_revocation_store.is_revoked(key_id))
+    except Exception as exc:  # pragma: no cover - defensive
+        logger.warning("RevocationStore.is_revoked raised: %s", exc)
+        return False
+
+
+def revocation_verify_cached_key(key_id: str) -> bool:
+    """Return True when the cached key *key_id* is still valid.
+
+    Inverse of :func:`should_reject_cached_key` — kept as a readable alias
+    for callers whose flow reads as "verify this cached key is OK".
+    """
+    return not should_reject_cached_key(key_id)

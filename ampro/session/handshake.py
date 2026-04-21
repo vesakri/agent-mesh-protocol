@@ -35,10 +35,13 @@ import hmac
 import json
 import secrets
 import threading
+import time
 from datetime import datetime, timezone
 from enum import Enum
 
 from pydantic import BaseModel, Field
+
+from ampro.errors import SessionError
 
 
 # ---------------------------------------------------------------------------
@@ -46,12 +49,22 @@ from pydantic import BaseModel, Field
 # ---------------------------------------------------------------------------
 
 
-class SessionReplayError(Exception):
+class SessionReplayError(SessionError):
     """Raised when a confirm_nonce is replayed or was never issued.
 
     This indicates either a replay attack on the session.confirm message
     or a programming error where the nonce was not properly generated via
     the HandshakeStateMachine.
+    """
+
+
+class HandshakeTimeoutError(SessionError):
+    """Raised when the handshake does not complete within the configured window.
+
+    Handshakes are bounded operations — a peer that goes silent mid-way
+    must not leave the state machine stuck in INIT_SENT / ESTABLISHED
+    forever. The default timeout is 30 seconds; customise via
+    :class:`HandshakeStateMachine`'s ``timeout_seconds`` constructor arg.
     """
 
 
@@ -403,11 +416,23 @@ class HandshakeStateMachine:
     event loop thread, or use asyncio.Lock instead.
     """
 
-    def __init__(self) -> None:
+    DEFAULT_TIMEOUT_SECONDS: float = 30.0
+
+    def __init__(self, timeout_seconds: float | None = None) -> None:
         self._state = HandshakeState.IDLE
         self._lock = threading.Lock()
         self._issued_confirm_nonces: set[str] = set()
         self._consumed_confirm_nonces: set[str] = set()
+        self._timeout_seconds: float = (
+            float(timeout_seconds)
+            if timeout_seconds is not None
+            else self.DEFAULT_TIMEOUT_SECONDS
+        )
+        self._started_at: float = time.monotonic()
+
+    @property
+    def timeout_seconds(self) -> float:
+        return self._timeout_seconds
 
     # ------------------------------------------------------------------
     # Confirm-nonce replay protection
@@ -479,6 +504,20 @@ class HandshakeStateMachine:
             ValueError: If the event is not valid for the current state.
         """
         with self._lock:
+            # Timeout only applies while the handshake is still negotiating.
+            # Once ACTIVE / PAUSED / CLOSED the session has its own TTL.
+            if self._state not in (
+                HandshakeState.ACTIVE,
+                HandshakeState.PAUSED,
+                HandshakeState.CLOSED,
+            ):
+                elapsed = time.monotonic() - self._started_at
+                if elapsed > self._timeout_seconds:
+                    raise HandshakeTimeoutError(
+                        f"Handshake timed out after {elapsed:.2f}s "
+                        f"(limit {self._timeout_seconds}s) in state "
+                        f"'{self._state.value}'"
+                    )
             key = (self._state, event)
             next_state = _TRANSITIONS.get(key)
             if next_state is None:

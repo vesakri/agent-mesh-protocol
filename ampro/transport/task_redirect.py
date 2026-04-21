@@ -18,6 +18,8 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
+from ampro.errors import RedirectLoopError
+
 
 class TaskRedirectBody(BaseModel):
     """body.type = 'task.redirect' — Redirect a task to another agent."""
@@ -48,5 +50,43 @@ class TaskRedirectBody(BaseModel):
         default=None,
         description="When the agent expects to be available again",
     )
+    visited_agents: list[str] = Field(
+        default_factory=list,
+        max_length=10,
+        description=(
+            "Chain of agent:// URIs that have already processed this "
+            "redirect, used to detect cycles"
+        ),
+    )
+    max_hops: int = Field(
+        default=5,
+        ge=1,
+        le=10,
+        description="Maximum allowed redirect chain length before a loop error is raised",
+    )
 
     model_config = {"extra": "ignore"}
+
+
+def check_redirect_chain(body: TaskRedirectBody, current_agent_id: str) -> None:
+    """Validate that following this redirect would not loop or exceed ``max_hops``.
+
+    Callers MUST invoke this before following a ``task.redirect`` so that
+    malicious or misconfigured agents cannot trap callers in a redirect
+    cycle or force an unbounded redirect chain.
+
+    Raises:
+        RedirectLoopError: when ``current_agent_id`` already appears in
+            ``visited_agents`` (cycle detected) or when ``len(visited_agents)``
+            has reached ``max_hops``.
+    """
+    if current_agent_id in body.visited_agents:
+        raise RedirectLoopError(
+            f"Redirect cycle detected: agent {current_agent_id!r} already "
+            f"appears in visited_agents={body.visited_agents}"
+        )
+    if len(body.visited_agents) >= body.max_hops:
+        raise RedirectLoopError(
+            f"Redirect chain exceeded max_hops={body.max_hops}: "
+            f"visited={body.visited_agents}"
+        )

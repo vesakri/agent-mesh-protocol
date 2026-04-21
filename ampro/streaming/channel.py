@@ -8,7 +8,68 @@ opened, used, and closed.
 
 from __future__ import annotations
 
+import threading
+
 from pydantic import BaseModel, Field
+
+
+# Per-session cap on simultaneously open stream channels. Keeps a single
+# client from exhausting server memory / file-descriptor budgets by
+# opening unbounded multiplexed streams.
+MAX_CHANNELS_PER_SESSION = 16
+
+
+class ChannelQuotaExceededError(Exception):
+    """Raised when opening a channel would exceed the per-session limit."""
+
+    def __init__(self, session_id: str, limit: int):
+        self.session_id = session_id
+        self.limit = limit
+        super().__init__(
+            f"Session {session_id} already has {limit} channels open; "
+            f"MAX_CHANNELS_PER_SESSION={MAX_CHANNELS_PER_SESSION}"
+        )
+
+
+class ChannelRegistry:
+    """Tracks open channels per session and enforces the per-session cap.
+
+    Thread-safe — all mutations are serialised on an internal lock.
+    """
+
+    def __init__(self, max_per_session: int = MAX_CHANNELS_PER_SESSION):
+        self._max_per_session = max_per_session
+        self._channels: dict[str, set[str]] = {}
+        self._lock = threading.Lock()
+
+    def register_channel(self, session_id: str, channel_id: str) -> None:
+        """Record that *channel_id* is open on *session_id*.
+
+        Raises:
+            ChannelQuotaExceededError: If the session is already at the limit.
+        """
+        with self._lock:
+            open_set = self._channels.setdefault(session_id, set())
+            if channel_id in open_set:
+                return
+            if len(open_set) >= self._max_per_session:
+                raise ChannelQuotaExceededError(session_id, self._max_per_session)
+            open_set.add(channel_id)
+
+    def release_channel(self, session_id: str, channel_id: str) -> None:
+        """Mark *channel_id* closed on *session_id* (idempotent)."""
+        with self._lock:
+            open_set = self._channels.get(session_id)
+            if not open_set:
+                return
+            open_set.discard(channel_id)
+            if not open_set:
+                self._channels.pop(session_id, None)
+
+    def count(self, session_id: str) -> int:
+        """Return the number of open channels for *session_id*."""
+        with self._lock:
+            return len(self._channels.get(session_id, ()))
 
 
 class StreamChannel(BaseModel):

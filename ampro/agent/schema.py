@@ -9,9 +9,21 @@ This module is PURE — no platform-specific imports.
 
 from __future__ import annotations
 
-from typing import Any
+from datetime import datetime
+from typing import Any, Callable, Literal
 
 from pydantic import BaseModel, Field
+
+from ampro.errors import MigrationChainTooLongError
+
+
+MAX_MIGRATION_HOPS = 5
+"""Maximum depth of ``moved_to`` references that callers SHOULD follow.
+
+Agents MUST refuse to follow migration chains beyond this limit to prevent
+unbounded resolution work and redirect-loop attacks through forged
+``moved_to`` pointers.
+"""
 
 
 class AgentJson(BaseModel):
@@ -59,3 +71,79 @@ class AgentJson(BaseModel):
     )
 
     model_config = {"extra": "allow"}
+
+
+def follow_migration_chain(
+    agent_json: AgentJson,
+    resolver: Callable[[str], AgentJson | None],
+    max_hops: int = MAX_MIGRATION_HOPS,
+) -> AgentJson:
+    """Follow ``moved_to`` pointers until a terminal agent.json is reached.
+
+    Args:
+        agent_json: Starting agent.json record.
+        resolver:   Callable mapping an ``agent://`` URI to its resolved
+                    :class:`AgentJson`, or ``None`` if the URI cannot be
+                    resolved. Callers typically pass a registry lookup
+                    closure.
+        max_hops:   Maximum number of ``moved_to`` redirects to follow before
+                    raising :class:`MigrationChainTooLongError`. Defaults to
+                    :data:`MAX_MIGRATION_HOPS`.
+
+    Returns:
+        The terminal :class:`AgentJson` (first record encountered with no
+        ``moved_to`` pointer or whose ``moved_to`` target cannot be resolved).
+
+    Raises:
+        MigrationChainTooLongError: when the chain would require more than
+            ``max_hops`` redirects, or when a cycle is detected in the chain.
+    """
+    if max_hops < 1:
+        raise ValueError("max_hops must be >= 1")
+
+    current = agent_json
+    hops = 0
+    seen: set[str] = set()
+    while current.moved_to:
+        if hops >= max_hops:
+            raise MigrationChainTooLongError(
+                f"Migration chain exceeded max_hops={max_hops} "
+                f"(last moved_to={current.moved_to!r})"
+            )
+        if current.moved_to in seen:
+            raise MigrationChainTooLongError(
+                f"Migration chain cycle detected at {current.moved_to!r}"
+            )
+        seen.add(current.moved_to)
+        resolved = resolver(current.moved_to)
+        if resolved is None:
+            return current
+        current = resolved
+        hops += 1
+    return current
+
+
+# ---------------------------------------------------------------------------
+# Cache invalidation push (issue #43)
+# ---------------------------------------------------------------------------
+
+
+class AgentMetadataInvalidateBody(BaseModel):
+    """body.type = 'agent.metadata_invalidate'.
+
+    Push notification: an agent's ``agent.json`` has changed; any peer that
+    caches the record MUST drop its copy on receipt of this message.
+    """
+
+    agent_id: str = Field(description="agent:// URI whose metadata changed")
+    changed_at: datetime = Field(
+        description="UTC timestamp when the underlying agent.json was updated",
+    )
+    reason: Literal[
+        "visibility_change",
+        "endpoint_change",
+        "migration",
+        "revocation",
+    ] = Field(description="Why the cached record must be dropped")
+
+    model_config = {"extra": "ignore"}

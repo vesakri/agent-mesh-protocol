@@ -21,9 +21,12 @@ Designed for extraction as part of `pip install agent-protocol`.
 from __future__ import annotations
 
 import json
+from decimal import Decimal
 from typing import Any
 
 from pydantic import BaseModel, Field
+
+from ampro.errors import CryptoError
 
 
 # ---------------------------------------------------------------------------
@@ -31,7 +34,7 @@ from pydantic import BaseModel, Field
 # ---------------------------------------------------------------------------
 
 
-class CostReceiptVerificationError(Exception):
+class CostReceiptVerificationError(CryptoError):
     """Raised when a CostReceipt fails signature verification or replay check."""
 
 
@@ -93,22 +96,40 @@ class CostReceipt(BaseModel):
 
 
 class CostReceiptChain(BaseModel):
-    """Ordered collection of cost receipts across a delegation chain."""
+    """Ordered collection of cost receipts across a delegation chain.
+
+    Mixed-currency chains are rejected at :py:meth:`add_receipt`. The
+    chain's currency is locked to the first receipt's ``currency``.
+
+    The running ``total_cost_usd`` is stored as :class:`decimal.Decimal`
+    to avoid floating-point drift across many small hops (e.g. summing
+    ``0.1`` repeatedly). Callers that want a float may use
+    :py:attr:`total_cost_usd_float`.
+    """
 
     receipts: list[CostReceipt] = Field(
         default_factory=list,
         description="Ordered list of receipts, one per delegation hop",
     )
-    total_cost_usd: float = Field(
-        default=0.0,
-        description="Sum of all hop costs",
+    total_cost_usd: Decimal = Field(
+        default=Decimal("0"),
+        description="Sum of all hop costs (Decimal to avoid FP drift)",
+    )
+    currency: str | None = Field(
+        default=None,
+        description="Currency of the chain, set by the first receipt; all subsequent receipts must match",
     )
 
-    model_config = {"extra": "ignore"}
+    model_config = {"extra": "ignore", "arbitrary_types_allowed": True}
 
     def model_post_init(self, __context: Any) -> None:
         """Initialize internal nonce tracking set after Pydantic init."""
         object.__setattr__(self, "_consumed_nonces", set())
+
+    @property
+    def total_cost_usd_float(self) -> float:
+        """Float view of the Decimal total — for callers that want a float."""
+        return float(self.total_cost_usd)
 
     def add_receipt(self, receipt: CostReceipt) -> None:
         """Verify and append a receipt, updating the running total.
@@ -117,6 +138,8 @@ class CostReceiptChain(BaseModel):
         - Replay: nonce already consumed in this chain
         - Unknown key: no public key found for agent_id
         - Bad signature: Ed25519 verification fails
+        - Currency mismatch: receipt.currency differs from the chain's
+          locked currency (set by the first receipt).
         """
         consumed: set[str] = object.__getattribute__(self, "_consumed_nonces")
 
@@ -126,7 +149,16 @@ class CostReceiptChain(BaseModel):
                 f"cost receipt nonce {receipt.nonce} already consumed"
             )
 
-        # 2. Signature check
+        # 2. Currency check — lock on first receipt, reject mismatches
+        if self.currency is None:
+            self.currency = receipt.currency
+        elif receipt.currency != self.currency:
+            raise CostReceiptVerificationError(
+                f"currency mismatch: chain is {self.currency!r}, "
+                f"receipt nonce={receipt.nonce} is {receipt.currency!r}"
+            )
+
+        # 3. Signature check
         from ampro.trust.resolver import get_public_key
 
         pub_bytes = get_public_key(receipt.agent_id)
@@ -155,7 +187,8 @@ class CostReceiptChain(BaseModel):
                 f"signature decode error for nonce={receipt.nonce}: {exc}"
             ) from exc
 
-        # 3. All checks passed — append
+        # 4. All checks passed — append
         consumed.add(receipt.nonce)
         self.receipts.append(receipt)
-        self.total_cost_usd += receipt.cost_usd
+        # Decimal arithmetic: str-wrap the float to avoid FP→Decimal rounding
+        self.total_cost_usd += Decimal(str(receipt.cost_usd))

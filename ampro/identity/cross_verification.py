@@ -18,6 +18,40 @@ from ampro.transport.attachment import validate_attachment_url
 logger = logging.getLogger(__name__)
 
 
+# Module-level policy flag. When True, any call to
+# :func:`cross_verify_identifiers` that returns at least one unverified
+# identifier MUST raise :class:`CrossVerificationRequiredError` instead
+# of silently returning False. Default is False to preserve current
+# permissive behaviour; platforms opt in via
+# :func:`register_cross_verification_policy`.
+REQUIRE_CROSS_VERIFICATION: bool = False
+
+
+class CrossVerificationRequiredError(Exception):
+    """Raised when cross-verification is mandatory but failed.
+
+    Triggered only when :data:`REQUIRE_CROSS_VERIFICATION` is True and the
+    verification call returned any unverified identifier.
+    """
+
+    def __init__(self, failed_identifiers: list[str]):
+        self.failed_identifiers = failed_identifiers
+        super().__init__(
+            "Cross-verification policy requires all identifiers to verify; "
+            f"failed: {failed_identifiers}"
+        )
+
+
+def register_cross_verification_policy(required: bool) -> None:
+    """Set the module-level policy flag.
+
+    Platforms that require strict cross-verification (e.g. for external
+    trust-tier agents) call this once at startup with ``required=True``.
+    """
+    global REQUIRE_CROSS_VERIFICATION
+    REQUIRE_CROSS_VERIFICATION = bool(required)
+
+
 class VerificationResult:
     """Result of cross-verifying an identifier."""
 
@@ -184,6 +218,11 @@ async def cross_verify_identifiers(
                     reason="No fetch function provided for SLUG verification",
                 ))
             continue
+
+    if REQUIRE_CROSS_VERIFICATION:
+        failed = [r.identifier for r in results if not r.verified]
+        if failed:
+            raise CrossVerificationRequiredError(failed)
 
     return results
 

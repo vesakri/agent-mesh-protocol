@@ -39,6 +39,12 @@ class StreamingEventType(str, Enum):
     STREAM_AUTH_REFRESH = "stream.auth_refresh"     # Mid-stream token renewal
 
 
+# Maximum size of a single SSE event payload. SSE has no hard limit, but
+# most infra (nginx, HTTP/2 proxies, Cloudflare) starts chunking or
+# dropping above roughly 1 MB. 256 KiB leaves generous headroom.
+MAX_SSE_EVENT_BYTES = 262_144  # 256 KiB
+
+
 class StreamingEvent(BaseModel):
     """A single streaming event for SSE delivery."""
 
@@ -53,15 +59,35 @@ class StreamingEvent(BaseModel):
             "Do not set manually — StreamBus.emit() assigns this atomically."
         ),
     )
+    cross_channel_seq: int | None = Field(
+        default=None,
+        ge=0,
+        description=(
+            "Optional monotonic counter scoped to the session, not the "
+            "channel. Implementations MAY provide cross_channel_seq to "
+            "enable causal ordering across channels; when present, "
+            "receivers MUST honour it."
+        ),
+    )
 
     def to_sse(self) -> str:
-        """Format as Server-Sent Events (SSE) text."""
+        """Format as Server-Sent Events (SSE) text.
+
+        Raises:
+            ValueError: If the serialized event exceeds
+                :data:`MAX_SSE_EVENT_BYTES` (256 KiB).
+        """
         lines = []
         if self.id:
             lines.append(f"id: {self.id}")
         lines.append(f"event: {self.type.value}")
         lines.append(f"data: {json.dumps(self.data, default=str)}")
         lines.append("")  # Empty line terminates the event
-        return "\n".join(lines) + "\n"
+        sse = "\n".join(lines) + "\n"
+        if len(sse.encode("utf-8")) > MAX_SSE_EVENT_BYTES:
+            raise ValueError(
+                f"SSE event exceeds {MAX_SSE_EVENT_BYTES}-byte limit"
+            )
+        return sse
 
     model_config = {"extra": "ignore"}

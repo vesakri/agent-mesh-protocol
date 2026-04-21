@@ -6,10 +6,11 @@ from __future__ import annotations
 
 from typing import Any
 
+from ampro.errors import AmpError
 from ampro.wire.errors import ProblemDetail
 
 
-class AMPError(Exception):
+class AMPError(AmpError):
     """Base error for AMPI operations."""
 
     def __init__(self, code: str, message: str = "", *, details: dict[str, Any] | None = None) -> None:

@@ -12,8 +12,9 @@ guidance, not protocol.
 
 from __future__ import annotations
 
+import hashlib
 from enum import Enum
-from typing import Any
+from typing import Any, Callable
 
 from pydantic import BaseModel, Field
 
@@ -25,6 +26,21 @@ class ChallengeReason(str, Enum):
     SUSPICIOUS_BEHAVIOR = "suspicious_behavior"
     RATE_LIMIT_EXCEEDED = "rate_limit_exceeded"
     TRUST_UPGRADE = "trust_upgrade"
+
+
+class ChallengeType(str, Enum):
+    """Canonical challenge types with built-in solution validators.
+
+    Implementations MAY extend by registering new types via
+    :func:`register_challenge_validator`. Unregistered types fall back to
+    a string-equality check against ``parameters['expected_solution']``
+    when present.
+    """
+
+    PROOF_OF_WORK = "proof_of_work"
+    SHARED_SECRET = "shared_secret"
+    ECHO = "echo"
+    CAPTCHA = "captcha"
 
 
 class TaskChallengeBody(BaseModel):
@@ -51,3 +67,115 @@ class TaskChallengeResponseBody(BaseModel):
     solution: str = Field(description="The computed answer to the challenge")
 
     model_config = {"extra": "ignore"}
+
+
+# ---------------------------------------------------------------------------
+# Per-type solution validators
+# ---------------------------------------------------------------------------
+
+
+ChallengeValidator = Callable[[TaskChallengeBody, TaskChallengeResponseBody], bool]
+
+
+def _validate_proof_of_work(
+    challenge: TaskChallengeBody, response: TaskChallengeResponseBody
+) -> bool:
+    """SHA-256(challenge_id || solution) must have N leading zero bits.
+
+    ``parameters['difficulty']`` carries the required leading-zero-bit count.
+    The solution is a hex string.
+    """
+    try:
+        difficulty = int(challenge.parameters.get("difficulty", 0))
+    except (TypeError, ValueError):
+        return False
+    if difficulty < 0:
+        return False
+    try:
+        _ = bytes.fromhex(response.solution)
+    except ValueError:
+        return False
+    digest = hashlib.sha256(
+        (challenge.challenge_id + response.solution).encode("utf-8")
+    ).digest()
+    # Count leading zero bits of the digest
+    leading = 0
+    for byte in digest:
+        if byte == 0:
+            leading += 8
+            continue
+        # count leading zeros in this byte
+        mask = 0x80
+        while mask and not (byte & mask):
+            leading += 1
+            mask >>= 1
+        break
+    return leading >= difficulty
+
+
+def _validate_shared_secret(
+    challenge: TaskChallengeBody, response: TaskChallengeResponseBody
+) -> bool:
+    """Solution equals a pre-shared secret carried in parameters."""
+    expected = challenge.parameters.get("expected_solution")
+    if not isinstance(expected, str):
+        return False
+    # Use hmac-style constant-time compare
+    import hmac as _hmac
+
+    return _hmac.compare_digest(expected, response.solution)
+
+
+def _validate_echo(
+    challenge: TaskChallengeBody, response: TaskChallengeResponseBody
+) -> bool:
+    """Solution must echo parameters['echo']."""
+    expected = challenge.parameters.get("echo")
+    return isinstance(expected, str) and expected == response.solution
+
+
+def _validate_captcha(
+    challenge: TaskChallengeBody, response: TaskChallengeResponseBody
+) -> bool:
+    """CAPTCHA validation requires a platform-provided solver.
+
+    By default we accept ``parameters['expected_solution']`` (string equality)
+    as a test hook; platforms register a real validator via
+    :func:`register_challenge_validator`.
+    """
+    expected = challenge.parameters.get("expected_solution")
+    return isinstance(expected, str) and expected == response.solution
+
+
+_VALIDATORS: dict[str, ChallengeValidator] = {
+    ChallengeType.PROOF_OF_WORK.value: _validate_proof_of_work,
+    ChallengeType.SHARED_SECRET.value: _validate_shared_secret,
+    ChallengeType.ECHO.value: _validate_echo,
+    ChallengeType.CAPTCHA.value: _validate_captcha,
+}
+
+
+def register_challenge_validator(
+    challenge_type: str, validator: ChallengeValidator
+) -> None:
+    """Register or override a validator for a given challenge_type string."""
+    _VALIDATORS[challenge_type] = validator
+
+
+def validate_challenge_solution(
+    challenge: TaskChallengeBody, response: TaskChallengeResponseBody
+) -> bool:
+    """Dispatch to the per-type validator and return pass/fail.
+
+    Also enforces that the response's ``challenge_id`` matches the
+    challenge it claims to answer. Unknown challenge types return False.
+    """
+    if challenge.challenge_id != response.challenge_id:
+        return False
+    validator = _VALIDATORS.get(challenge.challenge_type)
+    if validator is None:
+        return False
+    try:
+        return bool(validator(challenge, response))
+    except Exception:
+        return False

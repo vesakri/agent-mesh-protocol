@@ -9,10 +9,11 @@ This module is PURE — no platform-specific imports.
 
 from __future__ import annotations
 
+from datetime import datetime
 from enum import Enum
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class ContentClassification(str, Enum):
@@ -60,14 +61,71 @@ class ErasureRequest(BaseModel):
     model_config = {"extra": "ignore"}
 
 
+class RetainedRecord(BaseModel):
+    """A record retained despite an erasure request, with its legal justification.
+
+    Supports partial-erasure tracking: not every record can be deleted
+    (audit logs, regulatory-retention windows, etc.).  Each retained
+    record MUST carry a machine-readable ``reason`` and a human
+    ``legal_basis`` citing the statute or policy.
+    """
+
+    record_id: str = Field(..., max_length=256, description="Stable record identifier")
+    category: str = Field(
+        ...,
+        description="e.g. 'audit_log', 'financial_record'",
+    )
+    reason: Literal["legal_hold", "regulatory_retention", "user_denied"] = Field(
+        ..., description="Machine-readable retention cause",
+    )
+    legal_basis: str = Field(
+        ...,
+        max_length=512,
+        description="Statute or policy reference",
+    )
+    review_after: datetime | None = Field(
+        default=None,
+        description="Timestamp after which retention should be re-evaluated",
+    )
+
+    model_config = {"extra": "ignore"}
+
+
 class ErasureResponse(BaseModel):
     subject_id: str = Field(description="Unique identifier of the data subject whose data was erased")
     status: Literal["completed", "partial", "failed"] = Field(description="Outcome status of the erasure operation")
     records_deleted: int = Field(default=0, description="Total number of records deleted")
     categories_deleted: list[str] = Field(default_factory=list, description="Data categories that were successfully deleted")
-    retained: list[dict[str, Any]] = Field(default_factory=list, description="Records retained with legal justification for each")
+    retained: list[RetainedRecord] = Field(
+        default_factory=list,
+        description="Records retained with legal justification for each",
+    )
     completed_at: str = Field(description="ISO 8601 timestamp when erasure was completed")
     model_config = {"extra": "ignore"}
+
+    @model_validator(mode="before")
+    @classmethod
+    def _coerce_legacy_retained(cls, values: Any) -> Any:
+        """Accept legacy ``list[dict]`` input for ``retained`` (best-effort).
+
+        Older callers may still emit untyped dictionaries.  We upgrade
+        each dict to :class:`RetainedRecord`; dicts missing required
+        fields are rejected by the nested model (the dict remains in
+        place and Pydantic will raise a ValidationError).
+        """
+        if not isinstance(values, dict):
+            return values
+        retained = values.get("retained")
+        if not isinstance(retained, list):
+            return values
+        upgraded: list[Any] = []
+        for item in retained:
+            if isinstance(item, dict):
+                upgraded.append(RetainedRecord.model_validate(item))
+            else:
+                upgraded.append(item)
+        values = {**values, "retained": upgraded}
+        return values
 
 
 class ExportRequest(BaseModel):

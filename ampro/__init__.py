@@ -10,6 +10,21 @@ The protocol answers four questions:
 Install: pip install agent-protocol
 """
 
+# --- Unified error hierarchy ---
+from ampro.errors import (
+    AmpError,
+    ValidationError as AmpValidationError,
+    TrustError,
+    CryptoError,
+    SessionError,
+    CompliancePolicyError,
+    RateLimitError,
+    TransportError,
+    NotImplementedInProtocol,
+    RedirectLoopError,
+    MigrationChainTooLongError,
+)
+
 # --- Core envelope ---
 from ampro.core.envelope import AgentMessage, STANDARD_HEADERS
 from ampro.core.status import AgentStatus
@@ -81,6 +96,7 @@ from ampro.transport.callback import validate_callback_url, deliver_callback
 from ampro.core.message_middleware import (
     validate_message_body, build_negotiation_headers,
     check_message_size, MessageSizeError,
+    enforce_encryption_requirement,
 )
 
 # --- Registry & discovery ---
@@ -92,6 +108,7 @@ from ampro.agent.schema import AgentJson
 from ampro.identity.cross_verification import (
     cross_verify_identifiers, check_all_verified,
     get_failed_identifiers, VerificationResult,
+    CrossVerificationRequiredError, register_cross_verification_policy,
 )
 
 # --- Trust scoring ---
@@ -109,6 +126,7 @@ from ampro.trust.upgrade import TrustUpgradeRequestBody, TrustUpgradeResponseBod
 # --- Handshake ---
 from ampro.session.handshake import (
     HandshakeState, HandshakeStateMachine,
+    HandshakeTimeoutError, SessionReplayError,
     SessionInitBody, SessionEstablishedBody, SessionConfirmBody,
     SessionPingBody, SessionPongBody,
     SessionPauseBody, SessionResumeBody, SessionCloseBody,
@@ -131,10 +149,19 @@ from ampro.session.binding import (
 from ampro.agent.context_schema import ContextSchemaInfo, parse_schema_urn, check_schema_supported
 
 # --- Challenge (anti-abuse) ---
-from ampro.security.challenge import ChallengeReason, TaskChallengeBody, TaskChallengeResponseBody
+from ampro.security.challenge import (
+    ChallengeReason, ChallengeType,
+    TaskChallengeBody, TaskChallengeResponseBody,
+    validate_challenge_solution, register_challenge_validator,
+)
 
 # --- Key revocation ---
-from ampro.security.key_revocation import RevocationReason, KeyRevocationBody, is_revocation_authentic
+from ampro.security.key_revocation import (
+    RevocationReason, KeyRevocationBody, is_revocation_authentic,
+    KeyRevocationBroadcastBody, RevocationStore,
+    register_revocation_store, should_reject_cached_key,
+    revocation_verify_cached_key,
+)
 
 # --- Tool consent ---
 from ampro.agent.tool_consent import ToolConsentRequestBody, ToolConsentGrantBody, ToolDefinition
@@ -176,7 +203,10 @@ from ampro.compliance.consent_revoke import DataConsentRevokeBody
 from ampro.compliance.data_residency import DataResidency, validate_residency_region, check_residency_violation
 
 # --- Stream channels ---
-from ampro.streaming.channel import StreamChannel, StreamChannelOpenEvent, StreamChannelCloseEvent
+from ampro.streaming.channel import (
+    StreamChannel, StreamChannelOpenEvent, StreamChannelCloseEvent,
+    ChannelRegistry, ChannelQuotaExceededError, MAX_CHANNELS_PER_SESSION,
+)
 
 # --- Stream checkpoints ---
 from ampro.streaming.checkpoint import StreamCheckpointEvent
@@ -190,7 +220,25 @@ from ampro.identity.link import IdentityLinkProofBody
 # --- Registry federation ---
 from ampro.registry.federation import (
     RegistryFederationRequest, RegistryFederationResponse,
-    verify_federation_trust_proof,
+    RegistryFederationRevokeBody,
+    RegistryFederationSyncBody, RegistryFederationSyncResponseBody,
+    verify_federation_trust_proof, resolve_federation_conflict,
+)
+
+# --- Agent metadata cache invalidation ---
+from ampro.agent.schema import (
+    AgentMetadataInvalidateBody,
+    MAX_MIGRATION_HOPS,
+    follow_migration_chain,
+)
+
+# --- Task redirect loop detection ---
+from ampro.transport.task_redirect import check_redirect_chain
+
+# --- Identity link expiry ---
+from ampro.identity.link import (
+    is_link_proof_valid,
+    DEFAULT_LINK_PROOF_LIFETIME,
 )
 
 # --- Identity migration ---
@@ -200,7 +248,13 @@ from ampro.identity.migration import IdentityMigrationBody
 from ampro.compliance.audit_attestation import AuditAttestationBody, verify_attestation
 
 # --- Encryption ---
-from ampro.security.encryption import EncryptedBody, CONTENT_ENCRYPTION_HEADER
+from ampro.security.encryption import (
+    EncryptedBody,
+    EncryptionKeyOfferBody,
+    EncryptionKeyAcceptBody,
+    EncryptionDowngradeError,
+    CONTENT_ENCRYPTION_HEADER,
+)
 
 # --- Trust proof ---
 from ampro.trust.proof import TrustProofBody
@@ -282,6 +336,7 @@ __all__ = [
     # Cross-verification
     "cross_verify_identifiers", "check_all_verified",
     "get_failed_identifiers", "VerificationResult",
+    "CrossVerificationRequiredError", "register_cross_verification_policy",
     # Trust scoring
     "TrustFactor", "TrustScore", "TrustPolicy",
     "calculate_trust_score", "score_to_policy",
@@ -291,6 +346,7 @@ __all__ = [
     "TrustUpgradeRequestBody", "TrustUpgradeResponseBody",
     # Handshake
     "HandshakeState", "HandshakeStateMachine",
+    "HandshakeTimeoutError", "SessionReplayError",
     "SessionInitBody", "SessionEstablishedBody", "SessionConfirmBody",
     "SessionPingBody", "SessionPongBody",
     "SessionPauseBody", "SessionResumeBody", "SessionCloseBody",
@@ -304,9 +360,14 @@ __all__ = [
     # Context schemas
     "ContextSchemaInfo", "parse_schema_urn", "check_schema_supported",
     # Challenge (anti-abuse)
-    "ChallengeReason", "TaskChallengeBody", "TaskChallengeResponseBody",
+    "ChallengeReason", "ChallengeType",
+    "TaskChallengeBody", "TaskChallengeResponseBody",
+    "validate_challenge_solution", "register_challenge_validator",
     # Key revocation
     "RevocationReason", "KeyRevocationBody", "is_revocation_authentic",
+    "KeyRevocationBroadcastBody", "RevocationStore",
+    "register_revocation_store", "should_reject_cached_key",
+    "revocation_verify_cached_key",
     # Tool consent
     "ToolConsentRequestBody", "ToolConsentGrantBody", "ToolDefinition",
     # Backpressure
@@ -334,6 +395,7 @@ __all__ = [
     "DataResidency", "validate_residency_region", "check_residency_violation",
     # Stream channels
     "StreamChannel", "StreamChannelOpenEvent", "StreamChannelCloseEvent",
+    "ChannelRegistry", "ChannelQuotaExceededError", "MAX_CHANNELS_PER_SESSION",
     # Stream checkpoints
     "StreamCheckpointEvent",
     # Stream auth
@@ -342,13 +404,29 @@ __all__ = [
     "IdentityLinkProofBody",
     # Registry federation
     "RegistryFederationRequest", "RegistryFederationResponse",
-    "verify_federation_trust_proof",
+    "RegistryFederationRevokeBody",
+    "RegistryFederationSyncBody", "RegistryFederationSyncResponseBody",
+    "verify_federation_trust_proof", "resolve_federation_conflict",
+    # Agent metadata cache invalidation
+    "AgentMetadataInvalidateBody",
+    "MAX_MIGRATION_HOPS", "follow_migration_chain",
+    # Task redirect loop detection
+    "check_redirect_chain",
+    # Identity link expiry
+    "is_link_proof_valid", "DEFAULT_LINK_PROOF_LIFETIME",
+    # Unified error hierarchy
+    "AmpError", "AmpValidationError", "TrustError", "CryptoError",
+    "SessionError", "CompliancePolicyError", "RateLimitError",
+    "TransportError", "NotImplementedInProtocol",
+    "RedirectLoopError", "MigrationChainTooLongError",
     # Identity migration
     "IdentityMigrationBody",
     # Audit attestation
     "AuditAttestationBody", "verify_attestation",
     # Encryption
-    "EncryptedBody", "CONTENT_ENCRYPTION_HEADER",
+    "EncryptedBody", "EncryptionKeyOfferBody", "EncryptionKeyAcceptBody",
+    "EncryptionDowngradeError", "CONTENT_ENCRYPTION_HEADER",
+    "enforce_encryption_requirement",
     # Trust proof
     "TrustProofBody",
     # Certifications

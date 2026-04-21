@@ -238,6 +238,21 @@ class TestNegotiation:
         from ampro import negotiate_version, CURRENT_VERSION
         assert negotiate_version(None) == CURRENT_VERSION
 
+    def test_negotiate_version_uses_fallback_on_no_match(self):
+        """When no requested version is supported, fallback is returned."""
+        from ampro import negotiate_version, CURRENT_VERSION
+        assert (
+            negotiate_version("9.9.9, 8.8.8", fallback_version=CURRENT_VERSION)
+            == CURRENT_VERSION
+        )
+
+    def test_negotiate_version_raises_without_fallback(self):
+        """No fallback provided AND no match → ValueError (existing behaviour)."""
+        import pytest
+        from ampro import negotiate_version
+        with pytest.raises(ValueError):
+            negotiate_version("9.9.9")
+
 
 class TestAgentJson:
     def test_schema(self):
@@ -660,7 +675,7 @@ class TestV017Imports:
         from ampro import StreamAuthRefreshEvent
         event = StreamAuthRefreshEvent(
             method="jwt",
-            token="tok",
+            token="token-abcdef-123456",
             expires_at="2026-04-09T13:00:00Z",
         )
         assert event.method == "jwt"
@@ -689,6 +704,7 @@ class TestV018Imports:
             proof_type="ed25519_cross_sign",
             proof="sig",
             timestamp="2026-04-09T12:00:00Z",
+            expires_at="2027-04-09T12:00:00Z",
         )
         assert body.source_id == "agent://a.example.com"
 

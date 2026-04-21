@@ -160,7 +160,7 @@ def test_3_delegation_cost_receipt_task_complete():
     )
     chain = CostReceiptChain()
     chain.add_receipt(receipt)
-    assert chain.total_cost_usd == 0.05
+    assert chain.total_cost_usd_float == 0.05
     assert len(chain.receipts) == 1
 
     complete = validate_body("task.complete", {
@@ -170,7 +170,8 @@ def test_3_delegation_cost_receipt_task_complete():
     })
     assert isinstance(complete, TaskCompleteBody)
     assert complete.cost_receipt is not None
-    assert complete.cost_receipt["total_cost_usd"] == 0.05
+    # total_cost_usd is Decimal in the chain; compare via float conversion.
+    assert float(complete.cost_receipt["total_cost_usd"]) == 0.05
 
     _reset_public_key_cache_for_tests()
     print("PASS: Delegation -> Cost Receipt -> Task Complete")
@@ -273,7 +274,7 @@ def test_5_streaming_backpressure_channels_checkpoints():
 
     # Auth refresh
     auth = StreamAuthRefreshEvent(
-        method="jwt", token="new-token", expires_at="2026-04-10T13:00:00Z",
+        method="jwt", token="refreshed-jwt-token", expires_at="2026-04-10T13:00:00Z",
     )
     assert auth.method == "jwt"
 
@@ -354,6 +355,7 @@ def test_7_identity_federation_migration_attestation():
         "proof_type": "ed25519_cross_sign",
         "proof": "proof-data",
         "timestamp": "2026-04-10T12:00:00Z",
+        "expires_at": "2027-04-10T12:00:00Z",
     })
     assert isinstance(link, IdentityLinkProofBody)
 

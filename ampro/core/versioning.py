@@ -10,7 +10,11 @@ Designed for extraction as part of `pip install agent-protocol`.
 
 from __future__ import annotations
 
+import logging
+import re
 from datetime import datetime
+
+logger = logging.getLogger(__name__)
 
 
 # All protocol versions this server can speak.
@@ -18,6 +22,12 @@ SUPPORTED_VERSIONS: list[str] = ["1.0.0", "0.1.0"]
 
 # The version returned when the client does not specify one.
 CURRENT_VERSION: str = "1.0.0"
+
+# SemVer 2.0.0 shape check — MAJOR.MINOR.PATCH with optional
+# pre-release (``-x.y``) and build metadata (``+x.y``).
+_SEMVER_RE = re.compile(
+    r"^\d+\.\d+\.\d+(-[a-zA-Z0-9.-]+)?(\+[a-zA-Z0-9.-]+)?$"
+)
 
 
 def check_version(requested: str | None) -> str:
@@ -32,10 +42,16 @@ def check_version(requested: str | None) -> str:
         A valid version string (``CURRENT_VERSION`` when *requested* is None).
 
     Raises:
-        ValueError: If *requested* is not in ``SUPPORTED_VERSIONS``.
+        ValueError: If *requested* is malformed (not SemVer) or is not in
+                    ``SUPPORTED_VERSIONS``.
     """
     if requested is None:
         return CURRENT_VERSION
+    if not _SEMVER_RE.match(requested):
+        raise ValueError(
+            f"Malformed protocol version '{requested}'. "
+            f"Expected SemVer (e.g. '1.0.0', '1.0.0-beta', '1.0.0+build.1')."
+        )
     if requested not in SUPPORTED_VERSIONS:
         raise ValueError(
             f"Unsupported protocol version '{requested}'. "
@@ -75,14 +91,20 @@ def format_sunset_header(deprecated_at: datetime) -> str:
     )
 
 
-def negotiate_version(accept_version: str | None) -> str:
+def negotiate_version(
+    accept_version: str | None,
+    fallback_version: str | None = None,
+) -> str:
     """
     Negotiate protocol version from Accept-Version preference list.
 
     The client sends comma-separated versions in preference order.
     Server picks the highest version it supports from the list.
     Returns CURRENT_VERSION if accept_version is None.
-    Raises ValueError if no version matches.
+
+    If no requested version is supported and ``fallback_version`` is
+    given, logs a WARNING and returns the fallback (graceful degrade).
+    Otherwise raises ValueError.
     """
     if accept_version is None:
         return CURRENT_VERSION
@@ -94,6 +116,14 @@ def negotiate_version(accept_version: str | None) -> str:
     for version in requested:
         if version in SUPPORTED_VERSIONS:
             return version
+
+    if fallback_version is not None:
+        logger.warning(
+            "[versioning] no supported version in %s — falling back to %s",
+            requested,
+            fallback_version,
+        )
+        return fallback_version
 
     raise ValueError(
         f"No supported version in requested list {requested}. "

@@ -145,13 +145,22 @@ async def _resolve_did(token: str) -> TrustTier:
 
     1. A raw DID URI (e.g., ``did:key:z6Mk...``) — parsed directly.
     2. A JWT-like DID proof (``header.payload.signature``) — the ``did``
-       field is extracted from the base64-decoded payload.
+       field is extracted from the base64-decoded payload and the
+       signature MUST verify under the did:key's embedded Ed25519
+       public key. If verification fails or the algorithm is not
+       EdDSA, EXTERNAL is returned.
 
     Returns VERIFIED if the DID is a valid did:key with parseable
-    Ed25519 public key bytes; EXTERNAL otherwise.
+    Ed25519 public key bytes (and a verified signature for JWT-style
+    proofs); EXTERNAL otherwise.
     """
     # Determine the DID URI from the token format.
     did: str = ""
+    is_jwt_proof: bool = False
+    header_b64: str = ""
+    payload_b64_raw: str = ""
+    signature_b64: str = ""
+    header_payload_signing_input: bytes = b""
     if token.startswith("did:"):
         # Raw DID URI — use directly.
         did = token
@@ -162,17 +171,25 @@ async def _resolve_did(token: str) -> TrustTier:
             import base64
 
             parts = token.split(".")
-            if len(parts) < 2:
-                logger.debug("DID proof has insufficient parts")
+            if len(parts) != 3:
+                logger.debug("DID proof must be header.payload.signature")
                 return TrustTier.EXTERNAL
 
-            payload_b64 = parts[1]
-            if len(payload_b64) > 10000:
+            header_b64 = parts[0]
+            payload_b64_raw = parts[1]
+            signature_b64 = parts[2]
+            is_jwt_proof = True
+            # Signing input for JWS is "<header_b64>.<payload_b64>" (raw, no padding)
+            header_payload_signing_input = f"{header_b64}.{payload_b64_raw}".encode("ascii")
+
+            if len(payload_b64_raw) > 10000:
                 logger.warning(
-                    "DID proof payload too large (%d bytes)", len(payload_b64),
+                    "DID proof payload too large (%d bytes)", len(payload_b64_raw),
                 )
                 return TrustTier.EXTERNAL
-            # Add padding
+
+            # Decode payload
+            payload_b64 = payload_b64_raw
             remainder = len(payload_b64) % 4
             if remainder:
                 payload_b64 += "=" * (4 - remainder)
@@ -182,6 +199,21 @@ async def _resolve_did(token: str) -> TrustTier:
             did = payload.get("did", "")
             if not did:
                 logger.debug("DID proof missing 'did' field")
+                return TrustTier.EXTERNAL
+
+            # Decode header, enforce EdDSA alg
+            header_b64_padded = header_b64
+            remainder = len(header_b64_padded) % 4
+            if remainder:
+                header_b64_padded += "=" * (4 - remainder)
+            header_json = base64.urlsafe_b64decode(header_b64_padded)
+            header = json.loads(header_json)
+            alg = header.get("alg")
+            if alg != "EdDSA":
+                logger.warning(
+                    "[trust] DID proof algorithm must be EdDSA, got %r — returning EXTERNAL",
+                    alg,
+                )
                 return TrustTier.EXTERNAL
         except Exception as exc:
             logger.debug("DID proof parsing failed: %s", exc)
@@ -211,6 +243,37 @@ async def _resolve_did(token: str) -> TrustTier:
             len(public_key_bytes),
         )
         return TrustTier.EXTERNAL
+
+    # For JWT-style DID proofs, verify the Ed25519 signature against the
+    # embedded did:key public key. Raw DID URIs have no signature to check.
+    if is_jwt_proof:
+        try:
+            import base64
+            from cryptography.hazmat.primitives.asymmetric.ed25519 import (
+                Ed25519PublicKey,
+            )
+            from cryptography.exceptions import InvalidSignature
+
+            sig_padded = signature_b64
+            remainder = len(sig_padded) % 4
+            if remainder:
+                sig_padded += "=" * (4 - remainder)
+            sig_bytes = base64.urlsafe_b64decode(sig_padded)
+
+            pub_key = Ed25519PublicKey.from_public_bytes(public_key_bytes)
+            pub_key.verify(sig_bytes, header_payload_signing_input)
+        except InvalidSignature:
+            logger.warning(
+                "[trust] DID proof signature invalid for %s — returning EXTERNAL",
+                did,
+            )
+            return TrustTier.EXTERNAL
+        except Exception as exc:
+            logger.warning(
+                "[trust] DID proof signature verification error: %s — returning EXTERNAL",
+                exc,
+            )
+            return TrustTier.EXTERNAL
 
     return TrustTier.VERIFIED
 

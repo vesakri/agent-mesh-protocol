@@ -99,5 +99,13 @@ class SessionContext(BaseModel):
         default_factory=dict,
         description="Session context - injected key/value pairs persisted across messages",
     )
+    session_requires_encryption: bool = Field(
+        default=False,
+        description=(
+            "Pinned on ESTABLISHED when the initial message carried an "
+            "EncryptedBody with required_encryption=True. Once set, plaintext "
+            "message bodies MUST be rejected for this session."
+        ),
+    )
 
     model_config = {"extra": "ignore"}

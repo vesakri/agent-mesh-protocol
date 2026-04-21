@@ -158,3 +158,90 @@ class TestLoadLevelHeader:
 
     def test_standard_headers_is_frozenset(self):
         assert isinstance(STANDARD_HEADERS, frozenset)
+
+
+class TestRedirectLoopDetection:
+    """Issue #35 — redirect loop + max-hops enforcement."""
+
+    def test_visited_agents_defaults_to_empty_list(self):
+        body = TaskRedirectBody(
+            task_id="t-1",
+            redirect_to="agent://b.example.com",
+            reason="overloaded",
+        )
+        assert body.visited_agents == []
+        assert body.max_hops == 5
+
+    def test_visited_agents_capped_at_10(self):
+        with pytest.raises(ValidationError):
+            TaskRedirectBody(
+                task_id="t-1",
+                redirect_to="agent://b.example.com",
+                reason="overloaded",
+                visited_agents=[f"agent://a{i}.example.com" for i in range(11)],
+            )
+
+    def test_max_hops_bounds(self):
+        with pytest.raises(ValidationError):
+            TaskRedirectBody(
+                task_id="t",
+                redirect_to="agent://b.example.com",
+                reason="r",
+                max_hops=0,
+            )
+        with pytest.raises(ValidationError):
+            TaskRedirectBody(
+                task_id="t",
+                redirect_to="agent://b.example.com",
+                reason="r",
+                max_hops=11,
+            )
+
+    def test_redirect_detects_cycle(self):
+        from ampro.errors import RedirectLoopError
+        from ampro.transport.task_redirect import check_redirect_chain
+
+        body = TaskRedirectBody(
+            task_id="t",
+            redirect_to="agent://c.example.com",
+            reason="overloaded",
+            visited_agents=["agent://a.example.com", "agent://b.example.com"],
+        )
+        # Current agent already in visited → cycle
+        with pytest.raises(RedirectLoopError) as excinfo:
+            check_redirect_chain(body, "agent://a.example.com")
+        assert "cycle" in str(excinfo.value).lower()
+
+    def test_redirect_enforces_max_hops(self):
+        from ampro.errors import RedirectLoopError
+        from ampro.transport.task_redirect import check_redirect_chain
+
+        body = TaskRedirectBody(
+            task_id="t",
+            redirect_to="agent://z.example.com",
+            reason="overloaded",
+            visited_agents=[f"agent://a{i}.example.com" for i in range(5)],
+            max_hops=5,
+        )
+        # 5 visited >= max_hops=5 → must reject
+        with pytest.raises(RedirectLoopError) as excinfo:
+            check_redirect_chain(body, "agent://new.example.com")
+        assert "max_hops" in str(excinfo.value)
+
+    def test_redirect_chain_ok_when_under_limit(self):
+        from ampro.transport.task_redirect import check_redirect_chain
+
+        body = TaskRedirectBody(
+            task_id="t",
+            redirect_to="agent://z.example.com",
+            reason="overloaded",
+            visited_agents=["agent://a.example.com"],
+            max_hops=5,
+        )
+        check_redirect_chain(body, "agent://b.example.com")  # no raise
+
+    def test_redirect_loop_error_is_transport_error(self):
+        from ampro.errors import RedirectLoopError, TransportError, AmpError
+
+        assert issubclass(RedirectLoopError, TransportError)
+        assert issubclass(RedirectLoopError, AmpError)
