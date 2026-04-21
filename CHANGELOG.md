@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.3.3] - 2026-04-21
+
 ### Security
 - **Replay protection in `verify_request`.** `ampro.security.rfc9421.verify_request`
   now enforces a `max_age_seconds` freshness window (default 300 s) against the
