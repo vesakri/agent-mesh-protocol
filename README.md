@@ -1,214 +1,171 @@
-# Agent Mesh Protocol - Agent to Agent Communication
+# AMP — Agent Mesh Protocol
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://python.org)
-[![Version](https://img.shields.io/badge/version-0.3.1-green.svg)](CHANGELOG.md)
+[![Package version](https://img.shields.io/badge/package-0.3.1-green.svg)](CHANGELOG.md)
+[![Protocol version](https://img.shields.io/badge/protocol-1.0.0-blue.svg)](docs/WIRE-BINDING.md)
+[![Tests](https://img.shields.io/badge/tests-1015_passing-brightgreen.svg)](tests/)
+[![PRs welcome](https://img.shields.io/badge/PRs-welcome-ff69b4.svg)](CONTRIBUTING.md)
 
-The universal agent-to-agent communication protocol. Any agent, any runtime, any platform.
+**An open wire protocol for agent-to-agent communication.** Like HTTP for browsers — but for AI agents. `ampro` is the Python reference implementation; the protocol itself is language-agnostic.
 
-```
+> ⚠️ **Pre-1.0.** The wire format is stabilising toward 1.0 but may still evolve between minor versions. Receivers MUST ignore unknown fields. See [RELEASING.md](RELEASING.md) for the stability contract.
+
+---
+
+## Why?
+
+Today every agent framework — MCP, A2A, OpenAI's Assistants API, LangChain, custom builds — speaks its own dialect. An agent built for one can't natively talk to agents built on another. AMP is the HTTP-layer answer: a single typed wire format that any runtime can implement, so agents interoperate across frameworks, clouds, languages, and trust boundaries.
+
+| Feature | AMP | MCP | Google A2A | OpenAI Assistants |
+|---|---|---|---|---|
+| Wire format published | ✅ | ✅ | ✅ | ❌ (proprietary) |
+| Cross-agent addressing (`agent://`) | ✅ | partial | ✅ | ❌ |
+| Trust tiers + auth methods in spec | ✅ (4 tiers, 5 methods) | ❌ | partial | ❌ |
+| Signed delegation chains | ✅ | ❌ | ❌ | ❌ |
+| Compliance primitives (PII, erasure, jurisdiction) | ✅ | ❌ | ❌ | ❌ |
+| Wire-level streaming (SSE) | ✅ | ✅ | ✅ | ✅ |
+| Framework-agnostic reference impl | ✅ | ✅ | partial | ❌ |
+| Normative test vectors | ✅ (34) | partial | ❌ | ❌ |
+
+---
+
+## Install
+
+```bash
 pip install git+https://github.com/vesakri/agent-mesh-protocol.git
 ```
 
-> **Note:** PyPI release pending. Install from source until 1.0.
+> PyPI publication pending; install from source until 1.0.
 
-## What Is This?
+---
 
-Agent Protocol defines **how agents talk to each other** -- not how they're built. A Raspberry Pi agent, a cloud-hosted AI, and an enterprise bot all speak the same wire format.
+## 30-Second Tour — AMPI
 
-The protocol answers four questions:
-- **Can I reach you?** -- `agent://` addressing
-- **Can I trust you?** -- 4-tier trust (internal/owner/verified/external)
-- **What can you do?** -- 8 capability groups, 6 progressive levels
-- **How do we talk?** -- `POST /agent/message` with typed body schemas
-
-## Quick Start -- Minimum Viable Agent (30 Lines)
+**AMPI** (Agent Message Processing Interface) is the declarative framework for building an AMP agent. Think ASGI, but for agents.
 
 ```python
-from flask import Flask, request, jsonify
-from uuid import uuid4
+# agent.py
+from ampro.ampi.app import AgentApp
+from ampro.ampi.context import AMPContext
+from ampro.core.envelope import AgentMessage
 
-app = Flask(__name__)
-
-@app.route('/.well-known/agent.json')
-def agent_json():
-    return jsonify({
-        "protocol_version": "1.0.0",
-        "identifiers": ["agent://my-agent.local"],
-        "endpoint": "https://my-agent.local/agent/message",
-        "capabilities": {"groups": ["messaging"], "level": 1},
-        "constraints": {"max_concurrent_tasks": 1}
-    })
-
-@app.route('/agent/message', methods=['POST'])
-def message():
-    msg = request.json
-    return jsonify({
-        "sender": "agent://my-agent.local",
-        "recipient": msg["sender"],
-        "id": str(uuid4()),
-        "body_type": "task.response",
-        "headers": {"Protocol-Version": "1.0.0", "In-Reply-To": msg["id"]},
-        "body": {"text": "Hello from my agent!"}
-    })
-```
-
-That's a fully protocol-compliant Level 1 agent.
-
-## AMPI — Agent Message Processing Interface
-
-AMPI is ASGI for agents. Write handlers once, deploy anywhere.
-
-```python
-from ampro import AgentApp
-
-agent = AgentApp("agent://my-agent.com", "https://my-agent.com")
+agent = AgentApp(
+    agent_id="agent://my-bot.example.com",
+    endpoint="http://localhost:8000/agent/message",
+)
 
 @agent.on("task.create")
-async def handle(msg, ctx):
-    # ctx has trust_tier, session, capabilities, delegation chain...
-    return {"result": "done"}
-
-@agent.tool("search")
-async def search(query: str, ctx):
-    return {"results": []}
+async def handle(msg: AgentMessage, ctx: AMPContext) -> dict:
+    return {"echo": msg.body, "trust": ctx.trust_tier.value}
 ```
 
 Run it:
 
 ```bash
-ampro-server main:agent --port 8000
+ampro-server agent:agent --port 8000
 ```
 
-Test it:
+Test it without a server:
 
 ```python
-from ampro import TestServer
+from ampro.server.test import TestServer
 
 server = TestServer(agent)
-result = await server.send(message)
+response = await server.send(incoming_message)
 ```
 
-### Upgrading from 0.2.x
+That's it. See [`examples/41-45`](examples/) for tools, middleware, session hooks, `ctx.send`/`delegate`/`discover`, and more.
 
-AMPI is purely additive. All existing low-level usage (`parse_agent_uri`, `validate_body`, `TrustConfig`, `DelegationLink`, etc.) continues to work unchanged. Adopt `AgentApp` at your own pace — direct envelope handling remains fully supported.
+---
 
-## Addressing -- `agent://`
+## What's in the box
 
-Three forms, one scheme:
+| Layer | What it provides |
+|---|---|
+| **Protocol primitives** — `ampro.core`, `ampro.trust`, `ampro.identity` | Typed envelopes, `agent://` addressing, 4-tier trust resolution, 5 auth methods (Bearer / DID / JWKS / API key / mTLS), capability negotiation |
+| **Security** — `ampro.security`, `ampro.session` | RFC 9421 message signing, Ed25519 keys, nonce + dedup + rate-limit stores, session handshake, SSRF guards |
+| **Compliance** — `ampro.compliance` | PII classification, erasure propagation, jurisdiction tagging, audit attestation |
+| **Delegation** — `ampro.delegation` | Signed multi-hop delegation chains with cost receipts and budget enforcement |
+| **Streaming** — `ampro.streaming` | Server-sent events, multiplexing, checkpoints, backpressure |
+| **Registry** — `ampro.registry` | Agent discovery, federation, trust proofs |
+| **Framework** — `ampro.ampi` | `AgentApp` + decorators (`@on`, `@tool`, `@middleware`, `@on_startup`, `@on_session_start`, `@on_error`), `AMPContext` |
+| **Server + Client SDK** — `ampro.server`, `ampro.client` | Reference FastAPI server, `ampro-server` CLI, outbound message/discover/stream/connect helpers |
+| **Conformance** — `tests/vectors/` | 34 JSON vectors portable to any language implementation |
 
-```python
-from ampro import parse_agent_uri
+---
 
-# Direct host
-addr = parse_agent_uri("agent://bakery.com")
+## Choose your path
 
-# Registry slug
-addr = parse_agent_uri("agent://sunny-bakery@registry.example.com")
+### I'm building an agent
 
-# Decentralized identity
-addr = parse_agent_uri("agent://did:key:z6MkhaXgBZDvot...")
-```
+→ Start with the [30-second tour](#30-second-tour--ampi) above.
+→ Then browse [`examples/`](examples/) — 45 runnable scripts, `41-45` cover AMPI specifically.
+→ Read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the mental model.
 
-## Trust -- 4 Tiers
+### I'm implementing AMP in another language (Go, Rust, TypeScript, ...)
 
-```python
-from ampro import TrustTier, TrustConfig
+→ [docs/WIRE-BINDING.md](docs/WIRE-BINDING.md) is the normative HTTP binding.
+→ [`tests/vectors/`](tests/vectors/) has 34 cross-implementation test vectors with a [README index](tests/vectors/README.md).
+→ Raise a spec question via [`.github/ISSUE_TEMPLATE/spec_proposal.md`](.github/ISSUE_TEMPLATE/spec_proposal.md).
 
-config = TrustConfig.from_tier(TrustTier.EXTERNAL)
-print(config.check_auth)           # True
-print(config.check_rate_limit)     # True
-print(config.check_content_filter) # True
+### I'm reviewing or evaluating the protocol
 
-# EXTERNAL cannot delegate
-print(TrustTier.EXTERNAL.can_delegate)  # False
-print(TrustTier.VERIFIED.can_delegate)  # True
-```
+→ [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — protocol architecture at a glance.
+→ [docs/WIRE-BINDING.md](docs/WIRE-BINDING.md) — normative spec.
+→ [docs/SECURITY-AUDIT.md](docs/SECURITY-AUDIT.md) + [docs/SECURITY-AUDIT-V2.md](docs/SECURITY-AUDIT-V2.md) — audit retrospectives.
 
-## Capabilities -- 8 Groups, 6 Levels
+### I want to contribute
 
-```python
-from ampro import CapabilityGroup, CapabilitySet
+→ [CONTRIBUTING.md](CONTRIBUTING.md) — setup, testing, the AMPI extension surface.
+→ [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) — Contributor Covenant 2.1.
+→ [SECURITY.md](SECURITY.md) — responsible disclosure.
 
-caps = CapabilitySet(groups={
-    CapabilityGroup.MESSAGING,
-    CapabilityGroup.TOOLS,
-    CapabilityGroup.STREAMING,
-})
-print(f"Level: {caps.level}")  # Level: 3
-```
+---
 
-## Body Types -- 49+ Typed Body Schemas
+## Status
 
-```python
-from ampro import validate_body
+| | |
+|---|---|
+| Protocol version | **1.0.0** (stabilising; pre-ratification) |
+| Package version | **0.3.1** — see [CHANGELOG.md](CHANGELOG.md) |
+| Test suite | **1015 tests passing** across 3 Python versions |
+| Security audits | 2 completed — all 66 CRITICAL+HIGH findings closed in v0.2.3 |
+| PyPI | Not yet published — install from git until 1.0 |
+| CI | Matrix (Python 3.11 / 3.12 / 3.13) + ruff + framework-purity grep |
 
-# Validated against Pydantic schema
-body = validate_body("task.create", {
-    "description": "Check cake availability",
-    "priority": "high",
-})
-print(body.description)  # "Check cake availability"
-```
+---
 
-## Delegation -- Signed Chains with Budget
+## Protocol vs platform
 
-```python
-from ampro import DelegationLink, parse_chain_budget
-
-remaining, max_budget = parse_chain_budget("remaining=3.50USD;max=5.00USD")
-print(f"${remaining} of ${max_budget} remaining")
-```
-
-## Security -- Built In
-
-- Message dedup (5-minute window)
-- Nonce replay prevention
-- Per-sender rate limiting
-- Concurrency caps (50% per sender)
-- Poison message tracking
-- Chain-Budget enforcement
-- JWKS caching with revocation
-
-Version 0.2.3 closed all 66 CRITICAL+HIGH security findings from the Phase 0 audit sprint — see CHANGELOG.
-
-## Compliance -- GDPR Ready
-
-```python
-from ampro import ErasureRequest, ContentClassification
-
-# PII classification
-assert ContentClassification.PII == "pii"
-
-# Cross-platform erasure
-req = ErasureRequest(
-    subject_id="user-123",
-    subject_proof="signed-proof",
-    scope="all",
-    reason="user_request",
-    deadline="2026-05-08T00:00:00Z",
-)
-```
-
-## Protocol vs Platform
+AMP is deliberately narrow. It specifies the wire contract and nothing else. Everything about how an agent *is* — how you create it, configure it, operate it, observe it — is the host platform's job.
 
 | Protocol (this package) | Platform (your business) |
 |---|---|
 | `agent://` addressing | Agent creation & onboarding |
-| `POST /agent/message` | Agent configuration |
-| Trust tiers & auth | Memory system |
-| Delegation chains | AI model selection |
+| `POST /agent/message` + typed body schemas | Agent configuration & settings |
+| Trust tiers & auth methods | Memory system |
+| Signed delegation chains | Model selection & routing |
 | Streaming & events | UI / dashboard |
 | Compliance & erasure | Internal orchestration |
+| RFC 9421 signing | Key storage & rotation policy |
 
-## Documentation
+If something requires a specific framework, database, or business concept to implement, it doesn't belong in `ampro`.
 
-- [Architecture Guide](docs/ARCHITECTURE.md) — detailed protocol architecture
-- [Wire Binding Spec](docs/WIRE-BINDING.md) — normative HTTP binding
-- [Contributing Guide](CONTRIBUTING.md)
-- [Changelog](CHANGELOG.md)
-- [Examples](examples/)
+---
+
+## Security
+
+Report vulnerabilities to **security@amp-protocol.dev** — see [SECURITY.md](SECURITY.md) for the disclosure process.
+
+Built-in protections: RFC 9421 message signing, dedup (5-min window), nonce replay protection, per-sender rate limiting, concurrency caps, poison-message tracking, delegation-budget enforcement, JWKS caching with revocation, SSRF guards on all outbound URLs.
+
+Version 0.2.3 closed all 66 CRITICAL+HIGH findings from the Phase 0 audit sprint. See [docs/SECURITY-AUDIT-V2.md](docs/SECURITY-AUDIT-V2.md) for the retrospective.
+
+---
 
 ## License
 
-[Apache License 2.0](LICENSE)
+[Apache License 2.0](LICENSE). Copyright 2026 AMP Contributors.
+
+Contributions are licensed under Apache-2.0 per the DCO workflow described in [CONTRIBUTING.md](CONTRIBUTING.md).
