@@ -6,6 +6,7 @@ from ampro.session.handshake import (
     SessionInitBody, SessionEstablishedBody, SessionConfirmBody,
     SessionPingBody, SessionPongBody,
     SessionPauseBody, SessionResumeBody, SessionCloseBody,
+    create_resume_token, parse_resume_token,
 )
 from ampro.session.binding import (
     SessionBinding, derive_binding_token,
@@ -21,6 +22,7 @@ __all__ = [
     "SessionInitBody", "SessionEstablishedBody", "SessionConfirmBody",
     "SessionPingBody", "SessionPongBody",
     "SessionPauseBody", "SessionResumeBody", "SessionCloseBody",
+    "create_resume_token", "parse_resume_token",
     # Binding
     "SessionBinding", "derive_binding_token",
     "create_message_binding", "verify_message_binding",

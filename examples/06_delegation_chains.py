@@ -45,7 +45,7 @@ link1_data = {
     "created_at": now.isoformat(),
     "expires_at": (now + timedelta(hours=1)).isoformat(),
 }
-link1_sig = sign_delegation(keys["alice"], link1_data)
+link1_sig = sign_delegation(keys["alice"], link1_data, parent_delegate=None)
 link1 = DelegationLink(**link1_data, signature=link1_sig, trust_tier="owner", chain_budget="remaining=5.00USD;max=5.00USD")
 print(f"  Link 1: alice → bob (scopes: {link1.scopes})")
 
@@ -58,7 +58,7 @@ link2_data = {
     "created_at": now.isoformat(),
     "expires_at": (now + timedelta(minutes=30)).isoformat(),
 }
-link2_sig = sign_delegation(keys["bob"], link2_data)
+link2_sig = sign_delegation(keys["bob"], link2_data, parent_delegate="agent://bob.example.com")
 link2 = DelegationLink(**link2_data, signature=link2_sig, trust_tier="verified", chain_budget="remaining=3.50USD;max=5.00USD")
 print(f"  Link 2: bob → charlie (scopes: {link2.scopes})")
 

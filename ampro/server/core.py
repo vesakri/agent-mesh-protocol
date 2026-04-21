@@ -21,6 +21,18 @@ Usage::
 PURE — zero platform-specific imports at module level.
 """
 
+# ─── Reference implementation, not production-wired ────────────────
+# This module is part of the AMP protocol surface and is validated by
+# the test suite against the normative spec at
+# `docs/WIRE-BINDING.md`. It has no first-party runtime caller as of
+# ampro v0.3.0; downstream implementers may depend on it directly, or
+# provide their own implementation conforming to the same contract.
+#
+# Intended for `pip install agent-protocol && python -m ampro.server`.
+# Full-stack implementers mount AMPI handlers into their own HTTP
+# framework and do not use this server.
+# ───────────────────────────────────────────────────────────────────
+
 from __future__ import annotations
 
 import asyncio
@@ -28,7 +40,10 @@ import inspect
 import json
 import logging
 import time
-from typing import Any, Callable
+from typing import Any, Callable, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ampro.ampi.app import AgentApp
 
 from pydantic import BaseModel, ValidationError
 
@@ -83,6 +98,34 @@ class AgentServer:
         # Handler registries.
         self._handlers: dict[str, Callable[..., Any]] = {}
         self._default_handler: Callable[..., Any] | None = None
+
+    # ------------------------------------------------------------------
+    # Alternate constructors
+    # ------------------------------------------------------------------
+
+    @classmethod
+    def from_app(cls, app: AgentApp) -> AgentServer:
+        """Create an AgentServer from an AgentApp.
+
+        Maps AgentApp handlers to AgentServer handlers. Handlers
+        registered with ``@app.on("body_type")`` are wrapped to
+        accept the old ``(msg)`` signature if needed.
+        """
+        from ampro.ampi.app import AgentApp as _AgentApp  # avoid circular at module level
+
+        server = cls(
+            agent_id=app.agent_id,
+            endpoint=app.endpoint,
+            agent_json=app.agent_json,
+        )
+        # Copy handlers — AgentServer's old API uses (msg) only,
+        # but AMPI handlers use (msg, ctx).  We keep them as-is
+        # and let the handler pipeline deal with arity.
+        for body_type, handler in app.handlers.items():
+            server._handlers[body_type] = handler
+        if app.error_handler:
+            server._default_handler = app.error_handler
+        return server
 
     # ------------------------------------------------------------------
     # Decorators
@@ -150,7 +193,29 @@ class AgentServer:
         if method == "GET" and path == "/agent/stream":
             return self._stream_placeholder()
 
-        # 5. Everything else → 404
+        # ---------------------------------------------------------------
+        # Level 2-5 stubs — return 501 Not Implemented (not 404)
+        # so clients know the endpoint exists in the spec but isn't
+        # available on this server yet.
+        # ---------------------------------------------------------------
+
+        # Level 2 — Tools listing
+        if path == "/agent/tools":
+            return self._level_stub_response(2)
+
+        # Level 3 — Task management
+        if path == "/agent/tasks" or path.startswith("/agent/tasks/"):
+            return self._level_stub_response(3)
+
+        # Level 4 — Delegation
+        if path == "/agent/delegate" or path.startswith("/agent/delegate/"):
+            return self._level_stub_response(4)
+
+        # Level 5 — Admin
+        if path == "/agent/admin" or path.startswith("/agent/admin/"):
+            return self._level_stub_response(5)
+
+        # Everything else → 404
         err = not_found(f"No route for {method} {path}")
         return self._error_response(err)
 
@@ -187,6 +252,24 @@ class AgentServer:
             200,
             {"Content-Type": "text/event-stream"},
             "event: ping\ndata: {}\n\n",
+        )
+
+    def _level_stub_response(self, level: int) -> tuple[int, dict[str, Any], str]:
+        """Return 501 Not Implemented for a protocol level 2-5 endpoint.
+
+        This is semantically correct: the endpoint exists in the AMP spec
+        but this server has not implemented it yet.  A 404 would wrongly
+        imply the endpoint is unknown to the protocol.
+        """
+        err = not_implemented(
+            f"Level {level} endpoint not yet available"
+        )
+        payload = err.model_dump(mode="json", exclude_none=True)
+        payload["protocol_level"] = level
+        return (
+            501,
+            {"Content-Type": "application/problem+json"},
+            json.dumps(payload),
         )
 
     # ------------------------------------------------------------------
@@ -236,7 +319,9 @@ class AgentServer:
                 result = await result
         except Exception as exc:
             logger.exception("Handler raised for body_type '%s'", msg.body_type)
-            err = internal_error(str(exc))
+            err = internal_error(
+                "An unexpected error occurred while processing the request."
+            )
             return self._error_response(err)
 
         # Step 5: Serialize result.

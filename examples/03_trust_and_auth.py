@@ -48,5 +48,5 @@ for header in test_headers:
 
 # --- Clock Skew ---
 print(f"\n=== Clock Skew Tolerance: {CLOCK_SKEW_SECONDS}s ===")
-print("All timestamp comparisons allow 60 seconds of drift")
+print(f"All timestamp comparisons allow {CLOCK_SKEW_SECONDS} seconds of drift")
 print("for cross-platform compatibility (Pi clocks, time zones, etc.)")

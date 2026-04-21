@@ -30,6 +30,7 @@ def test_1_handshake_session_binding_message():
     assert sm.state == HandshakeState.INIT_SENT
 
     est = SessionEstablishedBody(
+        confirm_nonce="test-nonce-1",
         session_id="s1",
         negotiated_capabilities=["messaging"],
         negotiated_version="1.0.0",
@@ -114,13 +115,23 @@ def test_2_trust_score_policy_visibility():
 
 def test_3_delegation_cost_receipt_task_complete():
     """Delegation Chain -> Cost Receipt -> Task Complete"""
+    import base64, json, secrets, time
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
     from ampro import DelegationLink, validate_body, TaskCompleteBody, AgentMessage
     from ampro.delegation.cost_receipt import CostReceipt, CostReceiptChain
+    from ampro.trust.resolver import _PUBLIC_KEY_CACHE, _reset_public_key_cache_for_tests
+
+    _reset_public_key_cache_for_tests()
+
+    # Seed a test key for the agent
+    agent_id = "agent://b.example.com"
+    pk = Ed25519PrivateKey.generate()
+    _PUBLIC_KEY_CACHE[agent_id] = (time.time() + 3600, pk.public_key().public_bytes_raw())
 
     # Build delegation link
     link = DelegationLink(
         delegator="agent://a.example.com",
-        delegate="agent://b.example.com",
+        delegate=agent_id,
         scopes=["tool:read"],
         max_depth=3,
         created_at="2026-04-10T00:00:00Z",
@@ -130,11 +141,21 @@ def test_3_delegation_cost_receipt_task_complete():
         chain_budget="remaining=5.00USD;max=5.00USD",
     )
 
-    # Complete with cost receipt
+    # Complete with signed cost receipt
+    nonce = secrets.token_urlsafe(16)
+    canonical = json.dumps(
+        {"agent_id": agent_id, "task_id": "t1", "cost_usd": 0.05,
+         "currency": "USD", "issued_at": "2026-04-10T00:30:00Z", "nonce": nonce},
+        sort_keys=True, separators=(",", ":"), ensure_ascii=False,
+    ).encode("utf-8")
+    sig = base64.urlsafe_b64encode(pk.sign(canonical)).rstrip(b"=").decode()
+
     receipt = CostReceipt(
-        agent_id="agent://b.example.com",
+        agent_id=agent_id,
         task_id="t1",
         cost_usd=0.05,
+        nonce=nonce,
+        signature=sig,
         issued_at="2026-04-10T00:30:00Z",
     )
     chain = CostReceiptChain()
@@ -151,6 +172,7 @@ def test_3_delegation_cost_receipt_task_complete():
     assert complete.cost_receipt is not None
     assert complete.cost_receipt["total_cost_usd"] == 0.05
 
+    _reset_public_key_cache_for_tests()
     print("PASS: Delegation -> Cost Receipt -> Task Complete")
 
 
@@ -335,10 +357,12 @@ def test_7_identity_federation_migration_attestation():
     })
     assert isinstance(link, IdentityLinkProofBody)
 
+    # trust_proof must be >= 64 chars (base64-encoded Ed25519 sig minimum)
+    valid_proof = "QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQQ=="
     fed_req = validate_body("registry.federation_request", {
         "registry_id": "agent://reg.example.com",
         "capabilities": ["resolve", "search"],
-        "trust_proof": "proof",
+        "trust_proof": valid_proof,
     })
     assert isinstance(fed_req, RegistryFederationRequest)
 

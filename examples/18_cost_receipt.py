@@ -5,12 +5,24 @@ Demonstrates end-to-end cost tracking across a three-agent delegation
 chain. Each agent attaches a signed cost receipt to its response,
 enabling full cost visibility from gateway to leaf.
 
+Since C10, CostReceipt requires a mandatory `nonce` and Ed25519 `signature`.
+This example generates ephemeral keypairs for demonstration purposes.
+In production, agents use their registered keypairs.
+
 Run:
     pip install agent-protocol
     python examples/18_cost_receipt.py
 """
 
+from __future__ import annotations
+
+import base64
+import json
+import secrets
+import time
 from datetime import datetime, timezone, timedelta
+
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from ampro import (
     AgentMessage,
@@ -19,9 +31,10 @@ from ampro import (
     TaskCompleteBody,
     validate_body,
 )
+from ampro.trust.resolver import _PUBLIC_KEY_CACHE
 
 # ---------------------------------------------------------------------------
-# Setup: Three-agent delegation chain
+# Setup: Three-agent delegation chain with Ed25519 keypairs
 # ---------------------------------------------------------------------------
 
 GATEWAY = "agent://gateway.example.com"
@@ -36,12 +49,36 @@ print(f"         -> {TOOL_AGENT}")
 
 now = datetime.now(timezone.utc)
 
+# Generate ephemeral keypairs for the demo and seed them in the cache.
+# In production, agents register their keys at bootstrap and the resolver
+# fetches them from the host platform's key registry.
+_keys: dict[str, Ed25519PrivateKey] = {}
+for agent_uri in (GATEWAY, SPECIALIST, TOOL_AGENT):
+    pk = Ed25519PrivateKey.generate()
+    _keys[agent_uri] = pk
+    _PUBLIC_KEY_CACHE[agent_uri] = (time.time() + 3600, pk.public_key().public_bytes_raw())
+
+
+def _sign_receipt(agent_id: str, task_id: str, cost_usd: float,
+                  currency: str, issued_at: str, nonce: str) -> str:
+    """Sign canonical receipt fields with the agent's ephemeral key."""
+    canonical = json.dumps(
+        {"agent_id": agent_id, "task_id": task_id, "cost_usd": cost_usd,
+         "currency": currency, "issued_at": issued_at, "nonce": nonce},
+        sort_keys=True, separators=(",", ":"), ensure_ascii=False,
+    ).encode("utf-8")
+    sig = _keys[agent_id].sign(canonical)
+    return base64.urlsafe_b64encode(sig).rstrip(b"=").decode()
+
+
 # ---------------------------------------------------------------------------
 # Step 1: Tool Agent completes work — issues a cost receipt
 # ---------------------------------------------------------------------------
 
 print(f"\n=== Step 1: Tool Agent Completes Work ===\n")
 
+tool_nonce = secrets.token_urlsafe(16)
+tool_issued = now.isoformat()
 tool_receipt = CostReceipt(
     agent_id=TOOL_AGENT,
     task_id=TASK_ID,
@@ -56,7 +93,9 @@ tool_receipt = CostReceipt(
         "output": 120,
     },
     duration_seconds=1.2,
-    issued_at=now.isoformat(),
+    nonce=tool_nonce,
+    signature=_sign_receipt(TOOL_AGENT, TASK_ID, 0.003, "USD", tool_issued, tool_nonce),
+    issued_at=tool_issued,
 )
 
 print(f"  Agent:     {tool_receipt.agent_id}")
@@ -72,6 +111,8 @@ print(f"  Duration:  {tool_receipt.duration_seconds}s")
 
 print(f"\n=== Step 2: Specialist Adds Its Receipt ===\n")
 
+spec_nonce = secrets.token_urlsafe(16)
+spec_issued = (now + timedelta(seconds=2)).isoformat()
 specialist_receipt = CostReceipt(
     agent_id=SPECIALIST,
     task_id=TASK_ID,
@@ -86,7 +127,9 @@ specialist_receipt = CostReceipt(
         "output": 850,
     },
     duration_seconds=3.8,
-    issued_at=(now + timedelta(seconds=2)).isoformat(),
+    nonce=spec_nonce,
+    signature=_sign_receipt(SPECIALIST, TASK_ID, 0.012, "USD", spec_issued, spec_nonce),
+    issued_at=spec_issued,
 )
 
 chain = CostReceiptChain()
@@ -107,6 +150,8 @@ print(f"    Running total: ${chain.total_cost_usd:.4f}")
 
 print(f"\n=== Step 3: Gateway Adds Its Receipt ===\n")
 
+gw_nonce = secrets.token_urlsafe(16)
+gw_issued = (now + timedelta(seconds=4)).isoformat()
 gateway_receipt = CostReceipt(
     agent_id=GATEWAY,
     task_id=TASK_ID,
@@ -121,7 +166,9 @@ gateway_receipt = CostReceipt(
         "output": 200,
     },
     duration_seconds=0.5,
-    issued_at=(now + timedelta(seconds=4)).isoformat(),
+    nonce=gw_nonce,
+    signature=_sign_receipt(GATEWAY, TASK_ID, 0.005, "USD", gw_issued, gw_nonce),
+    issued_at=gw_issued,
 )
 
 chain.add_receipt(gateway_receipt)

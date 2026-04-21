@@ -1,0 +1,6 @@
+{
+  "_warning": "TEST-ONLY Ed25519 keypair. Never use in production. Self-contained fixture for ampro compliance + trust tests.",
+  "key_id": "083586fd-a1ba-4574-8873-499bae946976",
+  "private_key_b64url": "fmSBHzlamSk0A_EvUKYz4Xyd2aqxb2A9AjvZieB0VE0",
+  "public_key_b64url": "kAeok-a7r54slMhFlR4zNzNpHXQrohap8Dh8zDOEKjI"
+}

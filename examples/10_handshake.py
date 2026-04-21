@@ -45,6 +45,7 @@ shared_secret = "demo-shared-secret"  # In production, from JWT/DID/API-key exch
 binding_token = derive_binding_token(client_nonce, server_nonce, session_id, shared_secret)
 
 established = SessionEstablishedBody(
+        confirm_nonce="example-nonce",
     session_id=session_id,
     negotiated_capabilities=["messaging", "tools"],
     negotiated_version="1.0.0",
@@ -67,6 +68,7 @@ print(f"   Server state: {server_sm.state.value}")
 # --- Phase 3: Client sends session.confirm ---
 client_binding = derive_binding_token(client_nonce, server_nonce, session_id, shared_secret)
 confirm = SessionConfirmBody(
+        confirm_nonce="example-nonce",
     session_id=session_id,
     binding_proof=client_binding,
 )

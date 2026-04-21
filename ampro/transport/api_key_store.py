@@ -6,6 +6,18 @@ In-memory API key allowlist with brute force protection.
 Spec ref: Sections 2.3, 3.6
 """
 
+# ─── Reference implementation, not production-wired ────────────────
+# This module is part of the AMP protocol surface and is validated by
+# the test suite against the normative spec at
+# `docs/WIRE-BINDING.md`. It has no first-party runtime caller as of
+# ampro v0.3.0; downstream implementers may depend on it directly, or
+# provide their own implementation conforming to the same contract.
+#
+# Production deployments SHOULD replace this in-memory store with a
+# persistent implementation backed by your framework's session/KV
+# store, preserving the same interface.
+# ───────────────────────────────────────────────────────────────────
+
 from __future__ import annotations
 
 import hashlib

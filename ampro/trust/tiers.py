@@ -13,6 +13,14 @@ from enum import Enum
 from pydantic import BaseModel
 
 
+_TIER_ORDER: dict[str, int] = {
+    "external": 0,
+    "verified": 1,
+    "owner": 2,
+    "internal": 3,
+}
+
+
 class TrustTier(str, Enum):
     """
     Trust relationship between sender and receiver.
@@ -21,12 +29,40 @@ class TrustTier(str, Enum):
     OWNER:     The agent's owner/operator
     VERIFIED:  JWT-authenticated agent (signature verified, not owner)
     EXTERNAL:  Any other interaction (unknown agents, unauthenticated)
+
+    Ordered: EXTERNAL < VERIFIED < OWNER < INTERNAL.
+    Comparison operators use ``_TIER_ORDER`` so callers can write
+    ``if tier > TrustTier.EXTERNAL`` without a TypeError.
     """
 
     INTERNAL = "internal"
     OWNER = "owner"
     VERIFIED = "verified"
     EXTERNAL = "external"
+
+    # -- Ordering operators ---------------------------------------------------
+
+    def __lt__(self, other: object) -> bool:
+        if not isinstance(other, TrustTier):
+            return NotImplemented
+        return _TIER_ORDER[self.value] < _TIER_ORDER[other.value]
+
+    def __le__(self, other: object) -> bool:
+        if not isinstance(other, TrustTier):
+            return NotImplemented
+        return _TIER_ORDER[self.value] <= _TIER_ORDER[other.value]
+
+    def __gt__(self, other: object) -> bool:
+        if not isinstance(other, TrustTier):
+            return NotImplemented
+        return _TIER_ORDER[self.value] > _TIER_ORDER[other.value]
+
+    def __ge__(self, other: object) -> bool:
+        if not isinstance(other, TrustTier):
+            return NotImplemented
+        return _TIER_ORDER[self.value] >= _TIER_ORDER[other.value]
+
+    # -- Safety-check helpers -------------------------------------------------
 
     @property
     def requires_auth(self) -> bool:
@@ -55,8 +91,8 @@ class TrustTier(str, Enum):
 
 
 # Clock skew tolerance for cross-platform timestamp comparisons (Section 12.1).
-# 60 seconds is intentional for cross-region deployments. Reduce to 10-30s for high-security contexts.
-CLOCK_SKEW_SECONDS: int = 60
+# 30 seconds balances cross-region clock drift with security (narrower replay window).
+CLOCK_SKEW_SECONDS: int = 30
 
 
 class TrustConfig(BaseModel):

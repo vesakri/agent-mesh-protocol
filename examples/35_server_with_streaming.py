@@ -81,8 +81,9 @@ async def handle_task(msg: AgentMessage) -> dict:
     """Process a task by emitting streaming events, then return acknowledge."""
     task_id = f"task-{uuid.uuid4().hex[:12]}"
 
-    # Create a StreamBus for this task.
+    # Create a StreamBus for this task and subscribe the server itself.
     bus = StreamBus(task_id)
+    bus.subscribe("server")
 
     print(f"  [task] {task_id} — emitting streaming events\n")
 
@@ -97,7 +98,7 @@ async def handle_task(msg: AgentMessage) -> dict:
     # Print what the SSE output would look like over the wire.
     print("  SSE output (what the client would receive):")
     print("  " + "-" * 50)
-    for event in bus.replay_from(0):
+    for event in bus.replay_from(0, subscriber_id="server"):
         sse_text = event.to_sse()
         for line in sse_text.strip().split("\n"):
             print(f"  {line}")

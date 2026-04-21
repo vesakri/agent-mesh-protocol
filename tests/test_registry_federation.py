@@ -2,6 +2,9 @@
 import pytest
 from pydantic import ValidationError
 
+# A valid trust_proof string: 64+ chars, valid base64
+_VALID_TRUST_PROOF = "QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQQ=="
+
 
 class TestFederationRequest:
     def test_all_fields(self):
@@ -10,11 +13,11 @@ class TestFederationRequest:
         req = RegistryFederationRequest(
             registry_id="agent://registry-a.example.com",
             capabilities=["resolve", "search", "presence"],
-            trust_proof="ed25519-signed-proof-data",
+            trust_proof=_VALID_TRUST_PROOF,
         )
         assert req.registry_id == "agent://registry-a.example.com"
         assert req.capabilities == ["resolve", "search", "presence"]
-        assert req.trust_proof == "ed25519-signed-proof-data"
+        assert req.trust_proof == _VALID_TRUST_PROOF
 
     def test_missing_required_raises(self):
         from ampro import RegistryFederationRequest
@@ -31,7 +34,7 @@ class TestFederationRequest:
         req = RegistryFederationRequest(
             registry_id="agent://reg.example.com",
             capabilities=["resolve"],
-            trust_proof="proof",
+            trust_proof=_VALID_TRUST_PROOF,
             extra_field="ignored",
         )
         assert not hasattr(req, "extra_field")
@@ -96,7 +99,7 @@ class TestBodyRegistryRequest:
         body = validate_body("registry.federation_request", {
             "registry_id": "agent://reg-a.example.com",
             "capabilities": ["resolve", "search"],
-            "trust_proof": "signed-proof",
+            "trust_proof": _VALID_TRUST_PROOF,
         })
         assert isinstance(body, RegistryFederationRequest)
         assert body.registry_id == "agent://reg-a.example.com"

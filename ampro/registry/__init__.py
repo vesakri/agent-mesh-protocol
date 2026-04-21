@@ -6,6 +6,7 @@ from ampro.registry.search import (
 )
 from ampro.registry.federation import (
     RegistryFederationRequest, RegistryFederationResponse,
+    verify_federation_trust_proof,
 )
 
 __all__ = [
@@ -15,4 +16,5 @@ __all__ = [
     "RegistrySearchRequest", "RegistrySearchMatch", "RegistrySearchResult",
     # Federation
     "RegistryFederationRequest", "RegistryFederationResponse",
+    "verify_federation_trust_proof",
 ]

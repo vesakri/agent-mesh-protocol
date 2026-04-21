@@ -1,5 +1,19 @@
 """Agent Protocol — Circuit breaker protocol types. PURE."""
 
+# ─── Reference implementation, not production-wired ────────────────
+# This module is part of the AMP protocol surface and is validated by
+# the test suite against the normative spec at
+# `docs/WIRE-BINDING.md`. It has no first-party runtime caller as of
+# ampro v0.3.0; downstream implementers may depend on it directly, or
+# provide their own implementation conforming to the same contract.
+#
+# This module defines the response envelope (`CircuitBreakerInfo`)
+# emitted by circuit-aware endpoints. It does not include a
+# controller — servers bring their own circuit logic and populate
+# this envelope when reporting state on health / rate-limit
+# introspection endpoints.
+# ───────────────────────────────────────────────────────────────────
+
 from __future__ import annotations
 from enum import Enum
 from pydantic import BaseModel, Field

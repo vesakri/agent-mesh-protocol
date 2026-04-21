@@ -3,10 +3,13 @@ Agent Protocol — Nonce Tracker.
 
 Tracks seen nonces to prevent replay attacks on sensitive operations.
 In-memory with 1-hour sliding window per spec Section 3.4.
+
+All timing uses ``time.monotonic()`` to prevent clock manipulation attacks.
 """
 
 from __future__ import annotations
 
+import threading
 import time
 
 
@@ -17,6 +20,7 @@ class NonceTracker:
         self._window = window_seconds
         self._max_size = max_size
         self._seen: dict[str, float] = {}
+        self._lock = threading.Lock()
 
     def _cleanup(self) -> None:
         now = time.monotonic()
@@ -51,14 +55,16 @@ class NonceTracker:
 
     def is_replay(self, nonce: str) -> bool:
         """Check if nonce was already seen. Returns True if replay detected."""
-        self._cleanup()
-        if nonce in self._seen:
-            return True
-        self._seen[nonce] = time.monotonic()
-        self._evict_oldest()
-        return False
+        with self._lock:
+            self._cleanup()
+            if nonce in self._seen:
+                return True
+            self._seen[nonce] = time.monotonic()
+            self._evict_oldest()
+            return False
 
     def seen_count(self) -> int:
         """Number of nonces currently tracked."""
-        self._cleanup()
-        return len(self._seen)
+        with self._lock:
+            self._cleanup()
+            return len(self._seen)

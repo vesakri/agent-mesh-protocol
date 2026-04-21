@@ -1,12 +1,78 @@
-"""Tests for v0.1.3 Cost Receipt feature."""
+"""Tests for v0.1.3 Cost Receipt feature.
+
+Updated for C10: signature and nonce are now mandatory fields.
+"""
+
+from __future__ import annotations
+
+import base64
+import json
+import secrets
+import time
 
 import pytest
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from pydantic import ValidationError
+
+from ampro.trust.resolver import _PUBLIC_KEY_CACHE, _reset_public_key_cache_for_tests
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+
+def _seed_key(agent_id: str) -> Ed25519PrivateKey:
+    """Generate a keypair, seed it in the resolver cache, return private key."""
+    private = Ed25519PrivateKey.generate()
+    pub_bytes = private.public_key().public_bytes_raw()
+    _PUBLIC_KEY_CACHE[agent_id] = (time.time() + 3600, pub_bytes)
+    return private
+
+
+def _sign_receipt_fields(
+    private_key: Ed25519PrivateKey,
+    agent_id: str,
+    task_id: str,
+    cost_usd: float,
+    currency: str,
+    issued_at: str,
+    nonce: str,
+) -> str:
+    """Compute Ed25519 signature over canonical receipt fields, return base64url."""
+    canonical = json.dumps(
+        {
+            "agent_id": agent_id,
+            "task_id": task_id,
+            "cost_usd": cost_usd,
+            "currency": currency,
+            "issued_at": issued_at,
+            "nonce": nonce,
+        },
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+    ).encode("utf-8")
+    sig = private_key.sign(canonical)
+    return base64.urlsafe_b64encode(sig).rstrip(b"=").decode()
+
+
+@pytest.fixture(autouse=True)
+def _clean_key_cache():
+    _reset_public_key_cache_for_tests()
+    yield
+    _reset_public_key_cache_for_tests()
 
 
 class TestCostReceipt:
     def test_all_fields(self):
         from ampro import CostReceipt
+        nonce = secrets.token_urlsafe(16)
+        pk = _seed_key("agent://worker.example.com")
+        sig = _sign_receipt_fields(
+            pk, "agent://worker.example.com", "t-42", 0.05, "USD",
+            "2026-04-09T12:00:00Z", nonce,
+        )
         receipt = CostReceipt(
             agent_id="agent://worker.example.com",
             task_id="t-42",
@@ -15,7 +81,8 @@ class TestCostReceipt:
             breakdown={"llm": 0.04, "tools": 0.01},
             token_usage={"input": 1000, "output": 500},
             duration_seconds=2.5,
-            signature="sig_abc123",
+            nonce=nonce,
+            signature=sig,
             issued_at="2026-04-09T12:00:00Z",
         )
         assert receipt.agent_id == "agent://worker.example.com"
@@ -25,28 +92,44 @@ class TestCostReceipt:
         assert receipt.breakdown == {"llm": 0.04, "tools": 0.01}
         assert receipt.token_usage == {"input": 1000, "output": 500}
         assert receipt.duration_seconds == 2.5
-        assert receipt.signature == "sig_abc123"
+        assert receipt.signature == sig
+        assert receipt.nonce == nonce
         assert receipt.issued_at == "2026-04-09T12:00:00Z"
 
     def test_optional_fields_default_none(self):
         from ampro import CostReceipt
+        nonce = secrets.token_urlsafe(16)
+        pk = _seed_key("agent://a.example.com")
+        sig = _sign_receipt_fields(
+            pk, "agent://a.example.com", "t-1", 0.01, "USD",
+            "2026-04-09T00:00:00Z", nonce,
+        )
         receipt = CostReceipt(
             agent_id="agent://a.example.com",
             task_id="t-1",
             cost_usd=0.01,
+            nonce=nonce,
+            signature=sig,
             issued_at="2026-04-09T00:00:00Z",
         )
         assert receipt.breakdown is None
         assert receipt.token_usage is None
         assert receipt.duration_seconds is None
-        assert receipt.signature is None
 
     def test_currency_defaults_to_usd(self):
         from ampro import CostReceipt
+        nonce = secrets.token_urlsafe(16)
+        pk = _seed_key("agent://a.example.com")
+        sig = _sign_receipt_fields(
+            pk, "agent://a.example.com", "t-1", 1.00, "USD",
+            "2026-04-09T00:00:00Z", nonce,
+        )
         receipt = CostReceipt(
             agent_id="agent://a.example.com",
             task_id="t-1",
             cost_usd=1.00,
+            nonce=nonce,
+            signature=sig,
             issued_at="2026-04-09T00:00:00Z",
         )
         assert receipt.currency == "USD"
@@ -67,10 +150,18 @@ class TestCostReceiptChain:
     def test_add_receipt_appends_and_updates_total(self):
         from ampro import CostReceiptChain, CostReceipt
         chain = CostReceiptChain()
+        nonce = secrets.token_urlsafe(16)
+        pk = _seed_key("agent://a.example.com")
+        sig = _sign_receipt_fields(
+            pk, "agent://a.example.com", "t-1", 0.10, "USD",
+            "2026-04-09T00:00:00Z", nonce,
+        )
         receipt = CostReceipt(
             agent_id="agent://a.example.com",
             task_id="t-1",
             cost_usd=0.10,
+            nonce=nonce,
+            signature=sig,
             issued_at="2026-04-09T00:00:00Z",
         )
         chain.add_receipt(receipt)
@@ -81,28 +172,25 @@ class TestCostReceiptChain:
         from ampro import CostReceiptChain, CostReceipt
         chain = CostReceiptChain()
 
-        r1 = CostReceipt(
-            agent_id="agent://first.example.com",
-            task_id="t-1",
-            cost_usd=0.05,
-            issued_at="2026-04-09T00:00:00Z",
-        )
-        r2 = CostReceipt(
-            agent_id="agent://second.example.com",
-            task_id="t-1",
-            cost_usd=0.15,
-            issued_at="2026-04-09T00:01:00Z",
-        )
-        r3 = CostReceipt(
-            agent_id="agent://third.example.com",
-            task_id="t-1",
-            cost_usd=0.30,
-            issued_at="2026-04-09T00:02:00Z",
-        )
+        agents = [
+            ("agent://first.example.com", 0.05, "2026-04-09T00:00:00Z"),
+            ("agent://second.example.com", 0.15, "2026-04-09T00:01:00Z"),
+            ("agent://third.example.com", 0.30, "2026-04-09T00:02:00Z"),
+        ]
 
-        chain.add_receipt(r1)
-        chain.add_receipt(r2)
-        chain.add_receipt(r3)
+        for agent_id, cost, issued in agents:
+            nonce = secrets.token_urlsafe(16)
+            pk = _seed_key(agent_id)
+            sig = _sign_receipt_fields(pk, agent_id, "t-1", cost, "USD", issued, nonce)
+            receipt = CostReceipt(
+                agent_id=agent_id,
+                task_id="t-1",
+                cost_usd=cost,
+                nonce=nonce,
+                signature=sig,
+                issued_at=issued,
+            )
+            chain.add_receipt(receipt)
 
         assert len(chain.receipts) == 3
         assert chain.receipts[0].agent_id == "agent://first.example.com"

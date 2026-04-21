@@ -52,7 +52,7 @@ class RetentionPolicy(BaseModel):
 
 class ErasureRequest(BaseModel):
     subject_id: str = Field(description="Unique identifier of the data subject requesting erasure")
-    subject_proof: str = Field(description="Proof of identity for the data subject (e.g. signed token)")
+    subject_proof: str = Field(description="RESERVED for v2. Proof of identity for the data subject (e.g. signed token). Not validated in v1 — the sender's identity from the verified envelope is the sole authorization signal. This field is retained in the schema for forward compatibility; supply any non-empty string.")
     scope: Literal["all", "conversations", "tasks", "tools"] = Field(description="Scope of data to erase")
     reason: Literal["user_request", "account_deletion", "consent_withdrawn", "legal_order"] = Field(description="Legal basis for the erasure request")
     deadline: str = Field(description="ISO 8601 deadline for completion")

@@ -1,15 +1,24 @@
-# Agent Mesh Protocol — Security & Code Quality Audit
+# Agent Mesh Protocol — v0.2.0 Security Audit (Retrospective)
 
-> **Date**: 2026-04-10
-> **Version**: v0.2.0
-> **Auditors**: 4 parallel analysis agents
-> **Scope**: All 72 modules, all subpackages
+> **Audited version**: v0.2.0 (2026-04-10)
+> **Audit scope**: All 72 modules across all subpackages.
+> **Status**: **All P0/P1 findings closed in v0.2.1. All 66 CRITICAL+HIGH findings closed in v0.2.3.** See `CHANGELOG.md` §0.2.1 and §0.2.3 for per-finding remediation.
+>
+> This document is retained as a historical record of the protocol's
+> security-review process and as context for the retrospective
+> findings summarised in `docs/SECURITY-AUDIT-V2.md`. It does **not**
+> describe current (post-v0.2.3) protocol behaviour.
 
 ---
 
-## Executive Summary
+## Executive Summary (v0.2.0 snapshot)
 
-**The protocol types library is NOT production-ready for security-critical deployments.** While the type definitions and models are well-structured, the runtime security components (trust resolution, session binding, dedup, rate limiting) have exploitable vulnerabilities.
+At the time of this audit, the protocol's runtime security components
+(trust resolution, session binding, dedup, rate limiting) had
+exploitable vulnerabilities. Type definitions and models were
+well-structured; runtime enforcement needed hardening. Findings are
+listed below; see the re-audit (`SECURITY-AUDIT-V2.md`) for fix
+effectiveness and the CHANGELOG for the final resolution in v0.2.3.
 
 | Category | Critical | High | Medium | Low |
 |----------|----------|------|--------|-----|

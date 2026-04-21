@@ -39,7 +39,7 @@ from ampro.core.body_schemas import (
 from ampro.delegation.chain import (
     DelegationLink, DelegationChain,
     validate_chain, validate_scope_narrowing, sign_delegation,
-    parse_chain_budget, parse_visited_agents,
+    parse_chain_budget, parse_visited_agents, normalize_agent_uri,
     check_visited_agents_loop, check_visited_agents_limit,
 )
 
@@ -60,7 +60,7 @@ from ampro.compliance.middleware import (
     check_content_classification, check_minor_protection,
     requires_audit, ComplianceCheckResult,
 )
-from ampro.compliance.audit_logger import AuditLogger, AuditEntry
+from ampro.compliance.audit_logger import AuditLogger, AuditEntry, AuditStorage, InMemoryAuditStorage
 from ampro.compliance.erasure import ErasureProcessor
 
 # --- Security modules ---
@@ -112,6 +112,7 @@ from ampro.session.handshake import (
     SessionInitBody, SessionEstablishedBody, SessionConfirmBody,
     SessionPingBody, SessionPongBody,
     SessionPauseBody, SessionResumeBody, SessionCloseBody,
+    create_resume_token, parse_resume_token,
 )
 
 # --- Visibility & contact policies ---
@@ -145,7 +146,7 @@ from ampro.streaming.backpressure import StreamAckEvent, StreamPauseEvent, Strea
 from ampro.agent.lifecycle import AgentLifecycleStatus, AgentDeactivationNoticeBody
 
 # --- Cost receipts ---
-from ampro.delegation.cost_receipt import CostReceipt, CostReceiptChain
+from ampro.delegation.cost_receipt import CostReceipt, CostReceiptChain, CostReceiptVerificationError
 
 # --- Task redirect ---
 from ampro.transport.task_redirect import TaskRedirectBody
@@ -187,13 +188,16 @@ from ampro.streaming.auth import StreamAuthRefreshEvent
 from ampro.identity.link import IdentityLinkProofBody
 
 # --- Registry federation ---
-from ampro.registry.federation import RegistryFederationRequest, RegistryFederationResponse
+from ampro.registry.federation import (
+    RegistryFederationRequest, RegistryFederationResponse,
+    verify_federation_trust_proof,
+)
 
 # --- Identity migration ---
 from ampro.identity.migration import IdentityMigrationBody
 
 # --- Audit attestation ---
-from ampro.compliance.audit_attestation import AuditAttestationBody
+from ampro.compliance.audit_attestation import AuditAttestationBody, verify_attestation
 
 # --- Encryption ---
 from ampro.security.encryption import EncryptedBody, CONTENT_ENCRYPTION_HEADER
@@ -214,7 +218,15 @@ from ampro.wire.errors import ProblemDetail, ErrorType
 from ampro.wire.config import WireConfig, DEFAULTS as WIRE_DEFAULTS
 from ampro.wire.body_type_map import ResponseMode, BodyTypeBinding, BODY_TYPE_BINDINGS, binding_for
 
-__version__ = "0.2.2"
+# --- AMPI (Agent Message Processing Interface) ---
+from ampro.ampi.app import AgentApp
+from ampro.ampi.context import AMPContext
+from ampro.ampi.errors import AMPError, StreamLimitExceeded, BackpressureError
+from ampro.ampi.types import AMPIServer, AMPIApp, HandlerFunc, MiddlewareFunc
+from ampro.server.core import AgentServer
+from ampro.server.test import TestServer
+
+__version__ = "0.3.1"
 
 __all__ = [
     # Core
@@ -238,7 +250,7 @@ __all__ = [
     # Delegation
     "DelegationLink", "DelegationChain",
     "validate_chain", "validate_scope_narrowing", "sign_delegation",
-    "parse_chain_budget", "parse_visited_agents",
+    "parse_chain_budget", "parse_visited_agents", "normalize_agent_uri",
     "check_visited_agents_loop", "check_visited_agents_limit",
     # Events & sessions
     "EventType", "EventSubscription", "EventNotification",
@@ -251,7 +263,8 @@ __all__ = [
     "ErasureRequest", "ErasureResponse", "ExportRequest", "ExportResponse",
     "check_content_classification", "check_minor_protection",
     "requires_audit", "ComplianceCheckResult",
-    "AuditLogger", "AuditEntry", "ErasureProcessor",
+    "AuditLogger", "AuditEntry", "AuditStorage", "InMemoryAuditStorage",
+    "ErasureProcessor",
     # Security
     "InMemoryDedupStore", "DedupStore", "NonceTracker",
     "RateLimiter", "RateLimitInfo", "format_rate_limit_headers",
@@ -281,6 +294,7 @@ __all__ = [
     "SessionInitBody", "SessionEstablishedBody", "SessionConfirmBody",
     "SessionPingBody", "SessionPongBody",
     "SessionPauseBody", "SessionResumeBody", "SessionCloseBody",
+    "create_resume_token", "parse_resume_token",
     # Visibility & contact policies
     "VisibilityLevel", "ContactPolicy", "VisibilityConfig",
     "check_contact_allowed", "filter_agent_json",
@@ -300,7 +314,7 @@ __all__ = [
     # Agent lifecycle
     "AgentLifecycleStatus", "AgentDeactivationNoticeBody",
     # Cost receipts
-    "CostReceipt", "CostReceiptChain",
+    "CostReceipt", "CostReceiptChain", "CostReceiptVerificationError",
     # Task redirect
     "TaskRedirectBody",
     # Tracing
@@ -328,10 +342,11 @@ __all__ = [
     "IdentityLinkProofBody",
     # Registry federation
     "RegistryFederationRequest", "RegistryFederationResponse",
+    "verify_federation_trust_proof",
     # Identity migration
     "IdentityMigrationBody",
     # Audit attestation
-    "AuditAttestationBody",
+    "AuditAttestationBody", "verify_attestation",
     # Encryption
     "EncryptedBody", "CONTENT_ENCRYPTION_HEADER",
     # Trust proof
@@ -346,4 +361,9 @@ __all__ = [
     "ProblemDetail", "ErrorType",
     "WireConfig", "WIRE_DEFAULTS",
     "ResponseMode", "BodyTypeBinding", "BODY_TYPE_BINDINGS", "binding_for",
+    # AMPI
+    "AgentApp", "AMPContext",
+    "AMPError", "StreamLimitExceeded", "BackpressureError",
+    "AMPIServer", "AMPIApp", "HandlerFunc", "MiddlewareFunc",
+    "AgentServer", "TestServer",
 ]

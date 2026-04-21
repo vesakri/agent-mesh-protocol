@@ -23,9 +23,10 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import (
 )
 from pydantic import BaseModel, Field
 
-# Clock skew tolerance (60 s) — mirrors trust.CLOCK_SKEW_SECONDS.
-# Kept local so this module remains pure (no app.* imports).
-_SKEW = timedelta(seconds=60)
+# Clock skew tolerance — imported from canonical constant in trust.tiers.
+from ampro.trust.tiers import CLOCK_SKEW_SECONDS
+
+_SKEW = timedelta(seconds=CLOCK_SKEW_SECONDS)
 
 
 # ---------------------------------------------------------------------------
@@ -94,13 +95,23 @@ class DelegationChain(BaseModel):
 # ---------------------------------------------------------------------------
 
 
-def _canonical_link_bytes(link: DelegationLink) -> bytes:
+def _canonical_link_bytes(
+    link: DelegationLink,
+    parent_delegate: str | None = None,
+) -> bytes:
     """
     Produce deterministic JSON bytes for a delegation link,
     excluding the ``signature`` field.
 
     Keys are sorted and no extra whitespace is used so that
     any compliant implementation can reproduce the same bytes.
+
+    Args:
+        link: The delegation link to serialize.
+        parent_delegate: The ``delegate`` field of the parent link (or
+            ``None`` for the root link).  Including this value in the
+            canonical payload binds the signature to a specific position
+            in a specific chain, preventing cross-chain transplant attacks.
     """
     data = {
         "created_at": link.created_at.isoformat(),
@@ -108,6 +119,7 @@ def _canonical_link_bytes(link: DelegationLink) -> bytes:
         "delegator": link.delegator,
         "expires_at": link.expires_at.isoformat(),
         "max_depth": link.max_depth,
+        "parent_delegate": parent_delegate,
         "scopes": sorted(link.scopes),
     }
     return json.dumps(data, sort_keys=True, separators=(",", ":")).encode("utf-8")
@@ -136,8 +148,15 @@ def validate_scope_narrowing(
     """
     Check that *child_scopes* is a subset of *parent_scopes*.
 
-    Supports wildcard matching: ``tool:*`` in the parent allows
-    ``tool:read``, ``tool:execute``, etc. in the child.
+    Supports wildcard matching with strict prefix hierarchy:
+
+    - ``*`` (universal wildcard) in the parent allows any child scope.
+    - ``tool:*`` in the parent allows ``tool:read``, ``tool:execute``,
+      ``tool:sub:read``, and ``tool:*`` (any scope starting with ``tool:``).
+    - ``tool:*`` does NOT permit ``admin:*``, ``data:read``, or any scope
+      whose prefix differs from ``tool``.
+    - An explicit scope like ``tool:read`` only permits ``tool:read``
+      (exact match).
 
     An empty child scope list is considered invalid (useless delegation).
 
@@ -152,17 +171,30 @@ def validate_scope_narrowing(
 
     parent_set = set(parent_scopes)
 
+    # Universal wildcard — parent grants everything.
+    has_universal = "*" in parent_set
+
+    # Pre-compute wildcard prefixes for efficient matching.
+    # "tool:*" → prefix "tool:" so that "tool:read", "tool:sub:x" all match.
+    wildcard_prefixes: list[str] = []
+    for ps in parent_scopes:
+        if ps.endswith(":*"):
+            wildcard_prefixes.append(ps[:-1])  # "tool:*" → "tool:"
+
     for scope in child_scopes:
-        # Direct match
+        # Universal wildcard in parent → everything allowed
+        if has_universal:
+            continue
+
+        # Direct / exact match
         if scope in parent_set:
             continue
 
-        # Wildcard match: check if parent has ``<prefix>:*``
-        if ":" in scope:
-            prefix = scope.rsplit(":", 1)[0]
-            wildcard = f"{prefix}:*"
-            if wildcard in parent_set:
-                continue
+        # Wildcard prefix match: child scope must start with one of the
+        # parent's wildcard prefixes (e.g. parent "tool:*" → prefix
+        # "tool:" covers child "tool:read", "tool:sub:read", "tool:*").
+        if any(scope.startswith(wp) for wp in wildcard_prefixes):
+            continue
 
         # No match found
         return False
@@ -175,19 +207,31 @@ def validate_scope_narrowing(
 # ---------------------------------------------------------------------------
 
 
-def sign_delegation(private_key_bytes: bytes, link_data: dict) -> str:
+def sign_delegation(
+    private_key_bytes: bytes,
+    link_data: dict,
+    parent_delegate: str | None = None,
+) -> str:
     """
     Sign canonical JSON of *link_data* (excluding signature) with Ed25519.
+
+    The ``parent_delegate`` is injected into the canonical payload before
+    signing so that the resulting signature is bound to a specific chain
+    position, preventing cross-chain transplant attacks.
 
     Args:
         private_key_bytes: Raw 32-byte Ed25519 private key seed.
         link_data: Dict representing the delegation link fields.
+        parent_delegate: The ``delegate`` of the parent link, or ``None``
+            for the root link.
 
     Returns:
         Base64-encoded signature string.
     """
     private_key = Ed25519PrivateKey.from_private_bytes(private_key_bytes)
-    payload = _canonical_dict_bytes(link_data)
+    # Inject parent_delegate into the dict before canonical serialization
+    augmented = {**link_data, "parent_delegate": parent_delegate}
+    payload = _canonical_dict_bytes(augmented)
     signature = private_key.sign(payload)
     return base64.b64encode(signature).decode("ascii")
 
@@ -238,10 +282,11 @@ def validate_chain(
         if pub_bytes is None:
             return False, f"link {i}: unknown delegator '{link.delegator}'"
 
-        # --- 2. Signature verification ---
+        # --- 2. Signature verification (context-bound) ---
+        parent_delegate = chain.links[i - 1].delegate if i > 0 else None
         try:
             pub_key = Ed25519PublicKey.from_public_bytes(pub_bytes)
-            payload = _canonical_link_bytes(link)
+            payload = _canonical_link_bytes(link, parent_delegate=parent_delegate)
             sig_bytes = base64.b64decode(link.signature)
             pub_key.verify(sig_bytes, payload)
         except Exception as exc:
@@ -303,14 +348,31 @@ def validate_chain(
             if link.max_fan_out <= 0:
                 return False, f"link {i}: max_fan_out is {link.max_fan_out} (must be > 0)"
 
-        # --- 9. Budget check ---
+        # --- 9. Budget check (fail-closed) ---
         if hasattr(link, 'chain_budget') and link.chain_budget:
             try:
-                remaining, _ = parse_chain_budget(link.chain_budget)
-                if remaining <= 0:
-                    return False, f"link {i}: chain budget exhausted (remaining={remaining})"
-            except ValueError:
-                pass  # Invalid format — skip budget check
+                remaining, max_b = parse_chain_budget(link.chain_budget)
+            except ValueError as e:
+                return False, f"link {i}: invalid chain_budget ({e})"
+            if remaining < 0:
+                return False, f"link {i}: negative budget (remaining={remaining})"
+            if remaining <= 0:
+                return False, f"link {i}: chain budget exhausted (remaining={remaining})"
+            # Child budget must not exceed parent budget
+            if i > 0:
+                parent = chain.links[i - 1]
+                if hasattr(parent, 'chain_budget') and parent.chain_budget:
+                    try:
+                        parent_remaining, _ = parse_chain_budget(parent.chain_budget)
+                        if remaining > parent_remaining:
+                            return (
+                                False,
+                                f"link {i}: child budget ({remaining}) "
+                                f"exceeds parent budget ({parent_remaining})",
+                            )
+                    except ValueError:
+                        # Parent already validated; should not happen
+                        pass
 
     return True, "valid"
 
@@ -331,17 +393,39 @@ def parse_chain_budget(budget: str) -> tuple[float, float]:
     return float(match.group(1)), float(match.group(2))
 
 
-def parse_visited_agents(header: str) -> list[str]:
-    """Parse Visited-Agents header into list of agent URIs."""
+def normalize_agent_uri(uri: str) -> str:
+    """
+    Normalize an agent URI for consistent comparison.
+
+    Strips leading/trailing whitespace and lowercases the URI so that
+    ``agent://A`` and ``agent://a `` are treated as the same agent.
+    """
+    return uri.strip().lower()
+
+
+def parse_visited_agents(header: str) -> set[str]:
+    """
+    Parse Visited-Agents header into a set of **normalized** agent URIs.
+
+    Each URI is stripped and lowercased so that case/whitespace variations
+    are collapsed into a single canonical form.
+    """
     if not header:
-        return []
-    return [a.strip() for a in header.split(",") if a.strip()]
+        return set()
+    return {normalize_agent_uri(a) for a in header.split(",") if a.strip()}
 
 
 def check_visited_agents_loop(header: str, self_uri: str) -> bool:
-    """Check if self_uri is already in the Visited-Agents list. Returns True if loop detected."""
+    """
+    Check if *self_uri* is already in the Visited-Agents list.
+
+    Both the header entries and *self_uri* are normalized before comparison
+    so that case and whitespace differences do not bypass loop detection.
+
+    Returns True if a loop is detected.
+    """
     agents = parse_visited_agents(header)
-    return self_uri in agents
+    return normalize_agent_uri(self_uri) in agents
 
 
 def check_visited_agents_limit(header: str, max_agents: int = 20) -> bool:

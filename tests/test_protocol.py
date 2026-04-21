@@ -7,7 +7,7 @@ from pydantic import ValidationError
 class TestImports:
     def test_version(self):
         import ampro
-        assert ampro.__version__ == "0.2.2"
+        assert ampro.__version__ == "0.3.1"
 
     def test_all_exports(self):
         import ampro
@@ -96,7 +96,7 @@ class TestTrust:
 
     def test_clock_skew(self):
         from ampro import CLOCK_SKEW_SECONDS
-        assert CLOCK_SKEW_SECONDS == 60
+        assert CLOCK_SKEW_SECONDS == 30
 
 
 class TestCapabilities:
@@ -268,7 +268,7 @@ class TestV011Imports:
 
     def test_version_bumped(self):
         import ampro
-        assert ampro.__version__ == "0.2.2"
+        assert ampro.__version__ == "0.3.1"
 
     def test_handshake_imports(self):
         from ampro import (
@@ -330,7 +330,7 @@ class TestV012Imports:
 
     def test_version_is_016(self):
         import ampro
-        assert ampro.__version__ == "0.2.2"
+        assert ampro.__version__ == "0.3.1"
 
     def test_key_revocation_imports(self):
         from ampro import RevocationReason, KeyRevocationBody
@@ -395,6 +395,7 @@ class TestSessionResumption:
     def test_session_established_has_resumed(self):
         from ampro import SessionEstablishedBody
         body = SessionEstablishedBody(
+        confirm_nonce="test-nonce-2",
             session_id="sess-new",
             negotiated_capabilities=["messaging"],
             negotiated_version="1.0.0",
@@ -416,6 +417,7 @@ class TestSessionResumption:
             trust_score=100,
             server_nonce="sn",
             binding_token="bt",
+            confirm_nonce="test-nonce-protocol",
         )
         assert body.resumed is False
 
@@ -438,11 +440,15 @@ class TestV013Imports:
         assert body.agent_id == "agent://test.example.com"
 
     def test_cost_receipt_import(self):
+        import secrets
         from ampro import CostReceipt
+        nonce = secrets.token_urlsafe(16)
         receipt = CostReceipt(
             agent_id="agent://a.example.com",
             task_id="t-1",
             cost_usd=0.01,
+            nonce=nonce,
+            signature="test-sig-placeholder",
             issued_at="2026-04-09T00:00:00Z",
         )
         assert receipt.cost_usd == 0.01
@@ -688,10 +694,12 @@ class TestV018Imports:
 
     def test_registry_federation_request_import(self):
         from ampro import RegistryFederationRequest
+        # trust_proof must be >= 64 chars (base64-encoded Ed25519 sig minimum)
+        valid_proof = "QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQQ=="
         req = RegistryFederationRequest(
             registry_id="agent://reg.example.com",
             capabilities=["resolve", "search"],
-            trust_proof="proof",
+            trust_proof=valid_proof,
         )
         assert req.registry_id == "agent://reg.example.com"
 
@@ -768,3 +776,299 @@ class TestV019Imports:
     def test_all_exports_v019_count(self):
         import ampro
         assert len(ampro.__all__) >= 187
+
+
+# ===========================================================================
+# C18 — Server levels 2-5 return 501, not 404
+# ===========================================================================
+
+
+class TestServerLevelStubs:
+    """C18: Protocol levels 2-5 should return 501 Not Implemented (not 404)."""
+
+    def _route(self, server, method, path):
+        import asyncio
+        return asyncio.run(server.route(method, path))
+
+    def test_level1_agent_json_still_200(self):
+        """Level 1 endpoint (agent.json) still returns 200."""
+        from ampro.server import AgentServer
+        server = AgentServer(agent_id="@test", endpoint="https://test.example.com")
+        status, _, _ = self._route(server, "GET", "/.well-known/agent.json")
+        assert status == 200
+
+    def test_level1_health_still_200(self):
+        """Level 1 endpoint (health) still returns 200."""
+        from ampro.server import AgentServer
+        server = AgentServer(agent_id="@test", endpoint="https://test.example.com")
+        status, _, _ = self._route(server, "GET", "/agent/health")
+        assert status == 200
+
+    def test_level2_tools_returns_501(self):
+        """Level 2 endpoint /agent/tools returns 501 with protocol_level=2."""
+        import json
+        from ampro.server import AgentServer
+        server = AgentServer(agent_id="@test", endpoint="https://test.example.com")
+        status, headers, body_str = self._route(server, "GET", "/agent/tools")
+        assert status == 501
+        data = json.loads(body_str)
+        assert data["protocol_level"] == 2
+        assert data["type"] == "urn:amp:error:not-implemented"
+
+    def test_level3_tasks_returns_501(self):
+        """Level 3 endpoint /agent/tasks returns 501 with protocol_level=3."""
+        import json
+        from ampro.server import AgentServer
+        server = AgentServer(agent_id="@test", endpoint="https://test.example.com")
+        status, headers, body_str = self._route(server, "GET", "/agent/tasks")
+        assert status == 501
+        data = json.loads(body_str)
+        assert data["protocol_level"] == 3
+        assert data["type"] == "urn:amp:error:not-implemented"
+
+    def test_level4_delegate_returns_501(self):
+        """Level 4 endpoint /agent/delegate returns 501 with protocol_level=4."""
+        import json
+        from ampro.server import AgentServer
+        server = AgentServer(agent_id="@test", endpoint="https://test.example.com")
+        status, headers, body_str = self._route(server, "POST", "/agent/delegate")
+        assert status == 501
+        data = json.loads(body_str)
+        assert data["protocol_level"] == 4
+        assert data["type"] == "urn:amp:error:not-implemented"
+
+    def test_level5_admin_returns_501(self):
+        """Level 5 endpoint /agent/admin returns 501 with protocol_level=5."""
+        import json
+        from ampro.server import AgentServer
+        server = AgentServer(agent_id="@test", endpoint="https://test.example.com")
+        status, headers, body_str = self._route(server, "GET", "/agent/admin")
+        assert status == 501
+        data = json.loads(body_str)
+        assert data["protocol_level"] == 5
+        assert data["type"] == "urn:amp:error:not-implemented"
+
+    def test_unknown_path_still_404(self):
+        """Paths outside the spec still return 404."""
+        import json
+        from ampro.server import AgentServer
+        server = AgentServer(agent_id="@test", endpoint="https://test.example.com")
+        status, _, body_str = self._route(server, "GET", "/totally/unknown")
+        assert status == 404
+        data = json.loads(body_str)
+        assert data["type"] == "urn:amp:error:not-found"
+
+
+# ===========================================================================
+# C20 — Delegation tests with real Ed25519 signatures
+# ===========================================================================
+
+
+class TestDelegationSignatures:
+    """C20: Real Ed25519 delegation chain tests — not placeholders."""
+
+    def _make_keypair(self):
+        """Generate a fresh Ed25519 keypair. Returns (private_seed, public_bytes)."""
+        from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+        private_key = Ed25519PrivateKey.generate()
+        seed = private_key.private_bytes_raw()
+        pub = private_key.public_key().public_bytes_raw()
+        return seed, pub
+
+    def _make_signed_link(self, private_seed, delegator, delegate, scopes,
+                          max_depth=3, created_at=None, expires_at=None,
+                          parent_delegate=None):
+        """Create a DelegationLink with a real Ed25519 signature."""
+        from datetime import datetime, timedelta, timezone
+        from ampro.delegation.chain import DelegationLink, sign_delegation
+
+        now = datetime.now(timezone.utc)
+        created = created_at or now
+        expires = expires_at or (now + timedelta(hours=1))
+
+        link_data = {
+            "delegator": delegator,
+            "delegate": delegate,
+            "scopes": sorted(scopes),
+            "max_depth": max_depth,
+            "created_at": created.isoformat(),
+            "expires_at": expires.isoformat(),
+        }
+        sig = sign_delegation(private_seed, link_data, parent_delegate=parent_delegate)
+        return DelegationLink(
+            delegator=delegator,
+            delegate=delegate,
+            scopes=scopes,
+            max_depth=max_depth,
+            created_at=created,
+            expires_at=expires,
+            signature=sig,
+        )
+
+    def test_single_link_real_signature_verifies(self):
+        """A delegation link signed with a real Ed25519 key should verify."""
+        from ampro.delegation.chain import DelegationChain, validate_chain
+
+        seed_a, pub_a = self._make_keypair()
+        link = self._make_signed_link(
+            seed_a,
+            delegator="agent://a.example.com",
+            delegate="agent://b.example.com",
+            scopes=["tool:read", "tool:execute"],
+        )
+        chain = DelegationChain(links=[link])
+        public_keys = {"agent://a.example.com": pub_a}
+        valid, reason = validate_chain(chain, public_keys)
+        assert valid is True, f"Expected valid chain, got: {reason}"
+        assert reason == "valid"
+
+    def test_scope_widening_rejected(self):
+        """Child claiming more scopes than parent granted must be rejected."""
+        from ampro.delegation.chain import (
+            DelegationChain, validate_chain, validate_scope_narrowing,
+        )
+
+        seed_a, pub_a = self._make_keypair()
+        seed_b, pub_b = self._make_keypair()
+
+        # Parent grants only tool:read
+        link_a = self._make_signed_link(
+            seed_a,
+            delegator="agent://a.example.com",
+            delegate="agent://b.example.com",
+            scopes=["tool:read"],
+        )
+
+        # Child tries to claim tool:read AND tool:execute (widening!)
+        link_b = self._make_signed_link(
+            seed_b,
+            delegator="agent://b.example.com",
+            delegate="agent://c.example.com",
+            scopes=["tool:read", "tool:execute"],
+            parent_delegate="agent://b.example.com",
+        )
+
+        chain = DelegationChain(links=[link_a, link_b])
+        public_keys = {
+            "agent://a.example.com": pub_a,
+            "agent://b.example.com": pub_b,
+        }
+        valid, reason = validate_chain(chain, public_keys)
+        assert valid is False
+        assert "not subset" in reason or "scopes" in reason
+
+    def test_scope_narrowing_accepted(self):
+        """Child claiming fewer scopes than parent is valid narrowing."""
+        from ampro.delegation.chain import DelegationChain, validate_chain
+        from datetime import datetime, timedelta, timezone
+
+        seed_a, pub_a = self._make_keypair()
+        seed_b, pub_b = self._make_keypair()
+
+        now = datetime.now(timezone.utc)
+        expires = now + timedelta(hours=1)
+
+        # Parent grants tool:read and tool:execute
+        link_a = self._make_signed_link(
+            seed_a,
+            delegator="agent://a.example.com",
+            delegate="agent://b.example.com",
+            scopes=["tool:read", "tool:execute"],
+            created_at=now,
+            expires_at=expires,
+        )
+
+        # Child narrows to only tool:read
+        link_b = self._make_signed_link(
+            seed_b,
+            delegator="agent://b.example.com",
+            delegate="agent://c.example.com",
+            scopes=["tool:read"],
+            created_at=now,
+            expires_at=expires,
+            parent_delegate="agent://b.example.com",
+        )
+
+        chain = DelegationChain(links=[link_a, link_b])
+        public_keys = {
+            "agent://a.example.com": pub_a,
+            "agent://b.example.com": pub_b,
+        }
+        valid, reason = validate_chain(chain, public_keys)
+        assert valid is True, f"Scope narrowing should be accepted, got: {reason}"
+
+    def test_three_level_chain_all_signatures_verify(self):
+        """A 3-level delegation chain with real signatures should verify end-to-end."""
+        from ampro.delegation.chain import DelegationChain, validate_chain
+        from datetime import datetime, timedelta, timezone
+
+        seed_a, pub_a = self._make_keypair()
+        seed_b, pub_b = self._make_keypair()
+        seed_c, pub_c = self._make_keypair()
+
+        now = datetime.now(timezone.utc)
+        expires = now + timedelta(hours=1)
+
+        link_a = self._make_signed_link(
+            seed_a,
+            delegator="agent://a.example.com",
+            delegate="agent://b.example.com",
+            scopes=["tool:*"],
+            max_depth=5,
+            created_at=now,
+            expires_at=expires,
+        )
+        link_b = self._make_signed_link(
+            seed_b,
+            delegator="agent://b.example.com",
+            delegate="agent://c.example.com",
+            scopes=["tool:read", "tool:execute"],
+            max_depth=4,
+            created_at=now,
+            expires_at=expires,
+            parent_delegate="agent://b.example.com",
+        )
+        link_c = self._make_signed_link(
+            seed_c,
+            delegator="agent://c.example.com",
+            delegate="agent://d.example.com",
+            scopes=["tool:read"],
+            max_depth=3,
+            created_at=now,
+            expires_at=expires,
+            parent_delegate="agent://c.example.com",
+        )
+
+        chain = DelegationChain(links=[link_a, link_b, link_c])
+        public_keys = {
+            "agent://a.example.com": pub_a,
+            "agent://b.example.com": pub_b,
+            "agent://c.example.com": pub_c,
+        }
+        valid, reason = validate_chain(chain, public_keys)
+        assert valid is True, f"3-level chain should verify, got: {reason}"
+
+    def test_missing_signature_rejected(self):
+        """A delegation link with an empty signature must be rejected."""
+        from ampro.delegation.chain import (
+            DelegationLink, DelegationChain, validate_chain,
+        )
+        from datetime import datetime, timedelta, timezone
+
+        _, pub_a = self._make_keypair()
+
+        now = datetime.now(timezone.utc)
+        link = DelegationLink(
+            delegator="agent://a.example.com",
+            delegate="agent://b.example.com",
+            scopes=["tool:read"],
+            max_depth=3,
+            created_at=now,
+            expires_at=now + timedelta(hours=1),
+            signature="",  # Empty — no signature
+        )
+        chain = DelegationChain(links=[link])
+        public_keys = {"agent://a.example.com": pub_a}
+        valid, reason = validate_chain(chain, public_keys)
+        assert valid is False
+        assert "signature" in reason.lower() or "invalid" in reason.lower()

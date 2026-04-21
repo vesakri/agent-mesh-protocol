@@ -2084,7 +2084,7 @@ Receivers MUST validate each link in a delegation chain:
    JSON (sorted keys, no whitespace, excluding the `signature` field)
    MUST be valid.
 3. **Expiry check**: The link MUST NOT be expired (with clock skew
-   tolerance of 60 seconds).
+   tolerance of 30 seconds).
 4. **Depth check**: The hop index MUST NOT exceed the parent link's
    `max_depth`.
 5. **Scope narrowing**: Each link's scopes MUST be a subset of the
@@ -3095,7 +3095,7 @@ under the `constraints` field.
 | Callback retry delays      | 1, 5, 25 s | Exponential backoff for callback retries    |
 | Connect timeout            | 10 s       | TCP connection timeout                       |
 | Read timeout               | 30 s       | HTTP read timeout                            |
-| Clock skew tolerance       | 60 s       | Tolerance for cross-region timestamp comparison |
+| Clock skew tolerance       | 30 s       | Tolerance for cross-region timestamp comparison |
 | Sender failure threshold   | 3          | Consecutive failures before blocking sender  |
 | Max visited agents         | 20         | Maximum agents in loop-detection chain       |
 | Max delegation fan-out     | 3          | Maximum parallel sub-delegations per link    |

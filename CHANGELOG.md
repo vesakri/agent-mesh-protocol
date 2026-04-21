@@ -1,5 +1,100 @@
 # Changelog
 
+## [0.3.1] — 2026-04-20
+
+### Changed
+- Documentation only. Added "reference implementation, not production-wired"
+  banners to 14 submodules with zero first-party runtime callers but
+  normative spec coverage. See
+  `docs/superpowers/specs/2026-04-20-ws-d-ampro-shelfware-triage-design.md`
+  for the per-module inventory and rationale.
+
+  Affected modules:
+  - `ampi.types`
+  - `server.core`, `server.test`, `server.cli`, `server.__main__`
+  - `registry.search`, `registry.federation`
+  - `compliance.data_residency`, `compliance.jurisdiction`,
+    `compliance.audit_attestation`, `compliance.erasure_propagation`
+  - `transport.task_redirect`, `transport.task_revoke`,
+    `transport.api_key_store`
+  - `delegation.cost_receipt`
+  - `security.rfc9421`, `security.circuit_breaker`
+
+  No public API removed. No behaviour changed. No test removed.
+
+## [0.3.0] - 2026-04-13
+
+### Added
+- **AMPI (Agent Message Processing Interface)** — ASGI for agents
+  - `AgentApp` class with 8 decorators: `@on`, `@middleware`, `@tool`, `@on_startup`, `@on_shutdown`, `@on_session_start`, `@on_error`
+  - `AMPContext` with 26 fields (trust, session, delegation, compliance, tracing) + 12 methods (send, discover, delegate, emit, audit)
+  - `AMPError` hierarchy: `StreamLimitExceeded`, `BackpressureError`
+  - `TestServer` — unit test harness for handler testing without transport
+  - `ampro-server` CLI — `ampro-server main:agent --port 8000`
+  - Type aliases: `HandlerFunc`, `MiddlewareFunc`, `AMPIServer` Protocol, `AMPIApp` TypedDict
+  - Dict-based apps accepted alongside AgentApp
+- `AgentServer.from_app(app)` — create server from AgentApp
+
+### Changed
+- Version bumped to 0.3.0
+- `AgentServer` accepts AgentApp via `from_app()` classmethod
+
+## [0.2.3] - 2026-04-16
+
+### Security — Phase 0 Sprint
+
+Closed all 66 security findings (20 CRITICAL + 46 HIGH) from the 11-agent deep audit.
+
+#### Critical Fixes (P0.C1 + P0.C2)
+- **C1**: Stream endpoint requires VERIFIED+ trust tier
+- **C2**: Event subscription validates caller_id == subscriber
+- **C3**: Stream validates caller owns job_id/session_id
+- **C4**: Session.confirm replay protection via confirm_nonce
+- **C5**: Binding token TLS requirement documented
+- **C6**: Real did:key Ed25519 verification (multibase + multicodec)
+- **C7**: Server-side PII detection overrides sender classification
+- **C8**: Erasure requires owner authorization (is_authorized_to_erase)
+- **C9**: MinorRegistry protocol (NoOp default, platform registers real impl)
+- **C10**: Cost receipt mandatory Ed25519 signature verification
+- **C11**: Registry slug validation (3-30 chars, lowercase alphanum+hyphens)
+- **C12**: Federation trust_proof format validation (min 64 chars, base64)
+- **C13**: StreamBus replay requires authorized_subscribers membership
+- **C14**: Nonce store key: agent_id sanitized with strict regex
+- **C15**: asyncio.Lock/threading.Lock on all 5 security modules
+- **C16**: RateLimiter._evict_stale_senders enforces max_senders bound
+- **C17**: consent_url SSRF: HTTPS-only + validate_attachment_url
+- **C18**: Server levels 2-5 return 501 Not Implemented (not 404)
+- **C19**: SSRF protection: octal, hex, IPv6-mapped, zone ID, percent-encoded
+- **C20**: Delegation tests: real Ed25519 signatures, scope widening rejection
+
+#### High Fixes (P0.D)
+- **1.4**: Audit log append-only storage (AuditStorage protocol)
+- **1.5**: Attestation multi-party Ed25519 verification
+- **1.6**: Jurisdiction from signed agent.json (not untrusted headers)
+- **2.4**: JWT alg:none/HS256 rejection (ALLOWED_JWT_ALGS allowlist)
+- **2.5**: TrustTier ordering (__lt__/__gt__) without breaking str serialization
+- **2.6**: Clock skew tightened 60s → 30s
+- **2.7**: Resume token HMAC-signed session state container
+- **3.2**: Budget parsing fail-closed
+- **3.3**: Delegation signature context binding (parent_delegate)
+- **3.5**: Visited-agents URI normalization (case + whitespace)
+- **3.6**: Scope wildcard prefix matching
+- **3.7**: Trace context Ed25519 signing
+- **4.5**: Timing-safe token comparison (hmac.compare_digest)
+- **4.7**: Host-path whitelist on reference-server adapter
+- **4.8**: Error response filtering by trust tier
+- **5.2**: Rate limiter window boundary consistency
+- **5.4**: Monotonic clock throughout security modules
+- **5.5**: Stream seq server-assigned
+- **5.6**: Body type empty/whitespace validation
+- **5.7**: Field length limits on all body schemas
+- **5.9**: Handler exception sanitization
+
+#### Infrastructure
+- **P0.E**: All error responses migrated to RFC 7807 ProblemDetail
+- 976 protocol tests (was 457 at v0.2.1)
+- 1597 runtime bridge tests passing
+
 ## [0.2.2] - 2026-04-10
 
 ### Added

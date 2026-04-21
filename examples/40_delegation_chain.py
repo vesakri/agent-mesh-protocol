@@ -5,6 +5,9 @@ Builds a 3-agent delegation chain with Ed25519 signatures, validates
 scope narrowing, tracks per-hop costs via CostReceipt, and demonstrates
 Visited-Agents loop detection.
 
+Since C10, CostReceipt requires a mandatory `nonce` and Ed25519 `signature`.
+This example reuses the delegation keypairs to sign cost receipts.
+
 Extends example 06 with v0.1.3 cost receipt accumulation.
 
 Run:
@@ -12,7 +15,14 @@ Run:
     python examples/40_delegation_chain.py
 """
 
+from __future__ import annotations
+
+import base64
+import json
+import secrets
+import time
 from datetime import datetime, timezone, timedelta
+
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from ampro import (
@@ -27,6 +37,7 @@ from ampro import (
     CostReceipt,
     CostReceiptChain,
 )
+from ampro.trust.resolver import _PUBLIC_KEY_CACHE
 
 # ---------------------------------------------------------------------------
 # Setup: 3 agents with Ed25519 keypairs
@@ -35,12 +46,16 @@ from ampro import (
 AGENTS = ["gateway", "planner", "executor"]
 keys = {}
 pub_keys = {}
+_private_keys: dict[str, Ed25519PrivateKey] = {}
 
 for name in AGENTS:
     private = Ed25519PrivateKey.generate()
     uri = f"agent://{name}.example.com"
     keys[name] = private.private_bytes_raw()
     pub_keys[uri] = private.public_key().public_bytes_raw()
+    _private_keys[uri] = private
+    # Seed public key cache for cost receipt signature verification
+    _PUBLIC_KEY_CACHE[uri] = (time.time() + 3600, private.public_key().public_bytes_raw())
 
 now = datetime.now(timezone.utc)
 TASK_ID = "task-delegation-demo-001"
@@ -48,6 +63,19 @@ TASK_ID = "task-delegation-demo-001"
 print("=== Delegation Chain with Cost Receipts ===\n")
 print(f"  gateway -> planner -> executor")
 print(f"  Task: {TASK_ID}")
+
+
+def _sign_cost_receipt(agent_id: str, task_id: str, cost_usd: float,
+                       currency: str, issued_at: str, nonce: str) -> str:
+    """Sign canonical receipt fields with the agent's key."""
+    canonical = json.dumps(
+        {"agent_id": agent_id, "task_id": task_id, "cost_usd": cost_usd,
+         "currency": currency, "issued_at": issued_at, "nonce": nonce},
+        sort_keys=True, separators=(",", ":"), ensure_ascii=False,
+    ).encode("utf-8")
+    sig = _private_keys[agent_id].sign(canonical)
+    return base64.urlsafe_b64encode(sig).rstrip(b"=").decode()
+
 
 # ---------------------------------------------------------------------------
 # Step 1: Build the delegation chain
@@ -64,7 +92,7 @@ link1_data = {
     "created_at": now.isoformat(),
     "expires_at": (now + timedelta(hours=2)).isoformat(),
 }
-link1_sig = sign_delegation(keys["gateway"], link1_data)
+link1_sig = sign_delegation(keys["gateway"], link1_data, parent_delegate=None)
 link1 = DelegationLink(
     **link1_data,
     signature=link1_sig,
@@ -84,7 +112,7 @@ link2_data = {
     "created_at": now.isoformat(),
     "expires_at": (now + timedelta(hours=1)).isoformat(),
 }
-link2_sig = sign_delegation(keys["planner"], link2_data)
+link2_sig = sign_delegation(keys["planner"], link2_data, parent_delegate="agent://planner.example.com")
 link2 = DelegationLink(
     **link2_data,
     signature=link2_sig,
@@ -124,7 +152,7 @@ print(f"    Child:  ['tool:read', 'tool:execute', 'tool:admin']")
 print(f"    Valid:  {validate_scope_narrowing(link2.scopes, ['tool:read', 'tool:execute', 'tool:admin'])}")
 
 # ---------------------------------------------------------------------------
-# Step 4: Cost receipts — each agent reports what it spent
+# Step 4: Cost receipts — each agent reports what it spent (now signed)
 # ---------------------------------------------------------------------------
 
 print(f"\n--- Step 4: Cost Receipt Accumulation ---\n")
@@ -132,6 +160,8 @@ print(f"\n--- Step 4: Cost Receipt Accumulation ---\n")
 cost_chain = CostReceiptChain()
 
 # Executor finishes first (leaf of the chain)
+exec_nonce = secrets.token_urlsafe(16)
+exec_issued = now.isoformat()
 executor_receipt = CostReceipt(
     agent_id="agent://executor.example.com",
     task_id=TASK_ID,
@@ -140,11 +170,17 @@ executor_receipt = CostReceipt(
     breakdown={"tool_execution": 0.005, "llm_inference": 0.003},
     token_usage={"input": 600, "output": 200},
     duration_seconds=2.1,
-    issued_at=now.isoformat(),
+    nonce=exec_nonce,
+    signature=_sign_cost_receipt(
+        "agent://executor.example.com", TASK_ID, 0.008, "USD", exec_issued, exec_nonce,
+    ),
+    issued_at=exec_issued,
 )
 cost_chain.add_receipt(executor_receipt)
 
 # Planner adds its own receipt
+plan_nonce = secrets.token_urlsafe(16)
+plan_issued = (now + timedelta(seconds=3)).isoformat()
 planner_receipt = CostReceipt(
     agent_id="agent://planner.example.com",
     task_id=TASK_ID,
@@ -153,11 +189,17 @@ planner_receipt = CostReceipt(
     breakdown={"llm_inference": 0.012, "planning_overhead": 0.003},
     token_usage={"input": 1800, "output": 900},
     duration_seconds=4.5,
-    issued_at=(now + timedelta(seconds=3)).isoformat(),
+    nonce=plan_nonce,
+    signature=_sign_cost_receipt(
+        "agent://planner.example.com", TASK_ID, 0.015, "USD", plan_issued, plan_nonce,
+    ),
+    issued_at=plan_issued,
 )
 cost_chain.add_receipt(planner_receipt)
 
 # Gateway adds routing overhead
+gw_nonce = secrets.token_urlsafe(16)
+gw_issued = (now + timedelta(seconds=5)).isoformat()
 gateway_receipt = CostReceipt(
     agent_id="agent://gateway.example.com",
     task_id=TASK_ID,
@@ -166,7 +208,11 @@ gateway_receipt = CostReceipt(
     breakdown={"routing_overhead": 0.002},
     token_usage={"input": 200, "output": 50},
     duration_seconds=0.3,
-    issued_at=(now + timedelta(seconds=5)).isoformat(),
+    nonce=gw_nonce,
+    signature=_sign_cost_receipt(
+        "agent://gateway.example.com", TASK_ID, 0.002, "USD", gw_issued, gw_nonce,
+    ),
+    issued_at=gw_issued,
 )
 cost_chain.add_receipt(gateway_receipt)
 

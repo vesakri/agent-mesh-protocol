@@ -3,10 +3,13 @@ Agent Protocol — Message Deduplication Store.
 
 In-memory dedup with TTL-based expiry. A persistent-store-backed version
 can be swapped in via the DedupStore protocol.
+
+All timing uses ``time.monotonic()`` to prevent clock manipulation attacks.
 """
 
 from __future__ import annotations
 
+import asyncio
 import time
 from typing import Protocol
 
@@ -21,6 +24,7 @@ class InMemoryDedupStore:
         self._window = window_seconds
         self._max_size = max_size
         self._seen: dict[str, float] = {}
+        self._lock = asyncio.Lock()
 
     def _cleanup(self) -> None:
         now = time.monotonic()
@@ -54,12 +58,14 @@ class InMemoryDedupStore:
                 del self._seen[k]
 
     async def is_duplicate(self, message_id: str) -> bool:
-        self._cleanup()
-        if message_id in self._seen:
-            return True
-        self._seen[message_id] = time.monotonic()
-        self._evict_oldest()
-        return False
+        async with self._lock:
+            self._cleanup()
+            if message_id in self._seen:
+                return True
+            self._seen[message_id] = time.monotonic()
+            self._evict_oldest()
+            return False
 
     async def mark_seen(self, message_id: str) -> None:
-        self._seen[message_id] = time.monotonic()
+        async with self._lock:
+            self._seen[message_id] = time.monotonic()

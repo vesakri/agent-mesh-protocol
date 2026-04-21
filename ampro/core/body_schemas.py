@@ -21,7 +21,7 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 # ---------------------------------------------------------------------------
@@ -32,9 +32,10 @@ from pydantic import BaseModel, Field
 class MessageBody(BaseModel):
     """body.type = 'message' — Free-form message with optional attachments."""
 
-    text: str = Field(description="Message text content")
+    text: str = Field(max_length=65536, description="Message text content")
     attachments: list[dict[str, Any]] | None = Field(
         default=None,
+        max_length=50,
         description="Optional file or media attachments",
     )
 
@@ -44,14 +45,15 @@ class MessageBody(BaseModel):
 class TaskCreateBody(BaseModel):
     """body.type = 'task.create' — Create a new task."""
 
-    description: str = Field(description="Human-readable task description")
-    task_id: str | None = Field(default=None, description="Caller-supplied task ID")
+    description: str = Field(max_length=8192, description="Human-readable task description")
+    task_id: str | None = Field(default=None, max_length=256, description="Caller-supplied task ID")
     priority: Literal["low", "normal", "high", "urgent"] = Field(
         default="normal",
         description="Task priority level",
     )
     tools_required: list[str] | None = Field(
         default=None,
+        max_length=50,
         description="Tools the assignee must support to execute this task",
     )
     context: dict[str, Any] | None = Field(
@@ -60,10 +62,13 @@ class TaskCreateBody(BaseModel):
     )
     attachments: list[dict[str, Any]] | None = Field(
         default=None,
+        max_length=50,
         description="Optional file or media attachments",
     )
     timeout_seconds: int | None = Field(
         default=None,
+        ge=0,
+        le=86400,
         description="Maximum seconds to allow for task completion",
     )
 
@@ -73,9 +78,9 @@ class TaskCreateBody(BaseModel):
 class TaskAssignBody(BaseModel):
     """body.type = 'task.assign' — Assign an existing task to an agent."""
 
-    task_id: str = Field(description="ID of the task being assigned")
-    assignee: str = Field(description="Agent address to assign the task to")
-    reason: str | None = Field(default=None, description="Why this assignee was chosen")
+    task_id: str = Field(max_length=256, description="ID of the task being assigned")
+    assignee: str = Field(max_length=256, description="Agent address to assign the task to")
+    reason: str | None = Field(default=None, max_length=8192, description="Why this assignee was chosen")
 
     model_config = {"extra": "ignore"}
 
@@ -83,9 +88,10 @@ class TaskAssignBody(BaseModel):
 class TaskDelegateBody(BaseModel):
     """body.type = 'task.delegate' — Delegate a task with full chain context."""
 
-    task_id: str = Field(description="ID of the task being delegated")
-    description: str = Field(description="Description of the work to delegate")
+    task_id: str = Field(max_length=256, description="ID of the task being delegated")
+    description: str = Field(max_length=8192, description="Description of the work to delegate")
     delegation_chain: list[dict[str, Any]] = Field(
+        max_length=50,
         description="DelegationLink objects forming the authority chain",
     )
     context: dict[str, Any] | None = Field(
@@ -94,6 +100,7 @@ class TaskDelegateBody(BaseModel):
     )
     attachments: list[dict[str, Any]] | None = Field(
         default=None,
+        max_length=50,
         description="Optional file or media attachments",
     )
 
@@ -103,9 +110,9 @@ class TaskDelegateBody(BaseModel):
 class TaskSpawnBody(BaseModel):
     """body.type = 'task.spawn' — Spawn a child task from a parent."""
 
-    parent_task_id: str = Field(description="ID of the parent task")
-    task_id: str | None = Field(default=None, description="Optional child task ID")
-    description: str = Field(description="Description of the child task")
+    parent_task_id: str = Field(max_length=256, description="ID of the parent task")
+    task_id: str | None = Field(default=None, max_length=256, description="Optional child task ID")
+    description: str = Field(max_length=8192, description="Description of the child task")
     context: dict[str, Any] | None = Field(
         default=None,
         description="Context inherited or injected for the child task",
@@ -117,18 +124,22 @@ class TaskSpawnBody(BaseModel):
 class TaskQuoteBody(BaseModel):
     """body.type = 'task.quote' — Non-binding cost/time estimate for a task."""
 
-    task_id: str = Field(description="ID of the task being quoted")
-    expires_at: str = Field(description="ISO-8601 timestamp when this quote expires")
+    task_id: str = Field(max_length=256, description="ID of the task being quoted")
+    expires_at: str = Field(max_length=256, description="ISO-8601 timestamp when this quote expires")
     estimated_cost_usd: float | None = Field(
         default=None,
+        ge=0,
         description="Estimated cost in USD",
     )
     estimated_tokens: int | None = Field(
         default=None,
+        ge=0,
         description="Estimated token usage",
     )
     estimated_duration_seconds: int | None = Field(
         default=None,
+        ge=0,
+        le=86400,
         description="Estimated duration in seconds",
     )
     breakdown: dict[str, Any] | None = Field(
@@ -142,14 +153,15 @@ class TaskQuoteBody(BaseModel):
 class NotificationBody(BaseModel):
     """body.type = 'notification' — Push a notification to an agent."""
 
-    topic: str = Field(description="Notification topic or category")
-    message: str = Field(description="Human-readable notification message")
+    topic: str = Field(max_length=256, description="Notification topic or category")
+    message: str = Field(max_length=8192, description="Human-readable notification message")
     data: dict[str, Any] | None = Field(
         default=None,
         description="Optional structured data payload",
     )
     expires_at: str | None = Field(
         default=None,
+        max_length=256,
         description="ISO-8601 timestamp when this notification expires",
     )
 
@@ -164,7 +176,7 @@ class NotificationBody(BaseModel):
 class TaskProgressBody(BaseModel):
     """body.type = 'task.progress' — Report task progress."""
 
-    task_id: str = Field(description="ID of the task being updated")
+    task_id: str = Field(max_length=256, description="ID of the task being updated")
     percentage: int | None = Field(
         default=None,
         ge=0,
@@ -173,10 +185,13 @@ class TaskProgressBody(BaseModel):
     )
     message: str | None = Field(
         default=None,
+        max_length=8192,
         description="Human-readable progress message",
     )
     estimated_remaining_seconds: int | None = Field(
         default=None,
+        ge=0,
+        le=86400,
         description="Estimated seconds until task completion",
     )
     metadata: dict[str, Any] | None = Field(
@@ -190,21 +205,40 @@ class TaskProgressBody(BaseModel):
 class TaskInputRequiredBody(BaseModel):
     """body.type = 'task.input_required' — Request additional input from sender."""
 
-    task_id: str = Field(description="ID of the blocked task")
-    reason: str = Field(description="Why input is required")
-    prompt: str = Field(description="What to ask the user or calling agent")
+    task_id: str = Field(max_length=256, description="ID of the blocked task")
+    reason: str = Field(max_length=8192, description="Why input is required")
+    prompt: str = Field(max_length=8192, description="What to ask the user or calling agent")
     options: list[str] | None = Field(
         default=None,
+        max_length=50,
         description="Optional list of valid response options",
     )
     consent_url: str | None = Field(
         default=None,
+        max_length=2048,
         description="URL for consent or authorization flow",
     )
     timeout_seconds: int | None = Field(
         default=None,
+        ge=0,
+        le=86400,
         description="How long to wait for a response before timing out",
     )
+
+    @field_validator("consent_url")
+    @classmethod
+    def consent_url_must_be_safe(cls, v: str | None) -> str | None:
+        """SSRF protection: consent_url must be HTTPS and not target private IPs."""
+        if v is None:
+            return v
+        from ampro.transport.attachment import validate_attachment_url
+
+        if not validate_attachment_url(v):
+            raise ValueError(
+                "consent_url must be HTTPS and must not target private, "
+                "loopback, or link-local addresses"
+            )
+        return v
 
     model_config = {"extra": "ignore"}
 
@@ -212,15 +246,16 @@ class TaskInputRequiredBody(BaseModel):
 class TaskEscalateBody(BaseModel):
     """body.type = 'task.escalate' — Escalate a task to a human or specific agent."""
 
-    task_id: str = Field(description="ID of the task being escalated")
+    task_id: str = Field(max_length=256, description="ID of the task being escalated")
     escalate_to: Literal["sender_human", "local_human", "specific"] = Field(
         description="Who to escalate to",
     )
     target: str | None = Field(
         default=None,
+        max_length=256,
         description="Target agent address when escalate_to='specific'",
     )
-    reason: str = Field(description="Why escalation is needed")
+    reason: str = Field(max_length=8192, description="Why escalation is needed")
     context: dict[str, Any] | None = Field(
         default=None,
         description="Context to pass to the escalation target",
@@ -236,15 +271,16 @@ class TaskEscalateBody(BaseModel):
 class TaskRerouteBody(BaseModel):
     """body.type = 'task.reroute' — Cancel or redirect a task."""
 
-    task_id: str = Field(description="ID of the task to reroute")
+    task_id: str = Field(max_length=256, description="ID of the task to reroute")
     action: Literal["cancel", "redirect"] = Field(
         description="Reroute action to perform",
     )
     redirect_to: str | None = Field(
         default=None,
+        max_length=256,
         description="Agent address to redirect to when action='redirect'",
     )
-    reason: str = Field(description="Why the task is being rerouted")
+    reason: str = Field(max_length=8192, description="Why the task is being rerouted")
 
     model_config = {"extra": "ignore"}
 
@@ -252,9 +288,9 @@ class TaskRerouteBody(BaseModel):
 class TaskTransferBody(BaseModel):
     """body.type = 'task.transfer' — Transfer task ownership to another agent."""
 
-    task_id: str = Field(description="ID of the task being transferred")
-    transfer_to: str = Field(description="Agent address to transfer ownership to")
-    reason: str = Field(description="Why the task is being transferred")
+    task_id: str = Field(max_length=256, description="ID of the task being transferred")
+    transfer_to: str = Field(max_length=256, description="Agent address to transfer ownership to")
+    reason: str = Field(max_length=8192, description="Why the task is being transferred")
     context: dict[str, Any] | None = Field(
         default=None,
         description="Context to pass to the new owner",
@@ -270,29 +306,36 @@ class TaskTransferBody(BaseModel):
 class TaskAcknowledgeBody(BaseModel):
     """body.type = 'task.acknowledge' — Acknowledge receipt and acceptance of a task."""
 
-    task_id: str = Field(description="ID of the task being acknowledged")
+    task_id: str = Field(max_length=256, description="ID of the task being acknowledged")
     estimated_duration_seconds: int | None = Field(
         default=None,
+        ge=0,
+        le=86400,
         description="Estimated time to complete the task",
     )
     message: str | None = Field(
         default=None,
+        max_length=8192,
         description="Optional acknowledgement message",
     )
     upgraded_tier: str | None = Field(
         default=None,
+        max_length=256,
         description="Upgraded trust tier granted for this task",
     )
     scopes: list[str] | None = Field(
         default=None,
+        max_length=50,
         description="Scopes granted for task execution",
     )
     valid_for_session: str | None = Field(
         default=None,
+        max_length=256,
         description="Session ID for which the trust upgrade is valid",
     )
     expires_at: str | None = Field(
         default=None,
+        max_length=256,
         description="ISO-8601 timestamp when granted permissions expire",
     )
 
@@ -302,22 +345,26 @@ class TaskAcknowledgeBody(BaseModel):
 class TaskRejectBody(BaseModel):
     """body.type = 'task.reject' — Reject a task with reason."""
 
-    task_id: str = Field(description="ID of the rejected task")
-    reason: str = Field(description="Why the task was rejected")
+    task_id: str = Field(max_length=256, description="ID of the rejected task")
+    reason: str = Field(max_length=8192, description="Why the task was rejected")
     detail: str | None = Field(
         default=None,
+        max_length=8192,
         description="Additional detail about the rejection",
     )
     required_tier: str | None = Field(
         default=None,
+        max_length=256,
         description="Trust tier required to accept this task",
     )
     required: list[str] | None = Field(
         default=None,
+        max_length=50,
         description="Missing capabilities or permissions required",
     )
     supported: list[str] | None = Field(
         default=None,
+        max_length=50,
         description="Capabilities the agent does support",
     )
     retry_eligible: bool = Field(
@@ -326,6 +373,8 @@ class TaskRejectBody(BaseModel):
     )
     retry_after_seconds: int | None = Field(
         default=None,
+        ge=0,
+        le=86400,
         description="How long to wait before retrying",
     )
 
@@ -335,10 +384,11 @@ class TaskRejectBody(BaseModel):
 class TaskCompleteBody(BaseModel):
     """body.type = 'task.complete' — Signal successful task completion."""
 
-    task_id: str = Field(description="ID of the completed task")
+    task_id: str = Field(max_length=256, description="ID of the completed task")
     result: Any = Field(description="The task result or output")
     attachments: list[dict[str, Any]] | None = Field(
         default=None,
+        max_length=50,
         description="Optional result attachments",
     )
     metadata: dict[str, Any] | None = Field(
@@ -347,14 +397,17 @@ class TaskCompleteBody(BaseModel):
     )
     delegation_chain: list[dict[str, Any]] | None = Field(
         default=None,
+        max_length=50,
         description="Full delegation chain for traceability",
     )
     cost_usd: float | None = Field(
         default=None,
+        ge=0,
         description="Actual cost incurred in USD",
     )
     duration_seconds: float | None = Field(
         default=None,
+        ge=0,
         description="Actual wall-clock duration in seconds",
     )
     cost_receipt: dict[str, Any] | None = Field(
@@ -370,11 +423,13 @@ class TaskErrorBody(BaseModel):
 
     task_id: str | None = Field(
         default=None,
+        max_length=256,
         description="ID of the failed task (may be absent for routing errors)",
     )
-    reason: str = Field(description="Short machine-readable error reason")
+    reason: str = Field(max_length=8192, description="Short machine-readable error reason")
     detail: str | None = Field(
         default=None,
+        max_length=8192,
         description="Human-readable error detail",
     )
     retry_eligible: bool = Field(
@@ -382,6 +437,8 @@ class TaskErrorBody(BaseModel):
     )
     retry_after_seconds: int | None = Field(
         default=None,
+        ge=0,
+        le=86400,
         description="How long to wait before retrying",
     )
     partial_result: Any | None = Field(
@@ -406,11 +463,13 @@ class TaskResponseBody(BaseModel):
 
     task_id: str | None = Field(
         default=None,
+        max_length=256,
         description="ID of the task this response corresponds to",
     )
-    text: str = Field(description="Human-readable response text")
+    text: str = Field(max_length=65536, description="Human-readable response text")
     attachments: list[dict[str, Any]] | None = Field(
         default=None,
+        max_length=50,
         description="Optional response attachments",
     )
     data: dict[str, Any] | None = Field(
@@ -429,11 +488,11 @@ class TaskResponseBody(BaseModel):
 class DataConsentRequestBody(BaseModel):
     """body.type = 'data.consent_request' — Request consent for scoped access."""
 
-    requester: str = Field(description="Agent ID requesting consent")
-    target: str = Field(description="Agent ID whose consent is sought")
-    scopes: list[str] = Field(description="Requested permission scopes")
-    reason: str = Field(description="Human-readable reason")
-    ttl_seconds: int = Field(default=86400, description="Grant lifetime")
+    requester: str = Field(max_length=256, description="Agent ID requesting consent")
+    target: str = Field(max_length=256, description="Agent ID whose consent is sought")
+    scopes: list[str] = Field(max_length=50, description="Requested permission scopes")
+    reason: str = Field(max_length=8192, description="Human-readable reason")
+    ttl_seconds: int = Field(default=86400, ge=0, le=604800, description="Grant lifetime")
 
     model_config = {"extra": "ignore"}
 
@@ -441,12 +500,12 @@ class DataConsentRequestBody(BaseModel):
 class DataConsentResponseBody(BaseModel):
     """body.type = 'data.consent_response' — Grant or deny consent."""
 
-    grant_id: str = Field(default="", description="Unique grant ID if approved")
-    requester: str = Field(description="Agent that requested consent")
-    target: str = Field(description="Agent that responded")
-    scopes: list[str] = Field(default_factory=list, description="Granted scopes")
+    grant_id: str = Field(default="", max_length=256, description="Unique grant ID if approved")
+    requester: str = Field(max_length=256, description="Agent that requested consent")
+    target: str = Field(max_length=256, description="Agent that responded")
+    scopes: list[str] = Field(default_factory=list, max_length=50, description="Granted scopes")
     approved: bool = Field(description="Whether consent was granted")
-    expires_at: str | None = Field(default=None, description="When grant expires")
+    expires_at: str | None = Field(default=None, max_length=256, description="When grant expires")
 
     model_config = {"extra": "ignore"}
 
@@ -663,8 +722,10 @@ def validate_body(body_type: str, body: dict[str, Any]) -> BaseModel | dict[str,
         pydantic.ValidationError: If the body fails schema validation for a
                                   known body_type.
     """
-    if not body_type:
-        return body  # None or empty string → pass through unvalidated
+    if body_type is None:
+        raise ValueError("body_type is required")
+    if not body_type.strip():
+        raise ValueError("body_type cannot be empty or whitespace")
     model_cls = _BODY_TYPE_REGISTRY.get(body_type)
     if model_cls is None:
         return body

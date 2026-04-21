@@ -2,7 +2,7 @@
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://python.org)
-[![Version](https://img.shields.io/badge/version-0.2.2-green.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.3.0-green.svg)](CHANGELOG.md)
 
 The universal agent-to-agent communication protocol. Any agent, any runtime, any platform.
 
@@ -52,6 +52,40 @@ def message():
 ```
 
 That's a fully protocol-compliant Level 1 agent.
+
+## AMPI — Agent Message Processing Interface
+
+AMPI is ASGI for agents. Write handlers once, deploy anywhere.
+
+```python
+from ampro import AgentApp
+
+agent = AgentApp("agent://my-agent.com", "https://my-agent.com")
+
+@agent.on("task.create")
+async def handle(msg, ctx):
+    # ctx has trust_tier, session, capabilities, delegation chain...
+    return {"result": "done"}
+
+@agent.tool("search")
+async def search(query: str, ctx):
+    return {"results": []}
+```
+
+Run it:
+
+```bash
+ampro-server main:agent --port 8000
+```
+
+Test it:
+
+```python
+from ampro import TestServer
+
+server = TestServer(agent)
+result = await server.send(message)
+```
 
 ## Addressing -- `agent://`
 

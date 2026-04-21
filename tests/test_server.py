@@ -302,7 +302,9 @@ class TestErrorHandling:
         assert status == 500
         data = json.loads(body_str)
         assert data["type"] == "urn:amp:error:internal-error"
-        assert "boom" in data["detail"]
+        # Exception message must NOT leak to the caller (sanitised).
+        assert "boom" not in data["detail"]
+        assert "unexpected error" in data["detail"].lower()
 
     def test_no_handler_501(self):
         """No handler and no default → 501."""
@@ -321,3 +323,46 @@ class TestErrorHandling:
         server = _make_server()
         status, _, _ = _run(server.route("GET", "/agent/health/"))
         assert status == 200
+
+
+# ===========================================================================
+# TestFromApp
+# ===========================================================================
+
+
+class TestFromApp:
+    """Test AgentServer.from_app() classmethod."""
+
+    def test_agent_server_from_app(self):
+        from ampro.server.core import AgentServer
+        from ampro.ampi.app import AgentApp
+
+        app = AgentApp("agent://test.com", "https://test.com")
+
+        @app.on("task.create")
+        async def handle(msg, ctx):
+            return {"tier": "verified"}
+
+        server = AgentServer.from_app(app)
+        assert server.agent_id == "agent://test.com"
+        assert "task.create" in server._handlers
+
+    def test_from_app_copies_error_handler(self):
+        from ampro.ampi.app import AgentApp
+
+        app = AgentApp("agent://err.example.com", "https://err.example.com")
+
+        @app.on_error
+        async def on_err(msg, ctx):
+            return {"error": True}
+
+        server = AgentServer.from_app(app)
+        assert server._default_handler is on_err
+
+    def test_from_app_preserves_agent_json(self):
+        from ampro.ampi.app import AgentApp
+
+        app = AgentApp("agent://json.example.com", "https://json.example.com")
+        server = AgentServer.from_app(app)
+        assert server.agent_json.endpoint == "https://json.example.com"
+        assert "agent://json.example.com" in server.agent_json.identifiers

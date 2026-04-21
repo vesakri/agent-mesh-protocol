@@ -9,9 +9,10 @@ Public API
 ----------
 - ``get_or_create_stream(task_id)`` → ``StreamBus``
 - ``cleanup_stream(task_id)``
+- ``StreamBus.subscribe(subscriber_id)``
 - ``StreamBus.emit(event)``
-- ``StreamBus.events()``  (async iterator)
-- ``StreamBus.replay_from(last_event_id)``
+- ``StreamBus.events(subscriber_id)``  (async iterator, auth-gated)
+- ``StreamBus.replay_from(last_event_id, subscriber_id=...)``  (auth-gated)
 - ``StreamBus.close()``
 """
 
@@ -47,6 +48,27 @@ class StreamBus:
         self._seq: int = 0  # monotonically increasing event id
         self._closed: bool = False
         self._dropped_count: int = 0
+        self._authorized_subscribers: set[str] = set()
+
+    # ----- subscription -----
+
+    def subscribe(self, subscriber_id: str) -> None:
+        """Authorize *subscriber_id* to consume events from this bus.
+
+        Must be called before ``events()`` or ``replay_from()`` to
+        grant read access.
+        """
+        if not subscriber_id:
+            raise ValueError("subscriber_id must be a non-empty string")
+        self._authorized_subscribers.add(subscriber_id)
+
+    def _check_authorized(self, subscriber_id: str) -> None:
+        """Raise ``PermissionError`` if *subscriber_id* is not subscribed."""
+        if subscriber_id not in self._authorized_subscribers:
+            raise PermissionError(
+                f"subscriber '{subscriber_id}' is not authorized on stream "
+                f"'{self.task_id}'"
+            )
 
     # ----- writing side -----
 
@@ -95,8 +117,13 @@ class StreamBus:
 
     # ----- reading side -----
 
-    async def events(self) -> AsyncIterator[StreamingEvent]:
-        """Yield events as they arrive.  Stops when the bus is closed."""
+    async def events(self, subscriber_id: str) -> AsyncIterator[StreamingEvent]:
+        """Yield events as they arrive.  Stops when the bus is closed.
+
+        Raises ``PermissionError`` if *subscriber_id* has not been
+        registered via ``subscribe()``.
+        """
+        self._check_authorized(subscriber_id)
         while True:
             item = await self._queue.get()
             if item is _SENTINEL:
@@ -104,12 +131,18 @@ class StreamBus:
             # item is a StreamingEvent at this point
             yield item  # type: ignore[misc]
 
-    def replay_from(self, last_event_id: int) -> list[StreamingEvent]:
+    def replay_from(
+        self, last_event_id: int, *, subscriber_id: str
+    ) -> list[StreamingEvent]:
         """Return buffered events with id > ``last_event_id``.
 
         Used for SSE reconnection: the client sends ``Last-Event-ID``
         and the server replays everything that was emitted after that id.
+
+        Raises ``PermissionError`` if *subscriber_id* has not been
+        registered via ``subscribe()``.
         """
+        self._check_authorized(subscriber_id)
         result: list[StreamingEvent] = []
         for ev in self._ring:
             ev_id = int(ev.id) if ev.id else 0

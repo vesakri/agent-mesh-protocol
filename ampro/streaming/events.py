@@ -48,7 +48,10 @@ class StreamingEvent(BaseModel):
     seq: int = Field(
         default=0,
         ge=0,
-        description="Monotonic sequence number for ordering, starts at 1",
+        description=(
+            "Server-assigned monotonic sequence number for ordering. "
+            "Do not set manually — StreamBus.emit() assigns this atomically."
+        ),
     )
 
     def to_sse(self) -> str:

@@ -50,7 +50,7 @@ for target in ["sender_human", "local_human", "specific"]:
     body = validate_body("task.escalate", {
         "task_id": "t-1",
         "escalate_to": target,
-        "target": "agent://manager@corp.com" if target == "specific" else None,
+        "target": "agent://manager@corp.example.com" if target == "specific" else None,
         "reason": "Need help",
     })
     print(f"  escalate_to: {body.escalate_to}")

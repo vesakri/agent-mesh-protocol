@@ -17,5 +17,6 @@ Usage::
 from __future__ import annotations
 
 from ampro.server.core import AgentServer
+from ampro.server.test import TestServer
 
-__all__ = ["AgentServer"]
+__all__ = ["AgentServer", "TestServer"]

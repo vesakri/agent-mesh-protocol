@@ -11,6 +11,20 @@ NOTE: This file must NOT import any app.* modules outside
 protocol siblings -- it is protocol-pure.
 """
 
+# ─── Reference implementation, not production-wired ────────────────
+# This module is part of the AMP protocol surface and is validated by
+# the test suite against the normative spec at
+# `docs/WIRE-BINDING.md`. It has no first-party runtime caller as of
+# ampro v0.3.0; downstream implementers may depend on it directly, or
+# provide their own implementation conforming to the same contract.
+#
+# RFC 9421 (HTTP Message Signatures) canonicalisation primitives.
+# Higher-level authentication wrappers live in
+# `ampro.identity.auth_methods`; this module is the underlying
+# canonicaliser. Keep in sync with the normative RFC, not with any
+# caller.
+# ───────────────────────────────────────────────────────────────────
+
 from __future__ import annotations
 
 import base64

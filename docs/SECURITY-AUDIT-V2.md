@@ -1,19 +1,30 @@
-# Agent Mesh Protocol — Security Re-Audit v0.2.1
+# Agent Mesh Protocol — v0.2.1 Security Re-Audit (Retrospective)
 
-> **Date**: 2026-04-10
-> **Version**: v0.2.1 (post-fix)
-> **Purpose**: Verify v0.2.1 fixes are effective, find bypasses and new attack vectors
+> **Audited version**: v0.2.1 (2026-04-10)
+> **Purpose at time of audit**: Verify v0.2.1 fixes are effective, find bypasses and new attack vectors.
+> **Status**: **All CRITICAL+HIGH bypasses and logic bugs identified here were closed in v0.2.3.** See `CHANGELOG.md` §0.2.3 — the "Security — Phase 0 Sprint" section maps each C1–C20 / 1.4–5.9 finding to its remediation.
+>
+> This document is retained as a historical record of the protocol's
+> security-review process — specifically the self-critical re-audit
+> that caught incomplete fixes and regressions before they reached a
+> tagged release. It does **not** describe current (post-v0.2.3)
+> protocol behaviour.
 
 ---
 
-## Executive Summary
+## Executive Summary (v0.2.1 snapshot)
 
-The v0.2.1 fixes are **partially effective but introduce new attack vectors**. Of 47 fixes applied:
+At the time of this re-audit, the v0.2.1 fixes were **partially
+effective but introduced new attack vectors**. Of 47 fixes applied:
+
 - **19 are correctly implemented** and effective
 - **8 are incomplete** — fix exists but can be bypassed or has gaps
 - **6 introduced NEW vulnerabilities** — the fix itself creates a new attack surface
 - **5 are cosmetic** — docstring warnings with no code enforcement
 - **9 have edge cases** that weren't considered
+
+All of the above were addressed in v0.2.3. The remainder of this
+document is the raw re-audit as filed.
 
 ---
 

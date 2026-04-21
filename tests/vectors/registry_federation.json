@@ -83,7 +83,7 @@
         "body": {
           "registry_id": "agent://registry.alpha.example.com",
           "capabilities": ["resolve", "search"],
-          "trust_proof": "eyJhbGciOiJFZDI1NTE5In0.PROOF"
+          "trust_proof": "eyJhbGciOiJFZDI1NTE5In0uZXlKMGVYQWlPaUpHUldSbGNtRjBhVzl1VkhKMWMzUlFjbTl2WmlKOS5TSUdOQVRVUkU"
         }
       }
     },
@@ -115,7 +115,7 @@
       "expected_error": "registry_id",
       "body": {
         "capabilities": ["resolve"],
-        "trust_proof": "SOME_PROOF"
+        "trust_proof": "U09NRV9QUk9PRl9EQVRBXzEyMzQ1Njc4OTBhYmNkZWZnaGlqa2xtbm9wcXJzdHV2d3h5ejAxMjM0NTY3ODk"
       }
     },
     {
@@ -125,7 +125,7 @@
       "expected_error": "capabilities",
       "body": {
         "registry_id": "agent://registry.example.com",
-        "trust_proof": "SOME_PROOF"
+        "trust_proof": "U09NRV9QUk9PRl9EQVRBXzEyMzQ1Njc4OTBhYmNkZWZnaGlqa2xtbm9wcXJzdHV2d3h5ejAxMjM0NTY3ODk"
       }
     },
     {

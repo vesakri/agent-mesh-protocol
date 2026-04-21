@@ -6,6 +6,14 @@ criteria. Any registry implementing GET /registry/search returns results
 in this format.
 """
 
+# ─── Reference implementation, not production-wired ────────────────
+# This module is part of the AMP protocol surface and is validated by
+# the test suite against the normative spec at
+# `docs/WIRE-BINDING.md`. It has no first-party runtime caller as of
+# ampro v0.3.0; downstream implementers may depend on it directly, or
+# provide their own implementation conforming to the same contract.
+# ───────────────────────────────────────────────────────────────────
+
 from __future__ import annotations
 
 from typing import Any

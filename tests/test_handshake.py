@@ -27,6 +27,7 @@ class TestHandshakeBodyTypes:
     def test_session_established_body(self):
         from ampro import SessionEstablishedBody
         body = SessionEstablishedBody(
+        confirm_nonce="test-nonce-3",
             session_id="sess-1",
             negotiated_capabilities=["messaging"],
             negotiated_version="1.0.0",
@@ -40,7 +41,7 @@ class TestHandshakeBodyTypes:
 
     def test_session_confirm_body(self):
         from ampro import SessionConfirmBody
-        body = SessionConfirmBody(session_id="sess-1", binding_proof="proof-123")
+        body = SessionConfirmBody(session_id="sess-1", confirm_nonce="test-nonce-3", binding_proof="proof-123")
         assert body.binding_proof == "proof-123"
 
     def test_session_ping_body(self):
@@ -174,6 +175,7 @@ class TestHandshakeBodyTypeRegistry:
             "trust_score": 450,
             "server_nonce": "xyz",
             "binding_token": "tok",
+            "confirm_nonce": "test-nonce-handshake",
         })
         assert hasattr(body, "session_id")
 
@@ -194,9 +196,9 @@ class TestHandshakeBodyTypeRegistry:
             if t == "session.init":
                 result = validate_body(t, {"proposed_capabilities": ["x"], "proposed_version": "1.0.0", "client_nonce": "n"})
             elif t == "session.established":
-                result = validate_body(t, {"session_id": "s", "negotiated_capabilities": ["x"], "negotiated_version": "1.0.0", "trust_tier": "verified", "trust_score": 0, "server_nonce": "n", "binding_token": "t"})
+                result = validate_body(t, {"session_id": "s", "negotiated_capabilities": ["x"], "negotiated_version": "1.0.0", "trust_tier": "verified", "trust_score": 0, "server_nonce": "n", "binding_token": "t", "confirm_nonce": "cn"})
             elif t == "session.confirm":
-                result = validate_body(t, {"session_id": "s", "binding_proof": "p"})
+                result = validate_body(t, {"session_id": "s", "binding_proof": "p", "confirm_nonce": "cn"})
             elif t in ("session.ping", "session.pong"):
                 result = validate_body(t, {"session_id": "s", "timestamp": "2026-01-01T00:00:00Z"})
             elif t == "session.pause":
